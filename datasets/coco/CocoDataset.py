@@ -9,7 +9,7 @@ from skimage.transform import resize
 from torch.utils.data import Dataset
 
 
-class COCO(Dataset):
+class CocoDataset(Dataset):
     """COCO dataset. It is based on the COCO dataset provided by Joseph Redmon
     at https://pjreddie.com/.
     If you want to get the dataset you can obtain it running this bash script:

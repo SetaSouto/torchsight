@@ -9,17 +9,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Add dataset module to path
-data_path = abspath(join(dirname(abspath(__file__)), '../../data/datasets'))
+data_path = abspath(join(dirname(abspath(__file__)), '../../datasets'))
 sys.path.insert(0, data_path)
 
-from COCO import COCO
+from coco.CocoDataset import CocoDataset
 
 
 class COCOTest(TestCase):
     def setUp(self):
         # This is my custom path, change it to pass this test
         coco_path = '/media/souto/DATA/HDD/datasets/coco'
-        self.dataset = COCO(coco_path)  # train=True
+        self.dataset = CocoDataset(coco_path)  # train=True
 
     def test_length(self):
         self.assertEqual(len(self.dataset), 117264)
