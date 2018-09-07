@@ -34,8 +34,7 @@ class CocoDataset(Dataset):
         valid_path = path.abspath(path.join(coco_path, '5k.txt'))
         file_path = train_path if train else valid_path
         with open(file_path, 'r') as file:
-            self.images_paths = [line.strip().replace('\n', '')
-                                 for line in file.readlines()]
+            self.images_paths = [line.strip().replace('\n', '') for line in file.readlines()]
 
     def __len__(self):
         """Returns the length of the dataset."""
@@ -54,9 +53,7 @@ class CocoDataset(Dataset):
         """
         image_path = self.images_paths[index % len(self.images_paths)]
         image, real_shape = self.get_image(image_path)
-        bounding_boxes = self.generate_bounding_boxes_tensor(
-            self.get_bounding_boxes_file_path(image_path),
-            image_shape=real_shape)
+        bounding_boxes = self.generate_bounding_boxes_tensor(self.get_bounding_boxes_file_path(image_path), image_shape=real_shape)
 
         return image_path, image, bounding_boxes
 
@@ -84,11 +81,9 @@ class CocoDataset(Dataset):
         dim_diff = np.abs(h - w)
         # Upper (or left) and lower (or right) padding
         padding = dim_diff // 2, dim_diff - dim_diff // 2
-        padding = (padding, (0, 0), (0, 0)) if h <= w else (
-            (0, 0), padding, (0, 0))
+        padding = (padding, (0, 0), (0, 0)) if h <= w else ((0, 0), padding, (0, 0))
         # Pad, normalize and resize
-        image = np.pad(image, padding, 'constant',
-                       constant_values=127.5) / 255.  # Normalize between [0, 1]
+        image = np.pad(image, padding, 'constant', constant_values=127.5) / 255.  # Normalize between [0, 1]
         image = resize(
             image, (self.image_size, self.image_size, 3), mode='reflect')
         # Channels-first
@@ -117,6 +112,8 @@ class CocoDataset(Dataset):
         For this, this method needs the real image shape (the shape of the image before
         it was squared, padded and resized).
 
+        If no image shape is given, ignore the transformations.
+
         Args:
             file_path (str): The relative or absolute path to the label (or bounding boxes) file.
 
@@ -130,36 +127,35 @@ class CocoDataset(Dataset):
             # Move to device
             if self.device:
                 bounding_boxes.to(device)
-            # Reformat to match the padded image
-            h, w, _ = image_shape
-            # The bounding boxes are relative to the image, so we need to know the relative
-            # increment of the padding
-            if w > h:
-                # We have a vertical padding
-                # The relative height of the image is the proportion between the height and width.
-                # So if you have an image with height 200 and width 250 the relative height is
-                # 200 / 250 = 0.8
-                relative_height = h / w
-                # The height of the bounding box must scale to this relative height, so if the height of
-                # the bounding box was 1 now it will 0.8, if has 0.5 now it will be 0.4.
-                bounding_boxes[:, 4] = bounding_boxes[:, 4] * relative_height
-                # For the y position we need to scale it and move it the correct padding distance.
-                # For example, if the height and width are 100, 150 we need a padding of
-                # 150 / 100 = 1.5 relative to the height. And then we can add ((1.5 - 1) * 100) / 2 = 0.25
-                # relative to the height to the top and to the bottom of the image.
-                # First calculate the padding relative to the height (how many pixels it must add to match the
-                # width length proportionally to the height that it really has).
-                # It subtracts 1 because it already has all the pixels of the height and divide by 2 to add the half
-                # to the top and the other half to the bottom.
-                padding = ((w / h) - 1) / 2
-                bounding_boxes[:, 2] = (
-                    bounding_boxes[:, 2] + padding) * relative_height
-            else:
-                relative_width = w / h
-                padding = ((h / w) - 1) / 2
-                bounding_boxes[:, 3] = bounding_boxes[:, 3] * relative_width
-                bounding_boxes[:, 1] = (
-                    bounding_boxes[:, 1] + padding) * relative_width
+            if image_shape:
+                # Reformat to match the padded image
+                h, w, _ = image_shape
+                # The bounding boxes are relative to the image, so we need to know the relative
+                # increment of the padding
+                if w > h:
+                    # We have a vertical padding
+                    # The relative height of the image is the proportion between the height and width.
+                    # So if you have an image with height 200 and width 250 the relative height is
+                    # 200 / 250 = 0.8
+                    relative_height = h / w
+                    # The height of the bounding box must scale to this relative height, so if the height of
+                    # the bounding box was 1 now it will 0.8, if has 0.5 now it will be 0.4.
+                    bounding_boxes[:, 4] = bounding_boxes[:, 4] * relative_height
+                    # For the y position we need to scale it and move it the correct padding distance.
+                    # For example, if the height and width are 100, 150 we need a padding of
+                    # 150 / 100 = 1.5 relative to the height. And then we can add ((1.5 - 1) * 100) / 2 = 0.25
+                    # relative to the height to the top and to the bottom of the image.
+                    # First calculate the padding relative to the height (how many pixels it must add to match the
+                    # width length proportionally to the height that it really has).
+                    # It subtracts 1 because it already has all the pixels of the height and divide by 2 to add the half
+                    # to the top and the other half to the bottom.
+                    padding = ((w / h) - 1) / 2
+                    bounding_boxes[:, 2] = (bounding_boxes[:, 2] + padding) * relative_height
+                else:
+                    relative_width = w / h
+                    padding = ((h / w) - 1) / 2
+                    bounding_boxes[:, 3] = bounding_boxes[:, 3] * relative_width
+                    bounding_boxes[:, 1] = (bounding_boxes[:, 1] + padding) * relative_width
 
             return bounding_boxes
         else:
@@ -191,13 +187,11 @@ class CocoDataset(Dataset):
         if not isinstance(image, torch.Tensor):
             if image_path:
                 image = self.get_image(image_path)
-                bounding_boxes = self.generate_bounding_boxes_tensor(
-                    self.get_bounding_boxes_file_path(image_path))
+                bounding_boxes = self.generate_bounding_boxes_tensor(self.get_bounding_boxes_file_path(image_path))
             else:
                 raise Exception("The image must be a torch.Tensor or at least give the image's path")
         if isinstance(image, torch.Tensor) and not isinstance(bounding_boxes, torch.Tensor):
-            raise Exception(
-                'You have to give the image with its bounding boxes tensor.')
+            raise Exception('You have to give the image with its bounding boxes tensor.')
 
         # Get the classes to show the names
         classes = self.load_classes_names()
