@@ -8,11 +8,11 @@ from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Add dataset module to path
-data_path = abspath(join(dirname(abspath(__file__)), '../../datasets'))
+# Add root of the project to path
+data_path = abspath(join(dirname(abspath(__file__)), '../'))
 sys.path.insert(0, data_path)
 
-from coco.CocoDataset import CocoDataset
+from datasets.coco import CocoDataset
 
 
 class COCOTest(TestCase):

@@ -68,6 +68,7 @@ class CocoDataset(Dataset):
 
         Returns:
           torch.Tensor: The image as (3, image_size, image_size)
+          tuple: The real shape of the image before the editions.
         """
         image = np.array(Image.open(path))
         # Handle gray
@@ -191,7 +192,7 @@ class CocoDataset(Dataset):
             else:
                 raise Exception("The image must be a torch.Tensor or at least give the image's path")
         if isinstance(image, torch.Tensor) and not isinstance(bounding_boxes, torch.Tensor):
-            raise Exception('You have to give the image with its bounding boxes tensor.')
+            raise Exception('You have to give the image with its bounding boxes torch.Tensor.')
 
         # Get the classes to show the names
         classes = self.load_classes_names()
