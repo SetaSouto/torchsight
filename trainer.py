@@ -52,18 +52,24 @@ class Trainer:
         self.model.train()
 
         self.start_time = time.time()
+        last_batch_end_time = self.start_time
 
         for epoch in range(epochs):
             for i, (inputs, targets) in enumerate(self.train_loader):
+                # Get input, targets and train
                 inputs, targets = inputs.to(self.device), targets.to(self.device)
                 self.optimizer.zero_grad()
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
                 loss.backward()
                 optimizer.step()
-                self.log(epoch, i, loss)
+                # Log the batch
+                self.log(epoch, i, time.time() - last_batch_end_time, loss, 'train')
+                last_batch_end_time = time.time()
+            # Validate one time per epoch
+            self.validate()
 
-    def log(self, epoch, batch_index, batch_time, loss, name="train"):
+    def log(self, epoch, batch_index, batch_time, loss, name):
         """Append to the given log's name at the logs_dir directory a new log line.
 
         It logs the data as:
@@ -88,7 +94,7 @@ class Trainer:
         if self.logs_dir:
             file_path = self._get_log_file_path(name)
             with open(file_path, 'a') as file:
-                file.write('{} {} {} {} {}\n'.format(time.time(), epoch, batch_index, batch_time, loss))
+                file.write('{} {} {} {} {}\n'.format(time.time(), epoch, batch_index, batch_time, loss.item()))
     
     def _get_log_file_path(self, name):
         """Returns the log's file path as <self.logs_dir>/logs_<name>_<self.start_time>.txt"""
@@ -112,5 +118,18 @@ class Trainer:
         """
         return torch.from_numpy(np.loadtxt(path))
 
-    def validate(self):
-        pass
+    def validate(self, epoch):
+        """Validate the model to the given valid dataset.
+        If there is no valid dataset it does not do any validation.
+        It logs the validation with name 'validation'. 
+        """
+        if self.valid_loader:
+            total_loss = 0.0
+            start_time = time.time()
+            for i, (inputs, targets) in enumerate(self.valid_loader):
+                # Get input, targets and train
+                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                outputs = self.model(inputs)
+                total_loss += self.criterion(outputs, targets).item()
+            # Log the validation
+            self.log(epoch, 0, time.time() - start_time, total_loss, 'validation')
