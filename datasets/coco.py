@@ -58,7 +58,7 @@ class CocoDataset(Dataset):
         return image_path, image, bounding_boxes
 
     def get_image(self, path):
-        """Returns the image as a torch.Tensor with shape (C, W, H).
+        """Returns the image normalized [0, 1] as a torch.Tensor with shape (C, W, H).
         Typically C = 3 and the height and width are equal to self.image_size.
         If the image does not fit the image size given, it pads the image to make it a square and resize
         it to match the size.
