@@ -30,7 +30,7 @@ class CocoDataset(torch.utils.data.Dataset):
                 If no device is present it tries automatically to set the device to use as 'cuda:0'.
         """
         self.image_size = image_size
-        self.device = device
+        self.device = device if device else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         train_path = path.abspath(path.join(coco_path, 'trainvalno5k.txt'))
         valid_path = path.abspath(path.join(coco_path, '5k.txt'))
         file_path = train_path if train else valid_path
