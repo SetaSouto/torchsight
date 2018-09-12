@@ -26,7 +26,7 @@ class COCOTest(TestCase):
 
     def test_get_item(self):
         for i in range(10):
-            image_path, image, bounding_boxes = self.dataset[i]
+            image, bounding_boxes, image_path = self.dataset[i]
             self.assertTrue(isinstance(image_path, str))
             self.assertTrue(isinstance(image, torch.Tensor))
             self.assertEqual(len(image.shape), 3)
@@ -42,7 +42,7 @@ class COCOTest(TestCase):
                 image=image, bounding_boxes=bounding_boxes)
 
     def test_gray_image(self):
-        image_path, image, bounding_boxes = self.dataset[13]
+        image, bounding_boxes, image_path = self.dataset[13]
         self.assertTrue(isinstance(image_path, str))
         self.assertTrue(isinstance(image, torch.Tensor))
         self.assertEqual(len(image.shape), 3)
