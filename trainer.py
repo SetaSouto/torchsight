@@ -15,6 +15,10 @@ class Trainer:
                  logs_dir=None):
         """Initialize a trainer to train and/or evaluate a model.
 
+        The loaders must return a tuple as (input, target, *more) where more could be more arguments
+        but this class only use the first element of the tuple as the input for the model and the
+        second argument as the target output.
+
         Args:
             model (torch.nn.Module): The model created with pytorch to train.
             train_loader (torch.utils.data.DataLoader): The data loader of the train set.
@@ -67,7 +71,7 @@ class Trainer:
         last_batch_end_time = self.start_time
 
         for epoch in range(epochs):
-            for i, (inputs, targets) in enumerate(self.train_loader):
+            for i, (inputs, targets, *_) in enumerate(self.train_loader):
                 # Get input, targets and train
                 inputs, targets = inputs.to(
                     self.device), targets.to(self.device)
@@ -143,7 +147,7 @@ class Trainer:
         if self.valid_loader:
             total_loss = 0.0
             start_time = time.time()
-            for i, (inputs, targets) in enumerate(self.valid_loader):
+            for i, (inputs, targets, *_) in enumerate(self.valid_loader):
                 # Get input, targets and train
                 inputs, targets = inputs.to(
                     self.device), targets.to(self.device)
