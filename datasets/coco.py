@@ -14,6 +14,13 @@ class CocoDataset(torch.utils.data.Dataset):
     at https://pjreddie.com/.
     If you want to get the dataset you can obtain it running this bash script:
     https://github.com/pjreddie/darknet/tree/master/scripts/get_coco_dataset.sh
+
+    This class also has a method to get the DataLoader for this dataset. Why to
+    create a DataLoader here? Because as the target (tensor with bounding boxes)
+    has different shapes every time (depends on the amount of bounding boxes in
+    the image) we need a custom collate function to stack our batch (if the batch
+    size is over 1).
+    For more information please see the get_data_loader() method's documentation.
     """
 
     def __init__(self, coco_path, image_size=416, train=True, device=None):
@@ -179,7 +186,62 @@ class CocoDataset(torch.utils.data.Dataset):
         else:
             raise Exception('There is no file at {}'.format(file_path))
 
-    def load_classes_names(self):
+    def get_data_loader(self, *args, fill_value=-1.0, **kwargs):
+        """Returns a DataLoader for this instance of the dataset.
+
+        The special thing with this method is the custom collate function that it has.
+        Also, all the arguments for the DataLoader can be passed through this function.
+        For more information about DataLoader class please see:
+        https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+
+        Args:
+            fill_value (float, optional): Optional value to fill the bounding boxes
+                tensors to match all the tensors to the same shape. See collate internal
+                function for more information.
+        """
+
+        def collate(batch):
+            """Collate function to stack the batches into one tensor.
+
+            The DataLoader default collate tries to stack the targets but for to stack the
+            tensors pytorch requires that all the tensors has the same shape. This is not
+            the case with the bounding boxes tensors because they have dynamic shape as
+            (number of bounding boxes, bounding boxes parameters) so we need to get the max number
+            of bounding boxes per input in the batch and "fill" the rest of the bounding boxes
+            with the given fill_value to stack them.
+            So this returns the stack of inputs and the stack of targets "filled".
+
+            Args:
+                batch (seq): Sequence of tuples as (input, target, images' paths).
+                    Input and target must be torch.Tensor.
+
+            Returns:
+                torch.Tensor: Inputs stacked as (batch's size, channels, images' height,
+                    images' width).
+                torch.Tensor: Bounding boxes stacked as:
+                    (batch's size,
+                    maximum number of bounding boxes in a single image,
+                    bounding boxes parameters)
+                tuple: Tuple with the images' paths.
+            """
+            inputs = torch.stack([item[0] for item in batch])
+            images_paths = [item[2] for item in batch]
+            targets = [item[1] for item in batch]
+            max_shape = max([target.shape[0] for target in targets])
+            for i, target in enumerate(targets):
+                filling = torch.full((max_shape - target.shape[0], target.shape[1]),
+                                     fill_value,
+                                     dtype=torch.double)
+                targets[i] = torch.cat((target, filling))
+            targets = torch.stack(targets)
+
+            return [inputs, targets, images_paths]
+
+        # Body of the method
+        return torch.utils.data.DataLoader(dataset=self, collate_fn=collate, *args, **kwargs)
+
+    @staticmethod
+    def load_classes_names():
         """Load the classes' names from the coco.names file.
 
         Returns:
@@ -205,9 +267,10 @@ class CocoDataset(torch.utils.data.Dataset):
         """
         if not isinstance(image, torch.Tensor):
             if image_path:
-                image = self.get_image(image_path)
+                image, real_image_shape = self.get_image(image_path)
                 bounding_boxes = self.generate_bounding_boxes_tensor(
-                    self.get_bounding_boxes_file_path(image_path))
+                    self.get_bounding_boxes_file_path(image_path),
+                    real_image_shape)
             else:
                 raise Exception(
                     "The image must be a torch.Tensor or at least give the image's path")
