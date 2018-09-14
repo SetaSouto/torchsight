@@ -53,12 +53,17 @@ class Trainer:
             if not os.path.exists(self.logs_dir):
                 os.makedirs(self.logs_dir)
 
-    def train(self, epochs=1):
+    def train(self, epochs=1, epoch_callback=None, batch_callback=None):
         """Train the model for the given epochs.
 
         Args:
             epochs (int): Number of epochs to run.
                 An epoch is a full pass over all the images of the dataset.
+            epoch_callback (function): Function call every time that an epoch
+                finishes.
+            batch_callback (function): A function that is called with the arguments
+                of the log method (without the name, that is obviously 'train')
+                after each batch process. See log() for documentation.
         """
         # Move the model to the device and set to train mode, useful for batch normalization or
         # dropouts modules.
@@ -68,9 +73,13 @@ class Trainer:
         self.model.train()
 
         self.start_time = time.time()
-        last_batch_end_time = self.start_time
+
+        print('Training started.')
+        if self.logs_dir:
+            print('Logs can be found at {}'.format(self.logs_dir))
 
         for epoch in range(epochs):
+            batch_start_time = time.time()
             for i, (inputs, targets, *_) in enumerate(self.train_loader):
                 # Get input, targets and train
                 inputs, targets = inputs.to(
@@ -81,9 +90,17 @@ class Trainer:
                 loss.backward()
                 self.optimizer.step()
                 # Log the batch
-                self.log(epoch, i, time.time() -
-                         last_batch_end_time, loss, 'train')
-                last_batch_end_time = time.time()
+                batch_time = time.time() - batch_start_time
+                # We need to put here the the batch start time to get the time
+                # of loading the data
+                batch_start_time = time.time()
+                self.log(epoch, i, batch_time, loss, 'train')
+                # Batch callbacks
+                if batch_callback:
+                    batch_callback(epoch, i, batch_time, loss)
+            # Epoch callback
+            if epoch_callback:
+                epoch_callback()
             # Validate one time per epoch
             self.validate(epoch)
 
@@ -142,7 +159,7 @@ class Trainer:
     def validate(self, epoch):
         """Validate the model to the given valid dataset.
         If there is no valid dataset it does not do any validation.
-        It logs the validation with name 'validation'. 
+        It logs the validation with name 'validation'.
         """
         if self.valid_loader:
             total_loss = 0.0

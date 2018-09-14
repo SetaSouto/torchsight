@@ -1,24 +1,26 @@
 from torch import nn
-from torchvision.models import resnet50
+from torchvision.models import resnet18, resnet34, resnet50, resnet101, resnet152
 
 
-class Resnet50(nn.Module):
-    """An abstraction of the Resnet50 architecture for fine tuning.
+class Resnet(nn.Module):
+    """An abstraction of the Resnet architecture for fine tuning.
 
     Inspired by @mratsim at this issue:
     https://github.com/pytorch/examples/pull/58#issuecomment-305950890
     """
 
-    def __init__(self, num_classes=None, image_size=None, activation=None, requires_grad=True):
+    def __init__(self, type, num_classes=None, image_size=None, activation=None, requires_grad=True):
         """Initialize the network, sets the features module and the classifier module.
 
         Keep in mind that the network has an stride of 32. So if you have an image as (3, 320, 320)
-        this network generate a feature map as (2048, 10, 10).
+        this network generate a feature map as (output channels, 10, 10). Where the output channels
+        depends on the type of the model.
 
         The arguments of this method are only needed if you want to get the classifier too. To
         only get the feature extractor you can omit them.
 
         Args:
+            type (int): Model to use. Accepted: [18, 34, 50, 101, 152].
             num_classes (int, optional): The number of classes for output.
             image_size (int, optional): The size of the image to calculate the amount of input
                 features for the fully connected layer.
@@ -27,10 +29,29 @@ class Resnet50(nn.Module):
             requires_grad (bool, optional): Indicates if the features extractor requires grad or
                 not.
         """
-        super(Resnet50, self).__init__()
+        super(Resnet, self).__init__()
+
+        if type == 18:
+            original_model = resnet18(pretrained=True)
+            output_channels = 512
+        elif type == 34:
+            original_model = resnet34(pretrained=True)
+            # TODO: output channels
+        elif type == 50:
+            original_model = resnet50(pretrained=True)
+            output_channels = 2048
+        elif type == 101:
+            original_model = resnet101(pretrained=True)
+            # TODO: output channels
+        elif type == 150:
+            original_model = resnet152(pretrained=True)
+            # TODO: output channels
+        else:
+            raise Exception("""Wrong type for resnet. Accepted: [18, 34, 50, 101, 152].
+            Given: {}""".format(type))
+
         # This network has an stride of 32
         self.stride = 32
-        original_model = resnet50(pretrained=True)
         # Get everything but not the las fully connected layer and the average pool
         # The average pool was thought to get the 7x7 image and return a 1x1 image with
         # 2048 filters. Now we want to get all the channels and the complete feature map.
@@ -50,7 +71,7 @@ class Resnet50(nn.Module):
                 raise Exception("""This network has an stride of 32, so please use an image
                 size that is a multiple of 32. Actual image size: {}""".format(image_size))
             reduced_image_size = image_size / self.stride
-            in_features = 2048 * reduced_image_size * reduced_image_size
+            in_features = output_channels * reduced_image_size * reduced_image_size
             self.classifier = nn.Sequential(
                 nn.Linear(in_features, num_classes))
             # Initialize classifier
@@ -69,8 +90,8 @@ class Resnet50(nn.Module):
 
         Returns:
             torch.Tensor: A tensor with shape (batch size, number of class) if it used
-                the classifier or (batch size, 2048, reduced image, reduced image) if
-                it's used as feature extractor.
+                the classifier or (batch size, features, reduced image size,
+                reduced image size) if it's used as feature extractor.
         """
         features = self.features_extractor(inputs)
         if not self.classifier:
