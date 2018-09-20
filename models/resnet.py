@@ -33,13 +33,13 @@ class Resnet(nn.Module):
 
         if type == 18:
             original_model = resnet18(pretrained=True)
-            output_channels = 512
+            self.output_channels = 512
         elif type == 34:
             original_model = resnet34(pretrained=True)
             # TODO: output channels
         elif type == 50:
             original_model = resnet50(pretrained=True)
-            output_channels = 2048
+            self.output_channels = 2048
         elif type == 101:
             original_model = resnet101(pretrained=True)
             # TODO: output channels
@@ -71,7 +71,7 @@ class Resnet(nn.Module):
                 raise Exception("""This network has an stride of 32, so please use an image
                 size that is a multiple of 32. Actual image size: {}""".format(image_size))
             reduced_image_size = image_size / self.stride
-            in_features = output_channels * reduced_image_size * reduced_image_size
+            in_features = self.output_channels * reduced_image_size * reduced_image_size
             self.classifier = nn.Sequential(
                 nn.Linear(in_features, num_classes))
             # Initialize classifier
