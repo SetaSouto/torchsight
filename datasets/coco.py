@@ -92,9 +92,12 @@ class CocoDataset(Dataset):
             bounding_boxes = np.zeros((0, 5))
 
             for annotation in coco.imgToAnns[image_info['id']]:
-                label = self.classes['labels'][annotation['category_id']]
-                if label is not None:
+                try:
+                    label = self.classes['labels'][annotation['category_id']]
                     bounding_boxes = np.append(bounding_boxes, np.array([[*annotation['bbox'], label]]), axis=0)
+                except KeyError:
+                    # The image has a bounding box not relevant for us (given the classesNames)
+                    continue
 
             self.images.append((
                 os.path.join(root, 'images', dataset, image_info['file_name']),  # Image's path
