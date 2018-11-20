@@ -4,11 +4,13 @@ It contains a more robust and flexible version of the Coco dataset.
 Please prefere to use this dataset than the old one.
 """
 import os
+import time
 
 import matplotlib
 import numpy as np
 import skimage
 import skimage.io
+import torch
 from pycocotools.coco import COCO
 from torch.utils.data import Dataset
 
@@ -153,7 +155,7 @@ class CocoDataset(Dataset):
         bounding_boxes[:, 3] = bounding_boxes[:, 1] + bounding_boxes[:, 3]
 
         if self.transform:
-            image, bounding_boxes = self.transform(image, bounding_boxes)
+            image, bounding_boxes = self.transform((image, bounding_boxes))
 
         return image, bounding_boxes
 
@@ -163,7 +165,13 @@ class CocoDataset(Dataset):
         Args:
             index (int): The index of the image in the dataset to be loaded.
         """
+        initial_time = time.time()
+
         image, bounding_boxes = self.__getitem__(index)
+
+        if torch.is_tensor(image):
+            image = image.numpy().transpose(1, 2, 0)
+
         # Matplotlib colormaps, for more information please visit:
         # https://matplotlib.org/examples/color/colormaps_reference.html
         # Is a continuous map of colors, you can get a color by calling it on a number between
@@ -185,9 +193,11 @@ class CocoDataset(Dataset):
             # Generate and add rectangle to plot
             axes.add_patch(matplotlib.patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=color, facecolor='none'))
             # Generate text if there are any classes
-            class_name = self.classes['names'][label]
+            class_name = self.classes['names'][int(label)]
             matplotlib.pyplot.text(x, y, s=class_name, color='white',
                                    verticalalignment='top', bbox={'color': color, 'pad': 0})
+        # Print stats
+        print('----------\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, bounding_boxes))
         # Show image and plot
         axes.imshow(image)
         matplotlib.pyplot.show()
