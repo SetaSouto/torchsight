@@ -30,17 +30,17 @@ class CocoDataset(Dataset):
         Also, loads the classes and labels.
 
         It sets the 'classes' attribute of the class that contains a dict with four dicts:
-        - 'ids': Keep track of the classes' ids given its label (int) (label -> id).
-        - 'labels': Keep track of the label (int) given the id of the class (id -> label).
-        - 'names': Keep track of the name of the class given its label (label -> name).
-        - 'length': Keep track of how many images are for the given label (label -> int).
+        - 'ids': Keep track of the classes' ids given its label (label: int -> id: int).
+        - 'labels': Keep track of the label given the id of the class (id: int -> label: int).
+        - 'names': Keep track of the name of the class given its label (label: int -> name: string).
+        - 'length': Keep track of how many images are for the given label (label: int -> length: int).
 
         Why labels and ids? Because ids are given by the coco api, are static, but if we filter the classes
         we want to reorder the labels from 0 to N if we load N classes.
         For example, the 2017 dataset contains classes with ids from 1 to 90, but we like to keep labels
         starting from 0 (zero indexed). If we want only to load the classes 'person' (id: 1), 'bus' (id: 6)
         and 'stop sign' (id: 13) we don't want to work with labels 1, 6 and 13, we want to work with labels
-        0, 1, 2, because the loaded only 3 images.
+        0, 1, 2, because we loaded only 3 classes.
 
         You can filter the images and classes to be loaded by using classesNames argument.
 
@@ -98,7 +98,7 @@ class CocoDataset(Dataset):
                     label = self.classes['labels'][annotation['category_id']]
                     bounding_boxes = np.append(bounding_boxes, np.array([[*annotation['bbox'], label]]), axis=0)
                 except KeyError:
-                    # The image has a bounding box not relevant for us (given the classesNames)
+                    # The image has a bounding box from a class that does not exists in classesNames sequence
                     continue
 
             self.images.append((
