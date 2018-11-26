@@ -4,7 +4,6 @@ import time
 import numpy as np
 import torch
 
-# TODO: Real time visualization of the loss.
 # TODO: Smart saving of the weights.
 
 

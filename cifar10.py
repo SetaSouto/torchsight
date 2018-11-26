@@ -6,14 +6,14 @@ import os
 import torch
 
 import torchvision
-from models.resnet import Resnet
+from models.resnet import resnet18
 from trainer import Trainer
 
 
 class Cifar10Trainer(Trainer):
     """Custom trainer for a network based on resnet trained over CIFAR10 dataset."""
 
-    def __init__(self, *args, hyperparameters=None, model_type=18, **kwargs):
+    def __init__(self, *args, hyperparameters=None, **kwargs):
         """Initialize the trainer. It needs the hyperparameters for the training.
         The hyperparameters is a dict with these keys:
             - batch_size (int)
@@ -66,8 +66,7 @@ class Cifar10Trainer(Trainer):
                                                    shuffle=False,
                                                    num_workers=self.hyperparameters["num_workers"])
         # Get the model, criterion and optimizer
-        model = Resnet(type=model_type, num_classes=num_classes,
-                       image_size=image_size)
+        model = resnet18(num_classes=num_classes)
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.SGD(model.parameters(),
                                     lr=self.hyperparameters["learning_rate"],

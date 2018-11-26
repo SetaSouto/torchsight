@@ -220,6 +220,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
 
+        self.classifier = False
         if num_classes > 0:
             # Set the classifier
             self.classifier = True
@@ -304,7 +305,7 @@ class ResNet(nn.Module):
 
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
-            x = self.fc(x)
+            x = self.fully(x)
 
             return x
         else:
