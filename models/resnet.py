@@ -1,104 +1,371 @@
+"""Module that contains ResNet implementation.
+
+ResNet could contains several depths. The paper includes 5 different models
+and the model_zoo contains pretrained weights for each one:
+
+- ResNet 18
+- ResNet 34
+- ResNet 50
+- ResNet 101
+- ResNet 152
+
+Each one of this different architectures is based on "blocks" that help to
+reduce complexity of the network. There are two type of blocks:
+
+- Basic: Only applies two 3x3 convolutions. Used in the 18 and 34 architectures.
+- Bottleneck: Applies a 1x1 convolution to reduce the channel size of the feature
+    map to a 1/4 (i.e. a feature map with 512 channels is reduced to 128 channels),
+    then applies a 3x3 convolution with this reduced channels and finally increase
+    the channel dimensions again to the original size using a 1x1 convolution.
+    This help to reduce the weights to learn and the complexity of the network.
+
+After each convolution it applies a batch normalization and after each block applies
+a "Residual connection" that implies to sum the input of the block to the output of it.
+This is helpful to learn identity maps, because if F(x) is the output of the block
+the final output is F(x) + x, so if the weights went to zero, the output of the block
+is only x. The hypothesis of the authors were that is more easy to learn zero weights
+than learning 1 weights.
+
+Finally, an architecture is composed by several "layers" that contains several "blocks".
+All architectures has 5 layers, the difference is the kind of block and how many of them
+are used in each one. The first layer is only a single convolutional layer with kernel
+7x7 with stride 2, so the layers that contains blocks are only 4.
+
+To see the architectures in detail you can go to the Table 1 in the original paper.
+
+Original paper:
+https://arxiv.org/pdf/1512.03385.pdf
+
+Heavily inspired by the original code at:
+https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
+"""
 from torch import nn
-from torchvision.models import resnet18, resnet34, resnet50, resnet101, resnet152
+from torch.utils import model_zoo
 
 
-class Resnet(nn.Module):
-    """An abstraction of the Resnet architecture for fine tuning.
+__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
-    Inspired by @mratsim at this issue:
-    https://github.com/pytorch/examples/pull/58#issuecomment-305950890
+
+MODEL_URLS = {
+    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
+    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
+    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
+    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+}
+
+
+class BasicBlock(nn.Module):
+    """Basic block for ResNet.
+
+    It applies two 3x3 convolutions to the input. After each convolution
+    applies a batch normalization.
+
+    You can provide a downsample module to downsample the input and sum
+    to the output (Residual connection) if not provided it assumes that
+    the input has the same dimension of the output.
+
+    This block has no expansion (i.e. = 1), this means that the number of
+    channels of the output feature map are the same as the input.
     """
 
-    def __init__(self, type, num_classes=None, image_size=None, activation=None, requires_grad=True):
-        """Initialize the network, sets the features module and the classifier module.
+    expansion = 1
 
-        Keep in mind that the network has an stride of 32. So if you have an image as (3, 320, 320)
-        this network generate a feature map as (output channels, 10, 10). Where the output channels
-        depends on the type of the model.
-
-        The arguments of this method are only needed if you want to get the classifier too. To
-        only get the feature extractor you can omit them.
+    def __init__(self, in_channels, channels, stride=1, downsample=None):
+        """Initialize the block and set all the modules needed.
 
         Args:
-            type (int): Model to use. Accepted: [18, 34, 50, 101, 152].
-            num_classes (int, optional): The number of classes for output.
-            image_size (int, optional): The size of the image to calculate the amount of input
-                features for the fully connected layer.
-            activation (nn.Module, optional): The activation function for the classifier.
-                If none is given does not use any activation function.
-            requires_grad (bool, optional): Indicates if the features extractor requires grad or
-                not.
+            in_channels (int): Number of channels of the input feature map.
+            channels (int): Number of channels that the block must have.
+                Also, this is the number of channels to output.
+            stride (int): The stride of the convolutional layers.
+            downsample (torch.nn.Module): Module downsample the output.
         """
-        super(Resnet, self).__init__()
+        super(BasicBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(channels)
+        self.downsample = downsample
+        self.stride = stride
 
-        if type == 18:
-            original_model = resnet18(pretrained=True)
-            self.output_channels = 512
-        elif type == 34:
-            original_model = resnet34(pretrained=True)
-            # TODO: output channels
-        elif type == 50:
-            original_model = resnet50(pretrained=True)
-            self.output_channels = 2048
-        elif type == 101:
-            original_model = resnet101(pretrained=True)
-            # TODO: output channels
-        elif type == 150:
-            original_model = resnet152(pretrained=True)
-            # TODO: output channels
-        else:
-            raise Exception("""Wrong type for resnet. Accepted: [18, 34, 50, 101, 152].
-            Given: {}""".format(type))
-
-        # This network has an stride of 32
-        self.stride = 32
-        # Get everything but not the las fully connected layer and the average pool
-        # The average pool was thought to get the 7x7 image and return a 1x1 image with
-        # 2048 filters. Now we want to get all the channels and the complete feature map.
-        # Whats the difference between children() and modules() ?
-        # See: https://discuss.pytorch.org/t/module-children-vs-module-modules/4551
-        self.features_extractor = nn.Sequential(
-            *list(original_model.children())[:-2])
-        # Freeze parameters if the features extractor does not requires grad
-        if not requires_grad:
-            for parameter in self.features_extractor.parameters():
-                parameter.requires_grad = requires_grad
-        # Set the classifier
-        self.activation = activation
-        self.classifier = None
-        if num_classes and image_size:
-            if image_size % self.stride != 0:
-                raise Exception("""This network has an stride of 32, so please use an image
-                size that is a multiple of 32. Actual image size: {}""".format(image_size))
-            reduced_image_size = image_size / self.stride
-            in_features = self.output_channels * reduced_image_size * reduced_image_size
-            self.classifier = nn.Sequential(
-                nn.Linear(in_features, num_classes))
-            # Initialize classifier
-            for module in self.classifier:
-                nn.init.normal_(module.weight)
-
-    def forward(self, inputs):
-        """Forward pass of the network.
-
-        The input must match the size given in the initialization of the network if you
-        want that the classifier works.
+    def forward(self, x):
+        """Forward pass of the block.
 
         Args:
-            inputs (torch.Tensor): The input to pass forward in the network with shape
-                (batch's size, 3, image's size, image's size).
+            x (torch.Tensor): Any tensor with shape (batch size, in_channels, width, height).
 
         Returns:
-            torch.Tensor: A tensor with shape (batch size, number of class) if it used
-                the classifier or (batch size, features, reduced image size,
-                reduced image size) if it's used as feature extractor.
+            torch.Tensor: The output of the block with shape
+                (batch size, channels, width / stride, height / stride)
         """
-        features = self.features_extractor(inputs)
-        if not self.classifier:
-            return features
-        # Pass trough classifier and activation
-        features = features.view(features.shape[0], -1)
-        outputs = self.classifier(features)
-        if self.activation:
-            outputs = self.activation(outputs)
-        return outputs
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
+class Bottleneck(nn.Module):
+    """Bottleneck block for ResNet.
+
+    Applies a convolution of kernel 1x1 to reduce the number of channels from
+    in_channels to channels, then applies a 3x3 convolution and finally expand
+    the channels to 4 * channels (i.e. expansion = 4) with a 1x1 convolution.
+
+    You can provide a downsample module to downsample the input and sum
+    to the output (Residual connection) if not provided it assumes that
+    the input has the same dimension of the output.
+    """
+    expansion = 4
+
+    def __init__(self, in_channels, channels, stride=1, downsample=None):
+        super(Bottleneck, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, channels, kernel_size=1, stride=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(channels)
+
+        self.conv3 = nn.Conv2d(channels, channels * self.expansion, kernel_size=1, stride=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(channels * self.expansion)
+
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        """Forward pass of the block.
+
+        Args:
+            x (torch.Tensor): Any tensor with shape (batch size, in_channels, width, height).
+
+        Returns:
+            torch.Tensor: The output of the block with shape
+                (batch size, channels * expansion, width / stride, height / stride)
+        """
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
+class ResNet(nn.Module):
+    """ResNet architecture.
+
+    Implements a ResNet given the type of block and the depth of the layers.
+
+    If you provide the number of classes it can be used as a classifier, if not
+    it return the output of each layer starting from the deepest.
+
+    Keep in mind that for the first layer the stride is 2 ** 2 = 4, and the
+    consecutive ones are 2 ** 3 = 8, 2 ** 4 = 16, 2 ** 5 = 32.
+
+    So, if you provide an image with shape (3, 800, 800) the output of the last layer
+    will be (512 * block.expansion, 25, 25).
+    """
+
+    def __init__(self, block, layers, num_classes=None):
+        """Initialize the network.
+
+        Args:
+            block (torch.nn.Module): Indicates the block to use in the network. Must be
+                a BasicBlock or a Bottleneck.
+            layers (seq): Sequence to indicate the number of blocks per each layer.
+                It must have length 4.
+            num_classes (int, optional): If present initialize the architecture as a classifier
+                 and append a fully connected layer to map from the feature map to the class
+                 probabilities. If not present, the module returns the output of each layer.
+        """
+        super(ResNet, self).__init__()
+        # in_channels help us to keep track of the number of channels before each block
+        self.in_channels = 64
+
+        self.conv1 = nn.Conv2d(3, self.in_channels, kernel_size=7, stride=2, padding=3, bias=False)
+        self.bn1 = nn.BatchNorm2d(self.in_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+        # The first layer does not apply stride because we use maxPool
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+
+        if num_classes > 0:
+            # Set the classifier
+            self.classifier = True
+            self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+            self.fully = nn.Linear(512 * block.expansion, num_classes)
+
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(module, nn.BatchNorm2d):
+                nn.init.constant_(module.weight, 1)
+                nn.init.constant_(module.bias, 0)
+
+    def _make_layer(self, block, channels, blocks, stride=1):
+        """Creates a layer for the ResNet architecture.
+
+        It uses the given 'block' for the layer and repeat it 'blocks' times.
+        Each block expands the number of channels by a factor of block.expansion
+        times, so the 'in_channels' for every block after the first is block.expansion
+        times the 'channel' amount.
+
+        This method modifies the in_channels attribute of the object to keep track of the
+        number of channels before each block.
+
+        Args:
+            block (Module): Block class to use as the base block of the layer.
+            channels (int): The number of channels that the block must have.
+            blocks (int): How many blocks the layer must have.
+            stride (int): Stride that the first block must apply. None other block
+                applies stride.
+        """
+        downsample = None
+
+        if stride != 1 or self.in_channels != channels * block.expansion:
+            # Apply a module to reduce the width and height of the input feature map with the given stride
+            # or to adjust the number of channels that the first block will receive
+            downsample = nn.Sequential(
+                nn.Conv2d(self.in_channels, channels * block.expansion, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(channels * block.expansion),
+            )
+
+        layers = []
+        # Only the first block applies a stride to the input
+        layers.append(block(self.in_channels, channels, stride, downsample))
+        # Now the in_channels are the output of the block that is the channels times block.expansion
+        self.in_channels = channels * block.expansion
+
+        for _ in range(1, blocks):
+            layers.append(block(self.in_channels, channels))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        """Forward pass of the module.
+
+        Pass the input tensor for the layers and has two different outputs depending
+        if the module is used as a classifier or not.
+
+        Args:
+            x (torch.Tensor): A tensor with shape (batch size, 3, width, height).
+
+        Returns:
+            torch.Tensor: If the module is a classifier returns a tensor as (batch size, num_classes).
+                If the module is a feature extractor (no num classes given) then returns a tuple
+                with the output of each layer (i.e. length 4) starting from the last to the first.
+                The shapes are:
+                    - layer 4: (batch size, 512 * block.expansion, width / 32, height / 32)
+                    - layer 3: (batch size, 512 * block.expansion, width / 16, height / 16)
+                    - layer 2: (batch size, 512 * block.expansion, width / 8,  height / 8)
+                    - layer 1: (batch size, 512 * block.expansion, width / 4,  height / 4)
+        """
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        if self.classifier:
+            x = self.layer1(x)
+            x = self.layer2(x)
+            x = self.layer3(x)
+            x = self.layer4(x)
+
+            x = self.avgpool(x)
+            x = x.view(x.size(0), -1)
+            x = self.fc(x)
+
+            return x
+        else:
+            output1 = self.layer1(x)
+            output2 = self.layer2(output1)
+            output3 = self.layer3(output2)
+            output4 = self.layer4(output3)
+
+            return output4, output3, output2, output1
+
+
+def resnet18(pretrained=False, **kwargs):
+    """Constructs a ResNet-18 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet18']))
+    return model
+
+
+def resnet34(pretrained=False, **kwargs):
+    """Constructs a ResNet-34 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet34']))
+    return model
+
+
+def resnet50(pretrained=False, **kwargs):
+    """Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet50']))
+    return model
+
+
+def resnet101(pretrained=False, **kwargs):
+    """Constructs a ResNet-101 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet101']))
+    return model
+
+
+def resnet152(pretrained=False, **kwargs):
+    """Constructs a ResNet-152 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet152']))
+    return model
