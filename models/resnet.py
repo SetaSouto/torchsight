@@ -209,16 +209,17 @@ class ResNet(nn.Module):
         # in_channels help us to keep track of the number of channels before each block
         self.in_channels = 64
 
+        # Layer 1
         self.conv1 = nn.Conv2d(3, self.in_channels, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(self.in_channels)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         # The first layer does not apply stride because we use maxPool
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.layer2 = self._make_layer(block, 64, layers[0])
+        self.layer3 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer4 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer5 = self._make_layer(block, 512, layers[3], stride=2)
 
         self.classifier = False
         if num_classes > 0:
@@ -287,10 +288,10 @@ class ResNet(nn.Module):
                 If the module is a feature extractor (no num classes given) then returns a tuple
                 with the output of each layer (i.e. length 4) starting from the last to the first.
                 The shapes are:
-                    - layer 4: (batch size, 512 * block.expansion, width / 32, height / 32)
-                    - layer 3: (batch size, 512 * block.expansion, width / 16, height / 16)
-                    - layer 2: (batch size, 512 * block.expansion, width / 8,  height / 8)
-                    - layer 1: (batch size, 512 * block.expansion, width / 4,  height / 4)
+                    - layer 5: (batch size, 512 * block.expansion, width / 32, height / 32)
+                    - layer 4: (batch size, 512 * block.expansion, width / 16, height / 16)
+                    - layer 3: (batch size, 512 * block.expansion, width / 8,  height / 8)
+                    - layer 2: (batch size, 512 * block.expansion, width / 4,  height / 4)
         """
         x = self.conv1(x)
         x = self.bn1(x)
@@ -298,10 +299,10 @@ class ResNet(nn.Module):
         x = self.maxpool(x)
 
         if self.classifier:
-            x = self.layer1(x)
             x = self.layer2(x)
             x = self.layer3(x)
             x = self.layer4(x)
+            x = self.layer5(x)
 
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
@@ -309,12 +310,12 @@ class ResNet(nn.Module):
 
             return x
         else:
-            output1 = self.layer1(x)
-            output2 = self.layer2(output1)
+            output2 = self.layer2(x)
             output3 = self.layer3(output2)
             output4 = self.layer4(output3)
+            output5 = self.layer5(output4)
 
-            return output4, output3, output2, output1
+            return output5, output4, output3, output2
 
 
 def resnet18(pretrained=False, **kwargs):
