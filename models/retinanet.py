@@ -13,6 +13,9 @@ https://arxiv.org/pdf/1708.02002.pdf
 
 - Regression: A module to compute the regressions for each bounding box.
 - Classification: A module to classify the class of each bounding box.
+
+This code is heavily inspired by yhenon:
+https://github.com/yhenon/pytorch-retinanet
 """
 from torch import nn
 
@@ -134,3 +137,130 @@ class FeaturePyramid(nn.Module):
         p7 = self.p7_conv(p7)
 
         return p3, p4, p5, p6, p7
+
+
+class SubModule(nn.Module):
+    """Base class for the regression and classification submodules."""
+
+    def __init__(self, in_channels, outputs, anchors=9, features=256):
+        """Initialize the components of the network.
+
+        Args:
+            in_channels (int): Indicates the number of features (or channels) of the feature map.
+            outputs (int): The number of outputs per anchor.
+            anchors (int, optional): Indicates the number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of features that the conv layers must have.
+        """
+        super(SubModule, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channels, features, kernel_size=3, stride=1, padding=1)
+        self.act1 = nn.ReLU()
+
+        self.conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act2 = nn.ReLU()
+
+        self.conv3 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act3 = nn.ReLU()
+
+        self.conv4 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act4 = nn.ReLU()
+
+        self.conv5 = nn.Conv2d(features, outputs * anchors, kernel_size=4, stride=1, padding=1)
+
+    def forward(self, feature_map):
+        """Generates the outputs for each anchor and location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, width, height).
+
+        Returns:
+            torch.Tensor: The tensor with outputs values for each location and anchor in the feature map.
+                Shape:
+                    (batch size, outputs * anchors, width, height)
+        """
+        out = self.conv1(feature_map)
+        out = self.act1(out)
+        out = self.conv2(out)
+        out = self.act2(out)
+        out = self.conv3(out)
+        out = self.act3(out)
+        out = self.conv4(out)
+        out = self.act4(out)
+        out = self.conv5(out)
+
+        return out
+
+
+class Regression(SubModule):
+    """Regression submodule of RetinaNet.
+
+    It generates, given a feature map, a tensor with the values of regression for each
+    anchor.
+    """
+
+    def __init__(self, in_channels, anchors=9, features=256):
+        """Initialize the components of the network.
+
+        Args:
+            in_channels (int): Indicates the number of features (or channels) of the feature map.
+            anchors (int, optional): Indicates the number of anchors (i.e. bounding boxes) per location
+                in the feature map.
+            features (int, optional): Indicates the number of features that the conv layers must have.
+        """
+        super(Regression, self).__init__(in_channels, outputs=4, anchors=anchors, features=features)
+
+    def forward(self, feature_map):
+        """Generates the bounding box regression for each anchor and location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, width, height).
+
+        Returns:
+            torch.Tensor: The tensor with bounding boxes values for the feature map.
+                Shape:
+                    (batch size, width * height * number of anchors, 4)
+        """
+        out = super(Regression, self).forward(feature_map)
+
+        # Now, out has shape (batch size, 4 * number of anchors, width, height)
+        out = out.permute(0, 2, 3, 1).contiguous()  # Set regression values as the last dimension
+        return out.view(out.shape[0], -1, 4)  # Change the shape of the tensor
+
+
+class Classification(SubModule):
+    """Classification submodule of RetinaNet.
+
+    It generates, given a feature map, a tensor with the probability of each class.
+    """
+
+    def __init__(self, in_channels, classes, anchors=9, features=256):
+        """Initialize the network.
+
+        Args:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+        """
+        super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+        self.classes = classes
+        self.activation = nn.Sigmoid()
+
+    def forward(self, feature_map):
+        """Generates the probabilities for each class for each anchor for each location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, width, height).
+
+        Returns:
+            torch.Tensor: The tensour with the probability of each class for each anchor and location in the
+                feature map. Shape:
+                (batch size, width * height * anchors, classes)
+        """
+        out = super(Classification, self).forward(feature_map)
+        out = self.activation(out)
+
+        # Now out has shape (batch size, classes * anchors, width, height)
+        out = out.permute(0, 2, 3, 1).contiguous()  # Move the outputs to the last dim
+        return out.view(out.shape[0], -1, self.classes)
