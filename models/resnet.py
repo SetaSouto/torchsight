@@ -206,6 +206,8 @@ class ResNet(nn.Module):
                  probabilities. If not present, the module returns the output of each layer.
         """
         super(ResNet, self).__init__()
+        # Set the expansion of the net
+        self.expansion = block.expansion
         # in_channels help us to keep track of the number of channels before each block
         self.in_channels = 64
 
@@ -286,12 +288,11 @@ class ResNet(nn.Module):
         Returns:
             torch.Tensor: If the module is a classifier returns a tensor as (batch size, num_classes).
                 If the module is a feature extractor (no num classes given) then returns a tuple
-                with the output of each layer (i.e. length 4) starting from the last to the first.
+                with the output of the last 3 layers.
                 The shapes are:
                     - layer 5: (batch size, 512 * block.expansion, width / 32, height / 32)
-                    - layer 4: (batch size, 512 * block.expansion, width / 16, height / 16)
-                    - layer 3: (batch size, 512 * block.expansion, width / 8,  height / 8)
-                    - layer 2: (batch size, 512 * block.expansion, width / 4,  height / 4)
+                    - layer 4: (batch size, 256 * block.expansion, width / 16, height / 16)
+                    - layer 3: (batch size, 128 * block.expansion, width / 8,  height / 8)
         """
         x = self.conv1(x)
         x = self.bn1(x)
@@ -310,12 +311,12 @@ class ResNet(nn.Module):
 
             return x
         else:
-            output2 = self.layer2(x)
-            output3 = self.layer3(output2)
+            x = self.layer2(x)
+            output3 = self.layer3(x)
             output4 = self.layer4(output3)
             output5 = self.layer5(output4)
 
-            return output5, output4, output3, output2
+            return output5, output4, output3
 
 
 def resnet18(pretrained=False, **kwargs):
