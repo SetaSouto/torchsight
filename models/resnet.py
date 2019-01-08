@@ -94,11 +94,11 @@ class BasicBlock(nn.Module):
         """Forward pass of the block.
 
         Args:
-            x (torch.Tensor): Any tensor with shape (batch size, in_channels, width, height).
+            x (torch.Tensor): Any tensor with shape (batch size, in_channels, height, width).
 
         Returns:
             torch.Tensor: The output of the block with shape
-                (batch size, channels, width / stride, height / stride)
+                (batch size, channels, height / stride, width / stride)
         """
         residual = x
 
@@ -150,11 +150,11 @@ class Bottleneck(nn.Module):
         """Forward pass of the block.
 
         Args:
-            x (torch.Tensor): Any tensor with shape (batch size, in_channels, width, height).
+            x (torch.Tensor): Any tensor with shape (batch size, in_channels, height, width).
 
         Returns:
             torch.Tensor: The output of the block with shape
-                (batch size, channels * expansion, width / stride, height / stride)
+                (batch size, channels * expansion, height / stride, width / stride)
         """
         residual = x
 
@@ -208,8 +208,10 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         # Set the expansion of the net
         self.expansion = block.expansion
+        # The depths of each layer
+        depths = [64, 128, 256, 512]
         # in_channels help us to keep track of the number of channels before each block
-        self.in_channels = 64
+        self.in_channels = depths[0]
 
         # Layer 1
         self.conv1 = nn.Conv2d(3, self.in_channels, kernel_size=7, stride=2, padding=3, bias=False)
@@ -217,19 +219,25 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
-        # The first layer does not apply stride because we use maxPool
-        self.layer2 = self._make_layer(block, 64, layers[0])
-        self.layer3 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer4 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer5 = self._make_layer(block, 512, layers[3], stride=2)
+        # The first layer does not apply stride because we use maxPool with stride 2
+        self.layer2 = self._make_layer(block, depths[0], layers[0])
+        self.layer3 = self._make_layer(block, depths[1], layers[1], stride=2)
+        self.layer4 = self._make_layer(block, depths[2], layers[2], stride=2)
+        self.layer5 = self._make_layer(block, depths[3], layers[3], stride=2)
 
         self.classifier = False
-        if num_classes > 0:
+        if num_classes is not None and num_classes > 0:
             # Set the classifier
             self.classifier = True
             self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
             self.fully = nn.Linear(512 * block.expansion, num_classes)
+        else:
+            # Set the output's number of channels for each layer, useful to get the output depth outside this module
+            # when using it as feature extractor
+            self.output_channels = [depth * self.expansion for depth in depths[-3:]]
+            self.output_channels.reverse()
 
+        # Initialize network
         for module in self.modules():
             if isinstance(module, nn.Conv2d):
                 nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
@@ -283,40 +291,37 @@ class ResNet(nn.Module):
         if the module is used as a classifier or not.
 
         Args:
-            x (torch.Tensor): A tensor with shape (batch size, 3, width, height).
+            x (torch.Tensor): A tensor with shape (batch size, 3, height, width).
 
         Returns:
             torch.Tensor: If the module is a classifier returns a tensor as (batch size, num_classes).
                 If the module is a feature extractor (no num classes given) then returns a tuple
                 with the output of the last 3 layers.
                 The shapes are:
-                    - layer 5: (batch size, 512 * block.expansion, width / 32, height / 32)
-                    - layer 4: (batch size, 256 * block.expansion, width / 16, height / 16)
-                    - layer 3: (batch size, 128 * block.expansion, width / 8,  height / 8)
+                    - layer 5: (batch size, 512 * block.expansion, height / 32, width / 32)
+                    - layer 4: (batch size, 256 * block.expansion, height / 16, width / 16)
+                    - layer 3: (batch size, 128 * block.expansion, height / 8,  width / 8)
         """
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
+        x = self.layer2(x)
 
         if self.classifier:
-            x = self.layer2(x)
             x = self.layer3(x)
             x = self.layer4(x)
             x = self.layer5(x)
-
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
             x = self.fully(x)
-
             return x
-        else:
-            x = self.layer2(x)
-            output3 = self.layer3(x)
-            output4 = self.layer4(output3)
-            output5 = self.layer5(output4)
 
-            return output5, output4, output3
+        output3 = self.layer3(x)
+        output4 = self.layer4(output3)
+        output5 = self.layer5(output4)
+
+        return output5, output4, output3
 
 
 def resnet18(pretrained=False, **kwargs):
