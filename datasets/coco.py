@@ -1,8 +1,4 @@
-"""Coco dataset module.
-
-It contains a more robust and flexible version of the Coco dataset.
-Please prefere to use this dataset than the old one.
-"""
+"""Coco dataset"""
 import os
 import time
 
@@ -22,7 +18,7 @@ class CocoDataset(Dataset):
     https://github.com/SetaSouto/pytorch-retinanet/blob/master/dataloader.py
     """
 
-    def __init__(self, root, dataset, classesNames=(), transform=None, stats=True):
+    def __init__(self, root, dataset, classes_names=(), transform=None, stats=True):
         """Initialize the dataset.
 
         Initialize the coco api under the 'coco' attribute.
@@ -42,10 +38,10 @@ class CocoDataset(Dataset):
         and 'stop sign' (id: 13) we don't want to work with labels 1, 6 and 13, we want to work with labels
         0, 1, 2, because we loaded only 3 classes.
 
-        You can filter the images and classes to be loaded by using classesNames argument.
+        You can filter the images and classes to be loaded by using classes_names argument.
 
         Why we load the bounding boxes already? Because the COCO api already does that, so instead of keeping
-        the coco instance we format the bounding boxes in the initialization and keep track of the path
+        the coco api instance we format the bounding boxes in the initialization and keep track of the path
         of each image. The images are loaded in running time.
         This way we use the api in the initialization only and free some memory.
 
@@ -56,12 +52,12 @@ class CocoDataset(Dataset):
                 the images and is in the name of the file that contains the annotations.
                 Example: 'train2017' will trigger the loading of the images at coco/images/train2017
                 and the annotations from the file 'instances_train2017.json'.
-            classesNames (tuple): Tuple of strings with the name of the classes to load. Only load images with those
+            classes_names (tuple): Tuple of strings with the name of the classes to load. Only load images with those
                 classes' names.
             transform (torchvision.transforms.Compose, optional): A list with transforms to apply to each image.
             stats (Boolean): Print the stats of the classes. Indicates how many images are per category.
                 Keep in mind that the sum of all the images per category may not be the same to the total number
-                of images, this is because some images could contain more than one category (very common).
+                of images, this is because some images could contain more than one object type (very common).
         """
         self.transform = transform
 
@@ -73,7 +69,7 @@ class CocoDataset(Dataset):
         # Load classes and set classes dict
         print('Loading classes and setting labels, names and lengths ...')
         self.classes = {'ids': {}, 'names': {}, 'labels': {}, 'length': {}}
-        for label, category in enumerate(coco.loadCats(coco.getCatIds(catNms=classesNames))):
+        for label, category in enumerate(coco.loadCats(coco.getCatIds(catNms=classes_names))):
             self.classes['ids'][label] = category['id']
             self.classes['labels'][category['id']] = label
             self.classes['names'][label] = category['name']
@@ -87,7 +83,7 @@ class CocoDataset(Dataset):
             self.classes['length'][category_label] = len(category_images)
             images_ids |= category_images
 
-        # Init images array that contains the path to the image and the annotations
+        # Init images array that contains tuples with the path to the images and the annotations
         print('Setting bounding boxes ...')
         self.images = []
         for image_info in coco.loadImgs(images_ids):
@@ -98,7 +94,7 @@ class CocoDataset(Dataset):
                     label = self.classes['labels'][annotation['category_id']]
                     bounding_boxes = np.append(bounding_boxes, np.array([[*annotation['bbox'], label]]), axis=0)
                 except KeyError:
-                    # The image has a bounding box from a class that does not exists in classesNames sequence
+                    # The image has a bounding box from a class that does not exists in classes_names sequence
                     continue
 
             self.images.append((
@@ -140,7 +136,7 @@ class CocoDataset(Dataset):
             index (int): Index of the image in the dataset.
 
         Returns:
-            ndarray: The transformed image if there is any transformation.
+            ndarray: The transformed image if there is any transformation or the original image.
             ndarray: The bounding boxes of the image.
         """
         path, bounding_boxes = self.images[index]
@@ -159,11 +155,12 @@ class CocoDataset(Dataset):
 
         return image, bounding_boxes
 
-    def visualize(self, index, bounding_boxes=True):
+    def visualize(self, index, n_colors=20):
         """Visualize an image with its bounding boxes.
 
         Args:
             index (int): The index of the image in the dataset to be loaded.
+            n_colors (int, optional): The number of colors to use. Optional. Already in the max value.
         """
         initial_time = time.time()
 
@@ -177,7 +174,6 @@ class CocoDataset(Dataset):
         # Is a continuous map of colors, you can get a color by calling it on a number between
         # 0 and 1
         colormap = matplotlib.pyplot.get_cmap('tab20')
-        n_colors = 20
         # Select n_colors colors from 0 to 1
         colors = [colormap(i) for i in np.linspace(0, 1, n_colors)]
 
@@ -197,7 +193,7 @@ class CocoDataset(Dataset):
             matplotlib.pyplot.text(x, y, s=class_name, color='white',
                                    verticalalignment='top', bbox={'color': color, 'pad': 0})
         # Print stats
-        print('----------\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, bounding_boxes))
+        print('-----\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, bounding_boxes))
         # Show image and plot
         axes.imshow(image)
         matplotlib.pyplot.show()
