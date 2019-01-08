@@ -18,8 +18,6 @@ class Resize():
 
     It works with a tuple where it first value is a ndarray image and the second value
     are the bounding boxes.
-
-    See: https://github.com/pytorch/vision/blob/master/torchvision/transforms/functional.py#L182
     """
 
     def __init__(self, size=800):
@@ -32,18 +30,22 @@ class Resize():
             data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
         """
         image, bounding_boxes = data
-        width, height, channels = image.shape
+        height, width, channels = image.shape
 
         if height > width:
             scale = self.size / height
-            image = resize(image, (int(round(width * scale)), self.size))
+            new_width = int(round(width * scale))
+            new_height = self.size
         else:
             scale = self.size / width
-            image = resize(image, (self.size, int(round(height * scale))))
+            new_width = self.size
+            new_height = int(round(height * scale))
 
-        width, height, channels = image.shape
+        image = resize(image, (new_height, new_width))
+        height, width, channels = image.shape
+
         square = np.zeros((self.size, self.size, channels))
-        square[:width, :height, :] = image
+        square[:height, :width, :] = image
 
         bounding_boxes[:, :4] *= scale
 
