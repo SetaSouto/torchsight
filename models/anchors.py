@@ -13,7 +13,7 @@ class Anchors(nn.Module):
     So, for example, if we have a feature map of (10, 10, 2048) and 9 anchors per location we produce
     10 * 10 * 9 bounding boxes.
 
-    The bounding boxes has shape (4) for the x1, y1 (top left corner) and x2, y2 (top right corner).
+    The bounding boxes has shape (4) for the x1, y1 (top left corner) and x2, y2 (bottom right corner).
     Also each bounding box has a vector with the probabilities for the C classes.
 
     In this case we could generate different anchors depending on 3 basic variables:
@@ -28,15 +28,15 @@ class Anchors(nn.Module):
     For example, if we have an image with 320 * 320 pixels and apply a CNN with stride 10 we have a feature map
     with 32 * 32 locations (320 / 10). So, each location represents a region of 10 * 10 pixels so to center the
     anchor to the center of the location we need to move it 5 pixels to the right and 5 pixels down so the center
-    of the anchor is at the center of the location.
+    of the anchor is at the center of the location. With this, we move the anchor to the (i, j) position of
+    the feature map by moving it by (i * stride, j * stride) pixels and then center it by moving it by
+    (stride // 2, stride // 2), so the final movement is (i * stride + stride // 2, j * stride + stride // 2).
 
     --- Feature Pyramid Network ---
 
     The anchors could be for a Feature Pyramid Network, so its predicts for several feature maps
     of different scales. This is useful to improve the precision over different object scales (very little ones
     and very large ones).
-
-    --- Anchors' sizes ---
 
     The feature pyramid network (FPN) produces feature maps at different scales, so we use different anchors per scale,
     for example in the original paper of RetinaNet they use images of size 600 * 600 and the 5 levels of the FPN
@@ -73,10 +73,12 @@ class Anchors(nn.Module):
             strides (sequence, optional): The stride applied to the image to generate the feature map
                 for each base anchor size.
         """
+        super(Anchors, self).__init__()
+
         if len(sizes) != len(strides):
             # As we have one size for each feature map we need to know the stride applied to the image
             # to get that feature map
-            raise ValueError('sizes and strides must have the same length')
+            raise ValueError('"sizes" and "strides" must have the same length')
 
         self.strides = strides
         self.base_anchors = self.generate_anchors(sizes, scales, ratios)
@@ -127,25 +129,26 @@ class Anchors(nn.Module):
         # For a given stride, say i, we need to generate (image width / stride) * (image height / stride)
         # anchors for each one of the self.base_anchors[i, :, :]
         anchors = []
-        for index, image in enumerate(images):
+        for image in images:
             image_anchors = []
             for index, stride in enumerate(self.strides):
                 n_anchors = self.base_anchors.shape[1]  # len(scales) * len(ratios)
                 base_anchors = self.base_anchors[index, :, :]  # Shape (n_anchors, 4)
                 height, width = image.shape[1:]
                 feature_height, feature_width = height // stride, width // stride  # Dimensions of the feature map
+                print(feature_height, feature_width)
                 # We need to move each anchor (i * shift, j * shift) for each (i,j) location in the feature map
                 # to center the anchor on the center of the location
                 shift = stride * 0.5
                 # We need a tensor with shape (feature_height, feature_width, 4)
                 # shift_x shape: (feature_height, feature_width, 1) where each location has the index of the
                 # x position of the location in the feature map plus the shift value
-                shift_x = shift + \
-                    (stride * torch.arange(feature_width).unsqueeze(0).unsqueeze(2).repeat(feature_height, 1, 1))
+                shift_x = stride * torch.arange(feature_width).unsqueeze(0).unsqueeze(2).repeat(feature_height, 1, 1)
+                shift_x += shift
                 # shift_y shape: (feature_height, feature_width, 1) where each location has the index of the
                 # y position of the location in the feature map plus the shift value
-                shift_y = shift + \
-                    (stride * torch.arange(feature_height).unsqueeze(1).unsqueeze(2).repeat(1, feature_width, 1))
+                shift_y = stride * torch.arange(feature_height).unsqueeze(1).unsqueeze(2).repeat(1, feature_width, 1)
+                shift_y += shift
                 # The final shift will have shape (feature_height, feature_width, 4 * n_anchors)
                 shift = torch.cat([shift_x, shift_y, shift_x, shift_y], dim=2).repeat(1, 1, n_anchors)
                 # As pytorch interpret the channels in the first dimension it could be better to have a shift
@@ -164,6 +167,7 @@ class Anchors(nn.Module):
                 # continuous we need to apply the permutation first and then the view.
                 # Finally we get shape (total anchors, 4)
                 final_anchors = final_anchors.permute((1, 2, 0)).contiguous().view(-1, 4)
+                image_anchors.append(final_anchors)
             # Now we have an array with the anchors with shape (n_anchors * different heights * widths, 4) so we can
             # concatenate by the first dimension to have a list with anchors (with its 4 parameters) ordered by
             # sizes, x_i, y_i, all combination of aspect ratios vs scales
@@ -183,7 +187,7 @@ class Anchors(nn.Module):
 
         To get the total anchors for a given size, say 0, you could do:
         ```
-        anchors = generate_anchors(sizes, scales, ratios)
+        anchors = self.generate_anchors(sizes, scales, ratios)
         anchors[0, :, :]
         ```
         Or to get the 4 parameters for the j anchor for the i size:
