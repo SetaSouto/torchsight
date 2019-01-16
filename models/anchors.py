@@ -174,7 +174,7 @@ class Anchors(nn.Module):
             # where x_i, y_i are the positions in the feature map for the size i
             anchors.append(torch.cat(image_anchors, dim=0))
         # Now as each image has its anchors with shape
-        # (4 * n_anchors, feature_height_i * feature_width_i for i in range(len(strides)))
+        # (n_anchors * feature_height_i * feature_width_i for i in range(len(strides)), 4)
         # we can stack the anchors for each image and generate a tensor with shape
         # (batch size, n_anchors * feature_height_i * feature_width_i for i in range(len(strides)), 4)
         return torch.stack(anchors, dim=0)
