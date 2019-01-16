@@ -81,6 +81,7 @@ class Anchors(nn.Module):
             raise ValueError('"sizes" and "strides" must have the same length')
 
         self.strides = strides
+        self.n_anchors = len(scales) * len(ratios)
         self.base_anchors = self.generate_anchors(sizes, scales, ratios)
 
     def forward(self, images):
@@ -132,11 +133,9 @@ class Anchors(nn.Module):
         for image in images:
             image_anchors = []
             for index, stride in enumerate(self.strides):
-                n_anchors = self.base_anchors.shape[1]  # len(scales) * len(ratios)
                 base_anchors = self.base_anchors[index, :, :]  # Shape (n_anchors, 4)
                 height, width = image.shape[1:]
                 feature_height, feature_width = height // stride, width // stride  # Dimensions of the feature map
-                print(feature_height, feature_width)
                 # We need to move each anchor (i * shift, j * shift) for each (i,j) location in the feature map
                 # to center the anchor on the center of the location
                 shift = stride * 0.5
@@ -150,11 +149,11 @@ class Anchors(nn.Module):
                 shift_y = stride * torch.arange(feature_height).unsqueeze(1).unsqueeze(2).repeat(1, feature_width, 1)
                 shift_y += shift
                 # The final shift will have shape (feature_height, feature_width, 4 * n_anchors)
-                shift = torch.cat([shift_x, shift_y, shift_x, shift_y], dim=2).repeat(1, 1, n_anchors)
+                shift = torch.cat([shift_x, shift_y, shift_x, shift_y], dim=2).repeat(1, 1, self.n_anchors)
                 # As pytorch interpret the channels in the first dimension it could be better to have a shift
                 # with shape (4 * anchors, feature_height, feature_width) like an image (channels, height, width)
                 shift = shift.permute((2, 0, 1))
-                base_anchors = base_anchors.view(n_anchors * 4).unsqueeze(1).unsqueeze(2)
+                base_anchors = base_anchors.view(self.n_anchors * 4).unsqueeze(1).unsqueeze(2)
                 # As shift has shape (4* n_anchors, feature_height, feature_width) and base_anchors has shape
                 # (4 * n_anchors, 1, 1) this last one broadcast to the shape of shift
                 final_anchors = shift + base_anchors
@@ -179,8 +178,7 @@ class Anchors(nn.Module):
         # (batch size, n_anchors * feature_height_i * feature_width_i for i in range(len(strides)), 4)
         return torch.stack(anchors, dim=0)
 
-    @staticmethod
-    def generate_anchors(sizes, scales, ratios):
+    def generate_anchors(self, sizes, scales, ratios):
         """Given a sequence of side sizes generate len(scales) *  len(ratios) = n_anchors anchors per size.
         This allow to generate, for a given size, all the possibles combinations between different aspect
         ratios and scales.
@@ -201,9 +199,8 @@ class Anchors(nn.Module):
         Returns:
             torch.Tensor: Tensor with shape (len(anchors_sizes), len(scales) * len(ratios), 4).
         """
-        n_anchors = len(scales) * len(ratios)
         # First we are going to compute the anchors as center_x, center_y, height, width
-        anchors = torch.zeros((len(sizes), n_anchors, 4), dtype=torch.float)
+        anchors = torch.zeros((len(sizes), self.n_anchors, 4), dtype=torch.float)
         sizes, scales, ratios = [torch.Tensor(x) for x in [sizes, scales, ratios]]
         # Start with height = width = 1
         anchors[:, :, 2:] = torch.Tensor([1., 1.])
@@ -235,3 +232,84 @@ class Anchors(nn.Module):
         anchors[:, :, 3] = center_y + (height * 0.5)
 
         return anchors
+
+    @staticmethod
+    def transform(anchors, deltas):
+        """Adjust the anchors with the regression values (deltas) to obtain the final bounding boxes.
+
+        It uses the standard box parametrization from R-CNN:
+        https://arxiv.org/pdf/1311.2524.pdf (Appendix C)
+
+        Args:
+            anchors (torch.Tensor): Anchors generated for each image in the batch.
+                Shape:
+                    (batch size, total anchors, 4)
+            deltas (torch.Tensor): The regression values to adjust the anchors to generate the real
+                bounding boxes as x1, y2, x2, y2 (top left corner ahd bottom right corner).
+                Shape:
+                    (batch size, total anchors, 4)
+
+        Returns:
+            torch.Tensor: The bounding boxes with shape (batch size, total anchors, 4).
+        """
+        widths = anchors[:, :, 2] - anchors[:, :, 0]
+        heights = anchors[:, :, 3] - anchors[:, :, 1]
+        center_x = anchors[:, :, 0] + (widths / 2)
+        center_y = anchors[:, :, 1] + (heights / 2)
+
+        delta_x = deltas[:, :, 0]
+        delta_y = deltas[:, :, 1]
+        delta_w = deltas[:, :, 2]
+        delta_h = deltas[:, :, 3]
+
+        predicted_x = (delta_x * widths) + center_x
+        predicted_y = (delta_y * heights) + center_y
+        predicted_w = torch.exp(delta_w) * widths
+        predicted_h = torch.exp(delta_h) * heights
+
+        # Transform to x1, y1, x2, y2
+        predicted_x1 = predicted_x - (predicted_w / 2)
+        predicted_y1 = predicted_y - (predicted_h / 2)
+        predicted_x2 = predicted_x + (predicted_w / 2)
+        predicted_y2 = predicted_y + (predicted_h / 2)
+
+        return torch.stack([
+            predicted_x1,
+            predicted_y1,
+            predicted_x2,
+            predicted_y2
+        ], dim=2)
+
+    @staticmethod
+    def clip(batch, boxes):
+        """Given the boxes predicted for the batch, clip the boxes to fit the width and height.
+
+        This means that if the box has any side outside the dimensions of the images the side is adjusted
+        to fit inside the image. For example, if the image has width 800 and the right side of a bounding
+        box is at x = 830, then the right side will be x = 800.
+
+        Args:
+            batch (torch.Tensor): The batch with the images. Useful to get the width and height of the image.
+                Shape:
+                    (batch size, channels, width, height)
+            boxes (torch.Tensor): A tensor with the parameters for each bounding box.
+                Shape:
+                    (batch size, number of bounding boxes, 4).
+                Parameters:
+                    boxes[:, :, 0]: x1. Location of the left side of the box.
+                    boxes[:, :, 1]: y1. Location of the top side of the box.
+                    boxes[:, :, 2]: x2. Location of the right side of the box.
+                    boxes[:, :, 3]: y2. Location of the bottom side of the box.
+
+        Returns:
+            torch.Tensor: The clipped bounding boxes with the same shape.
+        """
+        _, _, height, width = batch.shape
+
+        boxes[:, :, 0] = torch.clamp(boxes[:, :, 0], min=0)
+        boxes[:, :, 1] = torch.clamp(boxes[:, :, 1], min=0)
+
+        boxes[:, :, 2] = torch.clamp(boxes[:, :, 2], max=width)
+        boxes[:, :, 3] = torch.clamp(boxes[:, :, 3], max=height)
+
+        return boxes

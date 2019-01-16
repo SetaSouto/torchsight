@@ -21,6 +21,7 @@ import torch
 from torch import nn
 
 from .resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from .anchors import Anchors
 
 
 class FeaturePyramid(nn.Module):
@@ -41,6 +42,8 @@ class FeaturePyramid(nn.Module):
 
     Each time that a decision in the code mention "the paper" is the RetinaNet paper.
     """
+
+    strides = [8, 16, 32, 64, 128]  # The stride applied to obtain each output
 
     def __init__(self, resnet=18, features=256, pretrained=True):
         """Initialize the network.
@@ -272,41 +275,6 @@ class RetinaNet(nn.Module):
     This Network is for object detection, so its outputs are the regressions
     for the bounding boxes for each anchor and the probabilities for each class for each anchor.
 
-    --- Anchors ---
-
-    Keep in mind that this network uses anchors, so for each location (or "pixel") of the feature map
-    it regresses a bounding box for each anchor and predict the class for each bounding box.
-    So, for example, if we have a feature map of (10, 10, 2048) and 9 anchors per location we produce
-    10 * 10 * 9 bounding boxes.
-
-    The bounding boxes has shape (4) for the x1, y1 (top left corner) and x2, y2 (top right corner).
-    Also each bounding box has a vector with the probabilities for the C classes.
-
-    This network uses a Feature Pyramid Network as feature extractor, so its predicts for several feature maps
-    of different scales. This is useful to improve the precision over different object scales (very little ones
-    and very large ones).
-
-    --- Anchors' sizes ---
-
-    The feature pyramid network (FPN) produces feature maps at different scales, so we use different anchors per scale,
-    in the original paper or RetinaNet they use images of size 600 * 600 and the 5 levels of the FPN (P3, ..., P7)
-    with anchors with areas of 32 * 32 to 512 * 512.
-
-    Each anchor size is adapted to three different aspect ratios {1:2, 1:1, 2:1} and to three different scales
-    {2 ** 0, 2 ** (1/3), 2 ** (2/3)} according to the paper.
-
-    So finally, we have 3 * 3 anchors based on one size, totally 3 * 3 * 5 different anchors for the total network.
-    Keep in mind that only 3 * 3 anchors are used per location in the feature map and that the FPN produces 5 feature
-    maps, that's why we have 3 * 3 * 5 anchors.
-
-    Example:
-    If we have anchors_sizes = [32, 64, 128, 256, 512] then anchors with side 32 pixels are used for the P3 output of
-    the FPN, 64 for the P4, ... , 512 for the P7.
-    Using the scales {2 ** 0, 2 ** (1/3), 2 ** (2/3)} we can get anchors from 32 pixels of side to 813 pixels of side.
-
-    If you want to use different sizes you can provide the sizes, scales or ratios you can provide them in the
-    initialization of the network.
-
     TODO:
     In training mode returns all the predicted values (all bounding boxes and classes for all the anchors)
     and in evaluation mode applies Non-Maximum suppresion to return only the relevant detections with shape
@@ -316,10 +284,16 @@ class RetinaNet(nn.Module):
     def __init__(self,
                  classes,
                  resnet=18,
-                 features={'pyramid': 256, 'regression': 256, 'classification': 256},
-                 anchors_sizes=[32, 64, 128, 256, 512],
-                 anchors_scales=[2, 2 ** (1/3), 2 ** (2/3)],
-                 anchors_ratios=[0.5, 1, 2],
+                 features={
+                     'pyramid': 256,
+                     'regression': 256,
+                     'classification': 256
+                 },
+                 anchors={
+                     'sizes': [32, 64, 128, 256, 512],
+                     'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
+                     'ratios': [0.5, 1, 2]
+                 },
                  pretrained=True):
         """Initialize the network.
 
@@ -337,104 +311,85 @@ class RetinaNet(nn.Module):
         """
         super(RetinaNet, self).__init__()
 
-        # Generate anchors
-        if len(anchors_sizes) != 5:
-            raise ValueError('anchors_size must have length 5 to work with the FPN')
-        self.anchors = self.generate_anchors(anchors_sizes, anchors_scales, anchors_ratios)
-        n_anchors = self.anchors.shape[1]  # The number of anchors per size
-
         # Modules
         self.fpn = FeaturePyramid(resnet=resnet, features=features['pyramid'], pretrained=pretrained)
-        self.regression = Regression(in_channels=features['pyramid'], anchors=n_anchors,
+
+        if len(anchors['sizes']) != 5:
+            raise ValueError('anchors_size must have length 5 to work with the FPN')
+        self.anchors = Anchors(anchors['sizes'], anchors['scales'], anchors['ratios'], self.fpn.strides)
+
+        self.regression = Regression(in_channels=features['pyramid'],
+                                     anchors=self.anchors.n_anchors,
                                      features=features['regression'])
-        self.classification = Classification(in_channels=features['pyramid'], classes=classes, anchors=n_anchors,
+        self.classification = Classification(in_channels=features['pyramid'],
+                                             classes=classes,
+                                             anchors=self.anchors.n_anchors,
                                              features=features['classification'])
 
-        # Loss
-        # TODO: Add loss and anchors, study code
+        # Set the base threshold for evaluating mode
+        self.threshold = 0.1
 
-    @staticmethod
-    def generate_anchors(sizes, scales, ratios):
-        """Given a sequence of side sizes generate len(scales) *  len(ratios) anchors per size.
-
-        Args:
-            anchors_sizes (sequence): Sequence of int that are the different sizes of the anchors.
-
-        Returns:
-            torch.Tensor: Tensor with shape (len(anchors_sizes), len(scales) * len(ratios), 4).
-        """
-        n_anchors = len(scales) * len(ratios)
-        scales, ratios = torch.Tensor(scales), torch.Tensor(ratios)
-        # First we are going to compute the anchors as center_x, center_y, height, width
-        anchors = torch.zeros((len(sizes), n_anchors, 4), dtype=torch.float)
-        # Start with height = width = 1
-        anchors[:, :, 2:] = torch.Tensor([1., 1.])
-        # Scale each anchor to the correspondent size. We use unsqueeze to get sizes with shape (len(sizes), 1, 1)
-        # and broadcast to (len(sizes), n_anchors, 4)
-        anchors *= sizes.unsqueeze(1).unsqueeze(1)
-        # Multiply the height for the aspect ratio. We repeat the ratios len(scales) times to get all the aspect
-        # ratios for each scale. We unsqueeze the ratios to get the shape (1, n_anchors) to broadcast to
-        # (len(sizes), n_anchors)
-        anchors[:, :, 2] *= ratios.repeat(len(scales)).unsqueeze(0)
-        # Adjust width and height to match the area size * size
-        areas = sizes * sizes  # Shape (len(sizes))
-        height, width = anchors[:, :, 2], anchors[:, :, 3]  # Shapes (len(sizes), n_anchors)
-        adjustment = torch.sqrt((height * width) / areas.unsqueeze(1))
-        anchors[:, :, 2] /= adjustment
-        anchors[:, :, 3] /= adjustment
-        # Multiply the height and width by the correspondent scale. We repeat the scale len(ratios) times to get
-        # one scale for each aspect ratio. So scales has shape (1, n_anchors, 1) and
-        # broadcast to (len(sizes), n_anchors, 2) to scale the height and width.
-        anchors[:, :, 2:] *= scales.unsqueeze(1).repeat((1, len(ratios))).view(1, -1, 1)
-
-        # Return the anchors but not centered nor with height or width, instead use x1, y1, x2, y2
-        height, width = anchors[:, :, 2].clone(), anchors[:, :, 3].clone()
-        center_x, center_y = anchors[:, :, 0].clone(), anchors[:, :, 1].clone()
-
-        anchors[:, :, 0] = center_x - (width * 0.5)
-        anchors[:, :, 1] = center_y - (height * 0.5)
-        anchors[:, :, 2] = center_x + (width * 0.5)
-        anchors[:, :, 3] = center_y + (height * 0.5) 
-
-        return anchors
-
-    @staticmethod
-    def transform(mean=None, std=None):
-        """Transforms the bounding boxes given by the regression model.
-
-        It uses ...
-        """
-
-    @staticmethod
-    def clip(boxes, batch):
-        """Given the boxes predicted for the batch, clip the boxes to fit the width and height.
-
-        This means that if the box has any side outside the dimensions of the images the side is adjusted
-        to fit inside the image. For example, if the image has width 800 and the right side of a bounding
-        box is at x = 830, then the right side will be x = 800.
+    def eval(self, threshold=None):
+        """Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
+        over threshold.
 
         Args:
-            boxes (torch.Tensor): A tensor with the parameters for each bounding box.
+            threshold (float): The threshold to keep only bounding boxes with a class' probability over it.
+        """
+        if threshold is not None:
+            self.threshold = threshold
+
+        return super(RetinaNet, self).eval()
+
+    def forward(self, images):
+        """Forward pass of the network. Returns the anchors and the probability for each class per anchor.
+
+        In training mode (calling `model.train()`) it returns all the anchors ans classes' probabilities
+        but in evaluation mode (calling `model.eval()`) it applies Non-Maximum Supresion to keep only
+        the predictions that do not collide.
+
+        On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+        different images could have different amounts of predictions over the threshold so we cannot keep
+        all them in a single tensor.
+        To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+        for each image.
+
+        Args:
+            images (torch.Tensor): Tensor with the batch of images.
                 Shape:
-                    (batch size, number of bounding boxes, 4).
-                Parameters:
-                    boxes[:, :, 0]: x1. Location of the left side of the box.
-                    boxes[:, :, 1]: y1. Location of the top side of the box.
-                    boxes[:, :, 2]: x2. Location of the right side of the box.
-                    boxes[:, :, 3]: y2. Location of the bottom side of the box.
-            batch (torch.Tensor): The batch with the images. Useful to get the width and height of the image.
-                Shape:
-                    (batch size, channels, width, height)
+                    (batch size, channels, height, width)
 
         Returns:
-            torch.Tensor: The clipped bounding boxes with the same shape.
+            In training mode:
+
+            torch.Tensor: A tensor with shape (batch size, total anchors, 4) indicating the position
+                of each anchor as x1, y1, x2, y2 (top left corner and bottom right corner of the bounding
+                box).
+            torch.Tensor: A tensor with shape (batch size, total anchors, classes) with the probability of
+                each class for each anchor.
+
+            In evaluation mode:
+
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
         """
-        _, _, height, width = batch.shape
+        feature_maps = self.fpn(images)
+        # Get regressions and classifications values with shape (batch size, total anchors, 4)
+        regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
+        classifications = torch.cat([self.classification(feature_map) for feature_map in feature_maps], dim=1)
+        del feature_maps
+        # Transform the anchors to bounding boxes
+        bounding_boxes = self.anchors.transform(self.anchors(images), regressions)
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes)
 
-        boxes[:, :, 0] = torch.clamp(boxes[:, :, 0], min=0)
-        boxes[:, :, 1] = torch.clamp(boxes[:, :, 1], min=0)
+        if self.training:
+            return bounding_boxes, classifications
+        else:
+            # Generate a sequence of (bounding_boxes, classifications) for each image
+            return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
 
-        boxes[:, :, 2] = torch.clamp(boxes[:, :, 2], max=width)
-        boxes[:, :, 3] = torch.clamp(boxes[:, :, 3], max=height)
-
-        return boxes
+    def nms(self, boxes, classifications):
+        """TODO:"""

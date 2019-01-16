@@ -10,7 +10,8 @@ from skimage.transform import resize
 
 from torchvision.transforms.functional import normalize, to_tensor
 
-
+# TODO: Change way of resize, use the Resize that is in the other repo, this generate too many padding
+# We don't need a squared image, we only need an image with sizes multiplies of 32.
 class Resize():
     """Resize an image and pad it to fit the square.
 
