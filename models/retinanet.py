@@ -328,16 +328,22 @@ class RetinaNet(nn.Module):
 
         # Set the base threshold for evaluating mode
         self.threshold = 0.1
+        self.iou_threshold = 0.5
 
-    def eval(self, threshold=None):
+    def eval(self, threshold=None, iou_threshold=None):
         """Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
         over threshold.
 
         Args:
             threshold (float): The threshold to keep only bounding boxes with a class' probability over it.
+            iou_threshold (float): If two bounding boxes has Intersection Over Union more than this
+                threshold they are detecting the same object.
         """
         if threshold is not None:
             self.threshold = threshold
+
+        if iou_threshold is not None:
+            self.iou_threshold = iou_threshold
 
         return super(RetinaNet, self).eval()
 
@@ -392,4 +398,80 @@ class RetinaNet(nn.Module):
             return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
 
     def nms(self, boxes, classifications):
-        """TODO:"""
+        """Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
+        the same object.
+
+        Args:
+            boxes (torch.Tensor): Tensor with the bounding boxes.
+                Shape:
+                    (total anchors, 4)
+            classifications (torch.Tensor): Tensor with the scores for each class for each anchor.
+                Shape:
+                    (total anchors, number of classes)
+
+        Returns:
+            torch.Tensor: The bounding boxes to keep.
+            torch.Tensor: The probabilities for each class for each bounding box keeped.
+        """
+        # Get the max score of any class for each anchor
+        scores = classifications.max(dim=1)[0]  # Shape (total anchors,)
+        # Keep only the bounding boxes and classifications over the threshold
+        scores_over_threshold = scores > self.threshold
+        boxes = boxes[scores_over_threshold, :]
+        classifications = classifications[scores_over_threshold, :]
+        # Update the scores to keep only the keeped boxes
+        scores = classifications.max(dim=1)[0]
+
+        # If there aren't detections return empty
+        if boxes.shape[0] == 0:
+            return torch.zeros(0)
+
+        # Get the numpy version
+        # was_cuda = detections.is_cuda
+        # detections = detections.cpu().numpy()
+
+        # Start the picked indexes list empty
+        picked = []
+
+        # Get the coordinates
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
+
+        # Compute the area of the bounding boxes
+        areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+
+        # Get the indexes of the detections sorted by score (lowest score first)
+        _, indexes = scores.sort()
+
+        while indexes.shape[0] > 0:
+            # Take the last index (highest score) and add it to the picked
+            actual = indexes[-1]
+            picked.append(actual)
+
+            # We need to find the overlap of the bounding boxes with the actual picked bounding box
+
+            # Find the largest (more to the bottom-right) (x,y) coordinates for the start
+            # (top-left) of the bounding box between the actual and all of the others with lower score
+            xx1 = torch.max(x1[actual], x1[indexes[:-1]])
+            yy1 = torch.max(y1[actual], y1[indexes[:-1]])
+            # Find the smallest (more to the top-left) (x,y) coordinates for the end (bottom-right)
+            # of the bounding box
+            xx2 = torch.min(x2[actual], x2[indexes[:-1]])
+            yy2 = torch.min(y2[actual], y2[indexes[:-1]])
+
+            # Compute width and height to compute the intersection over union
+            w = torch.max(torch.Tensor([0]), xx2 - xx1 + 1)
+            h = torch.max(torch.Tensor([0]), yy2 - yy1 + 1)
+            intersection = (w * h)
+            union = areas[actual] + areas[indexes[:-1]] - intersection
+            iou = intersection / union
+
+            # Delete the last index
+            indexes = indexes[:-1]
+            # Keep only the indexes that has overlap lower than the threshold
+            indexes = indexes[iou < self.iou_threshold]
+
+        # Return the filtered bounding boxes and classifications
+        return boxes[picked], classifications[picked]
