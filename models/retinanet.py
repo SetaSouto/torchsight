@@ -368,11 +368,16 @@ class RetinaNet(nn.Module):
         Returns:
             In training mode:
 
-            torch.Tensor: A tensor with shape (batch size, total anchors, 4) indicating the position
-                of each anchor as x1, y1, x2, y2 (top left corner and bottom right corner of the bounding
-                box).
-            torch.Tensor: A tensor with shape (batch size, total anchors, classes) with the probability of
-                each class for each anchor.
+            torch.Tensor: A tensor with the base anchors.
+                Shape:
+                    (batch size, total anchors, 4)
+            torch.Tensor: A tensor with that indicates the position of each bounding box as x1, y1, x2, y2
+                (top left corner and bottom right corner of the bounding box).
+                Shape:
+                    (batch size, total anchors, 4)
+            torch.Tensor: A tensor with the probability of each class for each anchor.
+                Shape:
+                    (batch size, total anchors, number of classes)
 
             In evaluation mode:
 
@@ -386,13 +391,14 @@ class RetinaNet(nn.Module):
         classifications = torch.cat([self.classification(feature_map) for feature_map in feature_maps], dim=1)
         del feature_maps
         # Transform the anchors to bounding boxes
-        bounding_boxes = self.anchors.transform(self.anchors(images), regressions)
+        anchors = self.anchors(images)
+        bounding_boxes = self.anchors.transform(anchors, regressions)
         del regressions
         # Clip the boxes to fit in the image
         bounding_boxes = self.anchors.clip(images, bounding_boxes)
 
         if self.training:
-            return bounding_boxes, classifications
+            return anchors, bounding_boxes, classifications
         else:
             # Generate a sequence of (bounding_boxes, classifications) for each image
             return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
@@ -424,7 +430,7 @@ class RetinaNet(nn.Module):
 
         # If there aren't detections return empty
         if boxes.shape[0] == 0:
-            return torch.zeros(0)
+            return torch.zeros(0).cuda()
 
         # Get the numpy version
         # was_cuda = detections.is_cuda
@@ -462,8 +468,8 @@ class RetinaNet(nn.Module):
             yy2 = torch.min(y2[actual], y2[indexes[:-1]])
 
             # Compute width and height to compute the intersection over union
-            w = torch.max(torch.Tensor([0]), xx2 - xx1 + 1)
-            h = torch.max(torch.Tensor([0]), yy2 - yy1 + 1)
+            w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
+            h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
             intersection = (w * h)
             union = areas[actual] + areas[indexes[:-1]] - intersection
             iou = intersection / union
