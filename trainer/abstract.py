@@ -1,0 +1,177 @@
+"""Base trainer module."""
+import os
+import time
+
+import torch
+
+
+class AbstractTrainer():
+    """Abstract trainer to fit a pytorch model.
+
+    To use this trainer you must override the getters methods.
+    """
+
+    def __init__(self, logs_dir='./logs'):
+        """Initialize the trainer. Sets the hyperparameters for the training.
+
+        Args:
+            logs_dir (string): Path to the directory where to save the logs.
+        """
+        print('***** TRAINER *****')
+        self.hyperparameters = self.get_hyperparameters()
+
+        # Set the datasets
+        self.dataset, self.valid_dataset = self.get_datasets()
+
+        # Set the model, data loaders, criterion and optimizer for the training
+        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.model = self.get_model()
+        self.train_loader, self.valid_loader = self.get_dataloaders()
+        self.criterion = self.get_criterion()
+        self.optimizer = self.get_optimizer()
+
+        # Configure the logs
+        self.logs_dir = os.path.join(logs_dir, str(int(time.time()))) if logs_dir else None
+        if self.logs_dir:
+            if not os.path.exists(self.logs_dir):
+                os.makedirs(self.logs_dir)
+            # Description of this instance are the hyperparameters of the training
+            description = "\n".join(["{}: {}".format(key, value) for key, value in self.hyperparameters.items()])
+            with open(os.path.join(self.logs_dir, 'description.txt'), 'w') as file:
+                file.write(description)
+
+    def train(self, epochs=100):
+        """Train the model for the given epochs.
+
+        Args:
+            epochs (int): Number of epochs to run. An epoch is a full pass over all the images of the dataset.
+        """
+        self.model.to(self.device)
+
+        print('----- Training started ------')
+        print('Using device: {}'.format(self.device))
+
+        if self.logs_dir:
+            print('Logs can be found at {}'.format(self.logs_dir))
+
+        for epoch in range(epochs):
+
+            epoch_start_time, last_batch_end_time = time.time(), time.time()
+
+            epoch_losses = {'regression': 0, 'classification': 0, 'total': 0}
+
+            # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
+            # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
+            self.model.train()
+
+            for batch_index, (images, annotations) in enumerate(self.train_loader):
+                images, annotations = images.to(self.device), annotations.to(self.device)
+
+                # Optimize
+                self.optimizer.zero_grad()
+                anchors, regressions, classifications = self.model(images)
+                del images
+                classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
+                                                                      annotations)
+                del anchors, regressions, classifications, annotations
+
+                # Log the batch
+                batch_time = time.time() - last_batch_end_time
+                last_batch_end_time = time.time()
+                string = '[Epoch: {}] [Batch: {}] [Time: {:.3f}] '.format(epoch, batch_index, batch_time)
+                string += '[Classification: {:.5f}] [Regression: {:.5f}] [Total: {:.5f}]'.format(classification_loss,
+                                                                                                 regression_loss,
+                                                                                                 loss)
+                print(string)
+
+                loss = classification_loss + regression_loss
+                classification_loss = float(classification_loss)
+                regression_loss = float(regression_loss)
+                loss.backward()
+                self.optimizer.step()
+
+                # Increment epoch loss
+                epoch_losses['classification'] += classification_loss
+                epoch_losses['regression'] += regression_loss
+                epoch_losses['total'] += float(loss)
+
+            # Save weights
+            self.save_weights(epoch)
+
+    def save_weights(self, epoch):
+        """Save the model state dict."""
+        path = os.path.join(self.logs_dir, 'epoch_{}_model.pth'.format(epoch))
+        print("[Epoch {}] Saving model's state dict to: {}".format(epoch, path))
+        self.model.save_state(path)
+
+    def compute_map(self, epoch, threshold=0.1):
+        """TODO:"""
+        pass
+
+    # -----------------------------------
+    #              GETTERS
+    # -----------------------------------
+
+    @staticmethod
+    def get_hyperparameters(hyperparameters):
+        """Return the hyperparameters for the model and training.
+
+        Returns:
+            (dict): The joined hyperparameters.
+        """
+        raise NotImplementedError()
+
+    def get_model(self):
+        """Initialize and return the model to train.
+
+        Returns:
+            (torch.nn.Module): The encoder that will generate the embeddings.
+        """
+        raise NotImplementedError()
+
+    def get_criterion(self):
+        """Returns the criterion (or loss) for the training.
+
+        Returns:
+            (nn.Module): The loss for the training.
+        """
+        raise NotImplementedError()
+
+    def get_transform(self):
+        """Get the transform to apply over the dataset.
+
+        Returns:
+            (torchvision.transforms.Compose): The transform to apply over the dataset.
+        """
+        raise NotImplementedError()
+
+    def get_datasets(self):
+        """Get the training and validation datasets.
+
+        Returns:
+            (torch.utils.data.Dataset): The dataset for training.
+            (torch.utils.data.Dataset): The dataset for validation.
+        """
+        raise NotImplementedError()
+
+    def get_dataloaders(self):
+        """Returns the train and validation dataloaders.
+
+        Returns:
+            (torch.utils.data.DataLoader): The dataloader that will sample the elements from the training dataset.
+            (torch.utils.data.DataLoader): The dataloader that will sample the elements from the validation dataset.
+        """
+        raise NotImplementedError()
+
+    def get_optimizer(self):
+        """Returns the optimizer of the training.
+
+        Stochastic Gradient Descent:
+        https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html
+
+        Returns:
+            optimizer (torch.optim.Optimizer): The optimizer of the training.
+                For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+        """
+        learning_rate = self.hyperparameters['learning_rate']
+        return torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
