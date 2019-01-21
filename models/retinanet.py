@@ -275,7 +275,6 @@ class RetinaNet(nn.Module):
     This Network is for object detection, so its outputs are the regressions
     for the bounding boxes for each anchor and the probabilities for each class for each anchor.
 
-    TODO:
     In training mode returns all the predicted values (all bounding boxes and classes for all the anchors)
     and in evaluation mode applies Non-Maximum suppresion to return only the relevant detections with shape
     (N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class' label.
@@ -371,8 +370,7 @@ class RetinaNet(nn.Module):
             torch.Tensor: A tensor with the base anchors.
                 Shape:
                     (batch size, total anchors, 4)
-            torch.Tensor: A tensor with that indicates the position of each bounding box as x1, y1, x2, y2
-                (top left corner and bottom right corner of the bounding box).
+            torch.Tensor: A tensor with the regression values to adjust the anchors to a bounding box.
                 Shape:
                     (batch size, total anchors, 4)
             torch.Tensor: A tensor with the probability of each class for each anchor.
@@ -392,14 +390,14 @@ class RetinaNet(nn.Module):
         del feature_maps
         # Transform the anchors to bounding boxes
         anchors = self.anchors(images)
-        bounding_boxes = self.anchors.transform(anchors, regressions)
-        del regressions
-        # Clip the boxes to fit in the image
-        bounding_boxes = self.anchors.clip(images, bounding_boxes)
 
         if self.training:
-            return anchors, bounding_boxes, classifications
+            return anchors, regressions, classifications
         else:
+            bounding_boxes = self.anchors.transform(anchors, regressions)
+            del regressions
+            # Clip the boxes to fit in the image
+            bounding_boxes = self.anchors.clip(images, bounding_boxes)
             # Generate a sequence of (bounding_boxes, classifications) for each image
             return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
 
