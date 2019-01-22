@@ -6,19 +6,32 @@ import torch
 
 
 class AbstractTrainer():
-    """Abstract trainer to fit a pytorch model.
+    """Abstract trainer to train a pytorch object detection model.
 
-    To use this trainer you must override the getters methods.
+    To create a trainer please override the getters methods.
+
+    Attributes:
+        hyperparameters (dict): The hyperparameters for the training.
+            Here you can add the 'learning_rate' hyperparameter.
+        dataset (torch.utils.data.Dataset): The dataset for training.
+        valid_dataset (torch.utils.data.Dataset): The validation dataset.
+        device (str): The device where is running the training.
+        model (torch.nn.Module): The model that is training.
+        dataloader (torch.utils.data.Dataloader): The dataloader for the training dataset.
+        valid_dataloader (torch.utils.data.Dataloader): The dataloader for the validation dataset.
+        criterion (torch.nn.Module): The criterion -or loss- function for the training.
+        optimizer (torch.optim.Optimizer): The optimizer for the training.
     """
 
-    def __init__(self, logs_dir='./logs'):
+    def __init__(self, hyperparameters, logs_dir='./logs'):
         """Initialize the trainer. Sets the hyperparameters for the training.
 
         Args:
+            hyperparameters (dict): The hyperparameters for the training.
             logs_dir (string): Path to the directory where to save the logs.
         """
         print('***** TRAINER *****')
-        self.hyperparameters = self.get_hyperparameters()
+        self.hyperparameters = hyperparameters
 
         # Set the datasets
         self.dataset, self.valid_dataset = self.get_datasets()
@@ -26,7 +39,7 @@ class AbstractTrainer():
         # Set the model, data loaders, criterion and optimizer for the training
         self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.model = self.get_model()
-        self.train_loader, self.valid_loader = self.get_dataloaders()
+        self.dataloader, self.valid_dataloader = self.get_dataloaders()
         self.criterion = self.get_criterion()
         self.optimizer = self.get_optimizer()
 
@@ -56,7 +69,7 @@ class AbstractTrainer():
 
         for epoch in range(epochs):
 
-            epoch_start_time, last_batch_end_time = time.time(), time.time()
+            last_endtime = time.time()
 
             epoch_losses = {'regression': 0, 'classification': 0, 'total': 0}
 
@@ -64,7 +77,7 @@ class AbstractTrainer():
             # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
             self.model.train()
 
-            for batch_index, (images, annotations) in enumerate(self.train_loader):
+            for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
                 images, annotations = images.to(self.device), annotations.to(self.device)
 
                 # Optimize
@@ -75,18 +88,11 @@ class AbstractTrainer():
                                                                       annotations)
                 del anchors, regressions, classifications, annotations
 
-                # Log the batch
-                batch_time = time.time() - last_batch_end_time
-                last_batch_end_time = time.time()
-                string = '[Epoch: {}] [Batch: {}] [Time: {:.3f}] '.format(epoch, batch_index, batch_time)
-                string += '[Classification: {:.5f}] [Regression: {:.5f}] [Total: {:.5f}]'.format(classification_loss,
-                                                                                                 regression_loss,
-                                                                                                 loss)
-                print(string)
-
                 loss = classification_loss + regression_loss
+                # Set as float to free memory
                 classification_loss = float(classification_loss)
                 regression_loss = float(regression_loss)
+                # Optimize
                 loss.backward()
                 self.optimizer.step()
 
@@ -95,8 +101,21 @@ class AbstractTrainer():
                 epoch_losses['regression'] += regression_loss
                 epoch_losses['total'] += float(loss)
 
+                # Log the batch
+                batch_time = time.time() - last_endtime
+                last_endtime = time.time()
+                string = '[Epoch: {}] [Batch: {}] [Time: {:.3f}] '.format(epoch, batch_index, batch_time)
+                string += '[Classification: {:.5f}] [Regression: {:.5f}] [Total: {:.5f}]'.format(classification_loss,
+                                                                                                 regression_loss,
+                                                                                                 loss)
+                print(string)
+
             # Save weights
             self.save_weights(epoch)
+
+            # Validate
+            self.validate()
+
 
     def save_weights(self, epoch):
         """Save the model state dict."""
@@ -104,22 +123,16 @@ class AbstractTrainer():
         print("[Epoch {}] Saving model's state dict to: {}".format(epoch, path))
         self.model.save_state(path)
 
-    def compute_map(self, epoch, threshold=0.1):
-        """TODO:"""
+    def validate(self):
+        """Validation method.
+
+        It's called after each epoch. Use it like you want.
+        """
         pass
 
     # -----------------------------------
     #              GETTERS
     # -----------------------------------
-
-    @staticmethod
-    def get_hyperparameters(hyperparameters):
-        """Return the hyperparameters for the model and training.
-
-        Returns:
-            (dict): The joined hyperparameters.
-        """
-        raise NotImplementedError()
 
     def get_model(self):
         """Initialize and return the model to train.
@@ -173,5 +186,5 @@ class AbstractTrainer():
             optimizer (torch.optim.Optimizer): The optimizer of the training.
                 For the optimizer package see: https://pytorch.org/docs/stable/optim.html
         """
-        learning_rate = self.hyperparameters['learning_rate']
+        learning_rate = self.hyperparameters['learning_rate'] if 'learning_rate' in self.hyperparameters else 1e-4
         return torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
