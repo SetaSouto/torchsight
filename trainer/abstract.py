@@ -177,14 +177,10 @@ class AbstractTrainer():
         raise NotImplementedError()
 
     def get_optimizer(self):
-        """Returns the optimizer of the training.
-
-        Stochastic Gradient Descent:
-        https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html
+        """Get the optimizer of the training.
 
         Returns:
             optimizer (torch.optim.Optimizer): The optimizer of the training.
                 For the optimizer package see: https://pytorch.org/docs/stable/optim.html
         """
-        learning_rate = self.hyperparameters['learning_rate'] if 'learning_rate' in self.hyperparameters else 1e-4
-        return torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
+        raise NotImplementedError()
