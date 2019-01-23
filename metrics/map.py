@@ -3,6 +3,8 @@ import torch
 
 from ..metrics import iou as compute_iou
 
+# TODO: Write test. This could be easily tested.
+
 
 class MeanAP():
     """Class to compute the Mean Average Precision.
@@ -104,9 +106,9 @@ class MeanAP():
             precisions = torch.zeros((11))
             for j, recall in enumerate(torch.range(0, 1, 0.1)):
                 # Generate the mask to keep only precisions over the current recall
-                mask = metrics[:, 2] > recall
+                mask = metrics[:, 2] >= recall
                 # Set the precision
-                precision[j] = metrics[mask, 1].max()[0]
+                precisions[j] = metrics[mask, 1].max()[0]
             # Put the Average Precision
             average_precisions[i] = precisions.mean()
         # Return the mAP
