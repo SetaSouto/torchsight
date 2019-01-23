@@ -149,7 +149,7 @@ class RetinaNetTrainer(AbstractTrainer):
             max_annotations = max([annotations.shape[0] for _, annotations in data])
 
             def fill(annotations):
-                aux = torch.ones((max_annotations, 5)).to(self.device)
+                aux = -1 * torch.ones((max_annotations, 5)).to(self.device)
                 aux[:annotations.shape[0], :] = annotations
                 return aux
 

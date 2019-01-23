@@ -10,19 +10,22 @@ from skimage.transform import resize
 
 from torchvision.transforms.functional import normalize, to_tensor
 
-# TODO: Change way of resize, use the Resize that is in the other repo, this generate too many padding
-# We don't need a squared image, we only need an image with sizes multiplies of 32.
+
 class Resize():
-    """Resize an image and pad it to fit the square.
+    """Resize an image to fit between the min_side and max_side.
 
-    It takes the size of the required square and make the largest side of the image take this length.
+    It tries to match the smallest side of the image to the min_side attribute of this transform
+    and if the biggest side of the image after the transformation will be over the max_size attribute
+    it instead resize the image to match the biggest side to the max_size attribute.
 
-    It works with a tuple where it first value is a ndarray image and the second value
-    are the bounding boxes.
+    Also, it tries to keep a multiple of the stride attribute on each of the sides to match design
+    better the feature map. 
     """
 
-    def __init__(self, size=800):
-        self.size = size
+    def __init__(self, min_side=608, max_side=960, stride=32):
+        self.min_side = min_side
+        self.max_side = max_side
+        self.stride = stride
 
     def __call__(self, data):
         """Resize the image and scale the bounding boxes.
@@ -33,24 +36,28 @@ class Resize():
         image, bounding_boxes = data
         height, width, channels = image.shape
 
-        if height > width:
-            scale = self.size / height
-            new_width = int(round(width * scale))
-            new_height = self.size
-        else:
-            scale = self.size / width
-            new_width = self.size
-            new_height = int(round(height * scale))
+        smallest_side = height if height < width else width
+        biggest_side = height if height > width else width
+
+        scale = self.min_side / smallest_side
+        scale = self.max_side / biggest_side if scale * biggest_side > self.max_side else scale
+
+        new_width = round(width * scale)
+        new_height = round(height * scale)
+
+        padding_width = new_width % self.stride
+        padding_height = new_height % self.stride
 
         image = resize(image, (new_height, new_width))
         height, width, channels = image.shape
 
-        square = np.zeros((self.size, self.size, channels))
-        square[:height, :width, :] = image
+        final = np.zeros((new_height + padding_height, new_width + padding_width, channels))
+        final[:height, :width, :] = image
 
         bounding_boxes[:, :4] *= scale
 
-        return square, bounding_boxes
+        return final, bounding_boxes
+
 
 class ToTensor():
     """Transform a tuple with a PIL image or ndarray and bounding boxes to tensors.
@@ -61,8 +68,12 @@ class ToTensor():
     def __call__(self, data):
         """Transforms the image and bounding boxes to tensors.
 
-        Args:
+        Arguments:
             data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
+
+        Returns:
+            torch.Tensor: The image.
+            torch.Tensor: The annotations.
         """
         return to_tensor(data[0]), torch.from_numpy(data[1])
 
@@ -75,15 +86,13 @@ class Normalize():
     It works with a tuple and it assumes that the first element is the image as a tensor.
     """
 
-    def __init__(self, mean=None, std=None):
+    def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
         """Initialize the normalizer with the given mean and std.
 
-        If there is no mean or std it assigns them automatically.
+        Arguments:
+            mean (sequence): Sequence of floats that contains the mean to which normalize each channel.
+            std (sequence): The standard deviation for each of the channels.
         """
-        if mean is None:
-            mean = [0.485, 0.456, 0.406]
-        if std is None:
-            std = [0.229, 0.224, 0.225]
 
         self.mean = mean
         self.std = std
@@ -91,8 +100,11 @@ class Normalize():
     def __call__(self, data):
         """Normalize the first element of the tuple assuming that is an image.
 
-        Args:
+        Arguments:
             data (tuple): A tuple where it first element is an image as a tensor.
+
+        Returns:
+            torch.Tensor: The image normalized.
         """
         image, *rest = data
         return (normalize(image, self.mean, self.std), *rest)
