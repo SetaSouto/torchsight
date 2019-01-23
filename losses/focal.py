@@ -5,6 +5,7 @@ https://arxiv.org/pdf/1708.02002.pdf
 """
 import torch
 from torch import nn
+from ..metrics import iou as compute_iou
 
 
 class FocalLoss(nn.Module):
@@ -85,7 +86,7 @@ class FocalLoss(nn.Module):
                 regression_losses.append(torch.Tensor([0]).to(self.device))
                 continue
 
-            iou = self.iou(anchors, annotations)  # (number of anchors, number of annotations)
+            iou = compute_iou(anchors, annotations)  # (number of anchors, number of annotations)
             iou_max, iou_argmax = iou.max(dim=1)  # (number of anchors)
             # Free memory
             del iou
@@ -168,94 +169,3 @@ class FocalLoss(nn.Module):
 
         # Return the mean classification loss and the mean regression loss
         return torch.stack(classification_losses).mean(), torch.stack(regression_losses).mean()
-
-    @staticmethod
-    def iou(anchors, annotations):
-        """Calculates the Intersection over Union (IoU) between the anchors and the bounding boxes.
-
-        Args:
-            anchors (torch.Tensor): The tensor with the base anchors.
-                4 values for x1, y1, x2, y2.
-                Shape:
-                    (total anchors, 4)
-            annotations (torch.Tensor): The tensor with the annotations of the image.
-                4 values for x1, y1, x2, y2.
-                Shape:
-                    (number of annotations, 4)
-
-        Returns:
-            torch.Tensor: The iou between all the anchors and the annotations.
-                Shape:
-                    (number of anchors, number of annotations)
-
-        How this work?
-
-        Let's say that d = batch size * width * height and b = number of annotations.
-
-        The beautiful idea behind this function is to unsqueeze the anchors (add one dimension) to change the
-        shape from (d) to (d, 1) and with the bounding box with shape (b) the operation broadcast
-        to finally get shape (d, b).
-
-        Broadcast:
-        PyTorch: https://pytorch.org/docs/stable/notes/broadcasting.html
-        Numpy: https://docs.scipy.org/doc/numpy-1.10.4/user/basics.broadcasting.html
-
-        The broadcast always goes from the last dimension to the first, so we have (b) with (d, 1), that is
-        to look the tensors as:
-
-        (d, 1)
-        (   b)
-        ------
-        (d, b)
-
-        So the final result is a tensor with shape (d, b).
-
-        How can we read this broadcasting?
-
-        The tensor with shape (d, 1) has "d rows with 1 column", and the vector with shape (b) has "b columns",
-        this is the correct way to read the shapes. That's why if you print a tensor with shape (b) you get
-        a vector as a row. And if you print a tensor with shape (d, 1) is like a matrix with d rows
-        and 1 column. Always we start reading the tensors from the last element of its shape and in the order
-        of "columns -> rows -> channels -> batches".
-
-        So the first tensor with shape (d, 1) to match the (d, b) shape must repeat its single element of each
-        row to match the column size. Ex:
-        [[0],       [[0, 0, 0],
-         [1],  -->   [1, 1, 1],
-         [2]]        [2, 2, 2]]
-
-        And the second tensor with shape (b) to match the (d, b) shape must repeat the values for each column
-        to match the d rows. Ex:
-        [3, 4, 5, 6]  --> [[3, 4, 5, 6],
-                           [3, 4, 5, 6],
-                           [3, 4, 5, 6]]
-
-        Keep in mind this trick.
-        Check how these "vectors" broadcast to the (d, b) matrix but with different ways. One repeat the column
-        and the other repeat the rows.
-
-        And now we can make calculations all vs all between the d anchors and the b bounding boxes without
-        the need of a for loop. That's beautiful and efficient.
-
-        Also, notice that the images are (channels, height, width), totally consequent with this vision on how
-        to read the shapes.
-        """
-        # Shape (number of anchors)
-        anchors_area = (anchors[:, 2] - anchors[:, 0]) * (anchors[:, 3] - anchors[:, 1])
-        # Shape (number of annotations)
-        annotations_area = (annotations[:, 2] - annotations[:, 0]) * (annotations[:, 3] - annotations[:, 1])
-
-        # Shape (anchors, annotations)
-        intersection_x1 = torch.max(anchors[:, 0].unsqueeze(dim=1), annotations[:, 0])
-        intersection_y1 = torch.max(anchors[:, 1].unsqueeze(dim=1), annotations[:, 1])
-        intersection_x2 = torch.min(anchors[:, 2].unsqueeze(dim=1), annotations[:, 2])
-        intersection_y2 = torch.min(anchors[:, 3].unsqueeze(dim=1), annotations[:, 3])
-
-        intersection_width = torch.clamp(intersection_x2 - intersection_x1, min=0)
-        intersection_height = torch.clamp(intersection_y2 - intersection_y1, min=0)
-        intersection_area = intersection_width * intersection_height
-
-        union_area = torch.unsqueeze(anchors_area, dim=1) + annotations_area - intersection_area
-        union_area = torch.clamp(union_area, min=1e-8)
-
-        return intersection_area / union_area
