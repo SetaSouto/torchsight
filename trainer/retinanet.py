@@ -2,7 +2,10 @@
 import torch
 from torch.utils.data import DataLoader
 
+from torchvision import transforms
+
 from ..datasets import CocoDataset
+from ..datasets.transforms import Normalize, Resize, ToTensor
 from ..losses import FocalLoss
 from ..models import RetinaNet
 from .abstract import AbstractTrainer
@@ -11,12 +14,11 @@ from .abstract import AbstractTrainer
 class RetinaNetTrainer(AbstractTrainer):
     """Trainer for the RetinaNet model.
 
-    As default it uses the Coco dataset.
+    For each one of the hyperparameters please visit the class docstring.
     """
 
     def __init__(self,
                  hyperparameters={
-                     # RetinaNet hyperparameters. See the class docstring for more info.
                      'RetinaNet': {
                          'classes': 80,
                          'resnet': 50,
@@ -35,7 +37,10 @@ class RetinaNetTrainer(AbstractTrainer):
                      'FocalLoss': {
                          'alpha': 0.25,
                          'gamma': 2.0,
-                         'iou_thresholds': {'background': 0.4, 'object': 0.5}
+                         'iou_thresholds': {
+                             'background': 0.4,
+                             'object': 0.5
+                         }
                      },
                      'datasets': {
                          'root': '/media/souto/DATA/HDD/datasets/coco',
@@ -50,10 +55,20 @@ class RetinaNetTrainer(AbstractTrainer):
                          'learning_rate': 1e-4,
                          'momentum': 0.9,
                          'weight_decay': 5e-4
+                     },
+                     'transforms': {
+                         'resize': {
+                             'min_side': 608,
+                             'max_side': 960,
+                             'stride': 32
+                         },
+                         'normalize': {
+                             'mean': [0.485, 0.456, 0.406],
+                             'std': [0.229, 0.224, 0.225]
+                         }
                      }
                  },
-                 logs='./logs'
-                 ):
+                 logs='./logs'):
         """Initialize the trainer.
 
         Arguments:
@@ -91,8 +106,17 @@ class RetinaNetTrainer(AbstractTrainer):
         )
 
     def get_transform(self):
-        """TODO:"""
-        pass
+        """Initialize and get the transforms for the images.
+
+        Returns:
+            torchvision.transform.Compose: The Compose of the transformations.
+        """
+        hyperparameters = self.hyperparameters['transforms']
+        return transforms.Compose([
+            Resize(**hyperparameters['resize']),
+            ToTensor(),
+            Normalize(**hyperparameters['normalize'])
+        ])
 
     def get_datasets(self):
         """Initialize and get the Coco dataset for training and evaluation.
@@ -100,7 +124,7 @@ class RetinaNetTrainer(AbstractTrainer):
         Returns:
             torch.utils.data.Dataset: The Coco dataset.
         """
-        transform = None  # TODO: self.get_transform()
+        transform = self.get_transform()
         hyperparameters = self.hyperparameters['datasets']
         return (
             CocoDataset(
