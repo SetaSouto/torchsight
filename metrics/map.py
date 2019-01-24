@@ -70,12 +70,13 @@ class MeanAP():
         # Compute Intersection over Union between the detections and the annotations
         iou = compute_iou(detections[:, :4], annotations[:, :4])  # (number of detections, number of annotations)
 
-        # Get the assigned annotation for each detection by its max IoU with an annotation
+        # Get the assigned annotation for each detection by its max IoU with an annotation.
+        # Now we can get the assigned annotation for each detection (for example, the detection 17 is assigned to the
+        # ground truth annotation 9 with an IoU that is the maximum IoU of the detection with any annotation)
         iou_max, assigned_annotation = iou.max(dim=1)  # (number of detections)
+
         # Create a tensor that indicates with a 1 if the label of the detection correspond to its assigned annotation
         correct = annotations[assigned_annotation, -1] == detections[:, -2]  # Shape (number of detections)
-        # Now we can get the assigned annotation for each detection (for example, the detection 17 is assigned to the
-        # ground truth annotation 9 with an IoU that is maximum IoU of the detection with any annotation)
 
         iou_thresholds = torch.range(self.start, self.stop, self.step)
         average_precisions = torch.zeros((iou_thresholds))
