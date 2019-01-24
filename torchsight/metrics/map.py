@@ -3,8 +3,6 @@ import torch
 
 from ..metrics import iou as compute_iou
 
-# TODO: Write test. This could be easily tested.
-
 
 class MeanAP():
     """Class to compute the Mean Average Precision.
@@ -79,7 +77,7 @@ class MeanAP():
         correct = annotations[assigned_annotation, -1] == detections[:, -2]  # Shape (number of detections)
 
         iou_thresholds = torch.range(self.start, self.stop, self.step)
-        average_precisions = torch.zeros((iou_thresholds))
+        average_precisions = torch.zeros((iou_thresholds.shape[0]))
 
         for i, threshold in enumerate(iou_thresholds):
             # Keep only detections with an IoU with its assigned annotation over the threshold
@@ -101,15 +99,18 @@ class MeanAP():
                 # Compute precision and recall
                 precision = n_correct / n_proposals
                 recall = n_correct / n_total_annotations
-                metrics[:, 1] = precision
-                metrics[:, 2] = recall
+                metrics[j, 1] = precision
+                metrics[j, 2] = recall
             # Get the max precision over each recall between (0, 0.1, 0.2, ..., 1.0):
             precisions = torch.zeros((11))
             for j, recall in enumerate(torch.range(0, 1, 0.1)):
                 # Generate the mask to keep only precisions over the current recall
                 mask = metrics[:, 2] >= recall
                 # Set the precision
-                precisions[j] = metrics[mask, 1].max()[0]
+                if mask.sum() > 0:
+                    precisions[j] = metrics[mask, 1].max().item()
+                else:
+                    precisions[j] = 0.
             # Put the Average Precision
             average_precisions[i] = precisions.mean()
         # Return the mAP
