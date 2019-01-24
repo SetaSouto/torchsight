@@ -1,26 +1,23 @@
 """Visualize some images from the Coco dataset"""
+import argparse
 import random
-import sys
-from os import path
 
+from torchsight.datasets import CocoDataset
+from torchsight.transforms import Resize
 from torchvision import transforms
 
-sys.path.insert(0, path.abspath(path.join(path.dirname(__file__), '..')))
-from datasets.coco import CocoDataset
-from datasets.transforms import Resize
+PARSER = argparse.ArgumentParser(description='Visualize some images from the CocoDataset.')
+PARSER.add_argument('root', help='The root directory where is the data.')
+PARSER.add_argument('-d', '--dataset', nargs='?', default='val2017', help='The dataset to be loaded. Ex: "val2017"')
+PARSER.add_argument('--no-random', action='store_const', const=False, default=True, help='Show random images.')
 
+ARGUMENTS = PARSER.parse_args()
 
-# Configurations
-ROOT = '/media/souto/DATA/HDD/datasets/coco'  # My custom root path
-DATASET = 'val2017'  # The dataset that we are going to visualize
-RANDOM = True  # Select random images
 TRANSFORMS = transforms.Compose([Resize()])
-
-# Visualize
-DATASET = CocoDataset(ROOT, DATASET, classes_names=(), transform=TRANSFORMS)
+DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(), transform=TRANSFORMS)
 INDEXES = list(range(len(DATASET)))
 
-if RANDOM:
+if ARGUMENTS.no_random:
     random.shuffle(INDEXES)
 
 for index in INDEXES:

@@ -19,7 +19,7 @@ class Resize():
     it instead resize the image to match the biggest side to the max_size attribute.
 
     Also, it tries to keep a multiple of the stride attribute on each of the sides to match design
-    better the feature map. 
+    better the feature map.
     """
 
     def __init__(self, min_side=608, max_side=960, stride=32):
