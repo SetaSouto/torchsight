@@ -1,4 +1,4 @@
-"""Test the metricks package."""
+"""Test the map module."""
 import argparse
 import sys
 import unittest
