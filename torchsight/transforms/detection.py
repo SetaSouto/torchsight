@@ -1,4 +1,4 @@
-"""Useful transforms for the images for any dataset.
+"""Useful transforms for the images for any dataset for object detection.
 
 The recomendation is to compose the transforms in the order that are written:
 Resize(), ToTensor(), Normalize().

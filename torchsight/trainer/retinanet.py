@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 
 from ..datasets import CocoDataset
-from ..datasets.transforms import Normalize, Resize, ToTensor
+from ..transforms.detection import Normalize, Resize, ToTensor
 from ..losses import FocalLoss
 from ..models import RetinaNet
 from .abstract import AbstractTrainer
