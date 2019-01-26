@@ -135,7 +135,8 @@ class Anchors(nn.Module):
             for index, stride in enumerate(self.strides):
                 base_anchors = self.base_anchors[index, :, :]  # Shape (n_anchors, 4)
                 height, width = image.shape[1:]
-                feature_height, feature_width = height // stride, width // stride  # Dimensions of the feature map
+                # Get dimensions of the feature map
+                feature_height, feature_width = round(height / stride), round(width / stride)
                 # We need to move each anchor (i * shift, j * shift) for each (i,j) location in the feature map
                 # to center the anchor on the center of the location
                 shift = stride * 0.5
