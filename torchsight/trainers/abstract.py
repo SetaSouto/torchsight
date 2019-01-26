@@ -25,12 +25,13 @@ class AbstractTrainer():
 
     hyperparameters = {}  # Base hyperparameters
 
-    def __init__(self, hyperparameters, logs_dir='./logs'):
+    def __init__(self, hyperparameters, logs_dir='./logs', checkpoint=None):
         """Initialize the trainer. Sets the hyperparameters for the training.
 
         Args:
             hyperparameters (dict): The hyperparameters for the training.
-            logs_dir (string): Path to the directory where to save the logs.
+            logs_dir (str): Path to the directory where to save the logs.
+            checkpoint (str): Path to a checkpoint dict.
         """
         print('\n--------- TRAINER ----------\n')
         self.hyperparameters = self.merge_hyperparameters(self.hyperparameters, hyperparameters)
@@ -44,6 +45,12 @@ class AbstractTrainer():
         self.dataloader, self.valid_dataloader = self.get_dataloaders()
         self.criterion = self.get_criterion()
         self.optimizer = self.get_optimizer()
+
+        # Load the checkpoint if there is any
+        if checkpoint is not None:
+            self.checkpoint_epoch = self.resume(checkpoint)
+        else:
+            self.checkpoint_epoch = 0
 
         # Configure the logs
         self.logs_dir = os.path.join(logs_dir, str(int(time.time()))) if logs_dir else None
@@ -97,9 +104,8 @@ class AbstractTrainer():
             print('Logs can be found at {}'.format(self.logs_dir))
 
         for epoch in range(epochs):
-
+            epoch = epoch + 1 + self.checkpoint_epoch
             last_endtime = time.time()
-
             epoch_losses = {'regression': 0, 'classification': 0, 'total': 0}
 
             # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
@@ -124,6 +130,7 @@ class AbstractTrainer():
                 regression_loss = float(regression_loss)
                 # Optimize
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
                 self.optimizer.step()
 
                 # Increment epoch loss
@@ -141,16 +148,42 @@ class AbstractTrainer():
                 print(string)
 
             # Save weights
-            self.save_weights(epoch)
+            self.save_checkpoint(epoch)
 
             # Validate
             self.validate()
 
-    def save_weights(self, epoch):
-        """Save the model state dict."""
-        path = os.path.join(self.logs_dir, 'epoch_{}_model.pth'.format(epoch))
-        print("[Epoch {}] Saving model's state dict to: {}".format(epoch, path))
-        self.model.save_state(path)
+    def save_checkpoint(self, epoch):
+        """Save the training's parameters.
+
+        It saves the model and the optimizer.
+
+        Arguments:
+            epoch (int): The epoch when this checkpoint was generated.
+        """
+        path = os.path.join(self.logs_dir, 'checkpoint_epoch_{}.pth.tar'.format(epoch))
+        print("[Epoch {}] Saving model's and optimizer's state dict to: {}".format(epoch, path))
+        checkpoint = {
+            'epoch': epoch,
+            'model': self.model.state_dict(),
+            'optimizer': self.optimizer.state_dict()
+        }
+        torch.save(checkpoint, path)
+
+    def resume(self, checkpoint):
+        """Load the state dicts of the model and optimizer.
+
+        Arguments:
+            checkpoint (str): The absolute path to the checkpoint file.
+
+        Returns:
+            int: The epoch when the checkpoint was saved.
+        """
+        print('Loading checkpoint from {}'.format(checkpoint))
+        checkpoint = torch.load(checkpoint)
+        self.model.load_state_dict(checkpoint['model'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        return checkpoint['epoch']
 
     def validate(self):
         """Validation method.
