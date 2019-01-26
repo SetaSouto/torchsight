@@ -23,6 +23,8 @@ class AbstractTrainer():
         optimizer (torch.optim.Optimizer): The optimizer for the training.
     """
 
+    hyperparameters = {}  # Base hyperparameters
+
     def __init__(self, hyperparameters, logs_dir='./logs'):
         """Initialize the trainer. Sets the hyperparameters for the training.
 
@@ -31,7 +33,7 @@ class AbstractTrainer():
             logs_dir (string): Path to the directory where to save the logs.
         """
         print('***** TRAINER *****')
-        self.hyperparameters = hyperparameters
+        self.hyperparameters = self.merge_hyperparameters(self.hyperparameters, hyperparameters)
 
         # Set the datasets
         self.dataset, self.valid_dataset = self.get_datasets()
@@ -52,6 +54,32 @@ class AbstractTrainer():
             description = "\n".join(["{}: {}".format(key, value) for key, value in self.hyperparameters.items()])
             with open(os.path.join(self.logs_dir, 'description.txt'), 'w') as file:
                 file.write(description)
+
+    def merge_hyperparameters(self, base, new, path=None):
+        """Merge the base hyperparameters (if there's any) with the given hyperparameters.
+
+        Arguments:
+            hyperparameters (dict): The modified hyperparameters.
+
+        Returns:
+            dict: The deeply merged hyperparameters.
+        """
+        if path is None:
+            path = []
+
+        for key in new:
+            if key in base:
+                if isinstance(base[key], dict) and isinstance(new[key], dict):
+                    self.merge_hyperparameters(base[key], new[key], path + [str(key)])
+                elif base[key] == new[key]:
+                    pass  # same leaf value
+                else:
+                    print('INFO: Replacing base hyperparameter "{}" with value <{}> for <{}>.'.format(key, base[key],
+                                                                                                      new[key]))
+                    base[key] = new[key]
+            else:
+                print('Warn: Hyperparameter "{key}" not present in base hyperparameters.'.format(key=key))
+        return base
 
     def train(self, epochs=100):
         """Train the model for the given epochs.
@@ -115,7 +143,6 @@ class AbstractTrainer():
 
             # Validate
             self.validate()
-
 
     def save_weights(self, epoch):
         """Save the model state dict."""

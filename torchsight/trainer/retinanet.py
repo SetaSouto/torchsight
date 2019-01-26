@@ -16,59 +16,60 @@ class RetinaNetTrainer(AbstractTrainer):
 
     For each one of the hyperparameters please visit the class docstring.
     """
+    # Base hyperparameters, can be replaced in the initialization of the trainer:
+    # >>> RetinaNetTrainer(hyperparameters={'RetinaNet': {'classes': 1}})
+    hyperparameters = {
+        'RetinaNet': {
+            'classes': 80,
+            'resnet': 50,
+            'features': {
+                'pyramid': 256,
+                'regression': 256,
+                'classification': 256
+            },
+            'anchors': {
+                'sizes': [32, 64, 128, 256, 512],
+                'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
+                'ratios': [0.5, 1, 2]
+            },
+            'pretrained': True
+        },
+        'FocalLoss': {
+            'alpha': 0.25,
+            'gamma': 2.0,
+            'iou_thresholds': {
+                'background': 0.4,
+                'object': 0.5
+            }
+        },
+        'datasets': {
+            'root': '/media/souto/DATA/HDD/datasets/coco',
+            'class_names': ('person')  # () indicates all classes
+        },
+        'dataloaders': {
+            'batch_size': 2,
+            'shuffle': True,
+            'num_workers': 4
+        },
+        'optimizer': {
+            'learning_rate': 1e-4,
+            'momentum': 0.9,
+            'weight_decay': 5e-4
+        },
+        'transforms': {
+            'resize': {
+                'min_side': 608,
+                'max_side': 960,
+                'stride': 32
+            },
+            'normalize': {
+                'mean': [0.485, 0.456, 0.406],
+                'std': [0.229, 0.224, 0.225]
+            }
+        }
+    }
 
-    def __init__(self,
-                 hyperparameters={
-                     'RetinaNet': {
-                         'classes': 80,
-                         'resnet': 50,
-                         'features': {
-                             'pyramid': 256,
-                             'regression': 256,
-                             'classification': 256
-                         },
-                         'anchors': {
-                             'sizes': [32, 64, 128, 256, 512],
-                             'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
-                             'ratios': [0.5, 1, 2]
-                         },
-                         'pretrained': True
-                     },
-                     'FocalLoss': {
-                         'alpha': 0.25,
-                         'gamma': 2.0,
-                         'iou_thresholds': {
-                             'background': 0.4,
-                             'object': 0.5
-                         }
-                     },
-                     'datasets': {
-                         'root': '/media/souto/DATA/HDD/datasets/coco',
-                         'class_names': ()  # ALL
-                     },
-                     'dataloaders': {
-                         'batch_size': 32,
-                         'shuffle': True,
-                         'num_workers': 4
-                     },
-                     'optimizer': {
-                         'learning_rate': 1e-4,
-                         'momentum': 0.9,
-                         'weight_decay': 5e-4
-                     },
-                     'transforms': {
-                         'resize': {
-                             'min_side': 608,
-                             'max_side': 960,
-                             'stride': 32
-                         },
-                         'normalize': {
-                             'mean': [0.485, 0.456, 0.406],
-                             'std': [0.229, 0.224, 0.225]
-                         }
-                     }
-                 },
-                 logs='./logs'):
+    def __init__(self, hyperparameters={}, logs='./logs'):
         """Initialize the trainer.
 
         Arguments:
@@ -126,6 +127,14 @@ class RetinaNetTrainer(AbstractTrainer):
         """
         transform = self.get_transform()
         hyperparameters = self.hyperparameters['datasets']
+
+        retina_classes = self.hyperparameters['RetinaNet']['classes']
+        dataset_classes = len(hyperparameters['class_names'])
+        if dataset_classes > 0 and retina_classes != dataset_classes:
+            raise ValueError(' '.join(['The amount of classes for the RetinaNet model ({})'.format(retina_classes),
+                                       'must be the same to the length of "class_names" in',
+                                       'the "dataset" hyperparameters ({}).'.format(dataset_classes)]))
+
         return (
             CocoDataset(
                 root=hyperparameters['root'],
