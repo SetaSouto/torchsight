@@ -44,12 +44,12 @@ class RetinaNetTrainer(AbstractTrainer):
         },
         'datasets': {
             'root': '/media/souto/DATA/HDD/datasets/coco',
-            'class_names': ('person')  # () indicates all classes
+            'class_names': ()  # () indicates all classes
         },
         'dataloaders': {
-            'batch_size': 2,
+            'batch_size': 4,
             'shuffle': True,
-            'num_workers': 4
+            'num_workers': 1
         },
         'optimizer': {
             'learning_rate': 1e-4,
@@ -139,13 +139,13 @@ class RetinaNetTrainer(AbstractTrainer):
             CocoDataset(
                 root=hyperparameters['root'],
                 dataset='train2017',
-                classes_names=hyperparameters['classes_names'],
+                classes_names=hyperparameters['class_names'],
                 transform=transform
             ),
             CocoDataset(
                 root=hyperparameters['root'],
                 dataset='val2017',
-                classes_names=hyperparameters['classes_names'],
+                classes_names=hyperparameters['class_names'],
                 transform=transform
             )
         )
@@ -167,6 +167,8 @@ class RetinaNetTrainer(AbstractTrainer):
             Why -1?
             Because the FocalLoss could interpret that label and ingore it for the loss.
 
+            Also it pads the images so all has the same size.
+
             Arguments:
                 data (sequence): Sequence of tuples as (image, annotations).
 
@@ -178,21 +180,35 @@ class RetinaNetTrainer(AbstractTrainer):
                     Shape:
                         (batch size, biggest amount of annotations, 5)
             """
-            images = torch.stack([image for image, _ in data], dim=0)
+            images = [image for image, _ in data]
+            max_width = max([image.shape[-1] for image in images])
+            max_height = max([image.shape[-2] for image in images])
+
+            print(max_height, max_width)
+
+            def pad_image(image):
+                aux = torch.zeros((image.shape[0], max_height, max_width))
+                aux[:, :image.shape[1], :image.shape[2]] = image
+                return aux
+
+            images = torch.stack([pad_image(image) for image, _ in data], dim=0)
+
             max_annotations = max([annotations.shape[0] for _, annotations in data])
 
-            def fill(annotations):
-                aux = -1 * torch.ones((max_annotations, 5)).to(self.device)
+            def fill_annotations(annotations):
+                aux = torch.ones((max_annotations, 5))
+                aux *= -1
                 aux[:annotations.shape[0], :] = annotations
                 return aux
 
-            annotations = torch.stack([fill(a) for _, a in data], dim=0)
+            annotations = torch.stack([fill_annotations(a) for _, a in data], dim=0)
             return images, annotations
 
         hyperparameters = {**self.hyperparameters['dataloaders'], 'collate_fn': collate}
+
         return (
-            DataLoader(dataset=self.dataset, *hyperparameters),
-            DataLoader(dataset=self.valid_dataset, *hyperparameters)
+            DataLoader(dataset=self.dataset, **hyperparameters),
+            DataLoader(dataset=self.valid_dataset, **hyperparameters)
         )
 
     def get_optimizer(self):

@@ -22,7 +22,7 @@ class Resize():
     better the feature map.
     """
 
-    def __init__(self, min_side=608, max_side=960, stride=32):
+    def __init__(self, min_side=608, max_side=928, stride=32):
         self.min_side = min_side
         self.max_side = max_side
         self.stride = stride
@@ -45,10 +45,12 @@ class Resize():
         new_width = round(width * scale)
         new_height = round(height * scale)
 
-        padding_width = new_width % self.stride
-        padding_height = new_height % self.stride
+        padding_width = self.stride - (new_width % self.stride)
+        padding_width = 0 if padding_width == 32 else padding_width
+        padding_height = self.stride - (new_height % self.stride)
+        padding_height = 0 if padding_height == 32 else padding_height
 
-        image = resize(image, (new_height, new_width))
+        image = resize(image, (new_height, new_width), mode='constant')
         height, width, channels = image.shape
 
         final = np.zeros((new_height + padding_height, new_width + padding_width, channels))

@@ -32,7 +32,7 @@ class AbstractTrainer():
             hyperparameters (dict): The hyperparameters for the training.
             logs_dir (string): Path to the directory where to save the logs.
         """
-        print('***** TRAINER *****')
+        print('\n--------- TRAINER ----------\n')
         self.hyperparameters = self.merge_hyperparameters(self.hyperparameters, hyperparameters)
 
         # Set the datasets
@@ -74,8 +74,9 @@ class AbstractTrainer():
                 elif base[key] == new[key]:
                     pass  # same leaf value
                 else:
-                    print('INFO: Replacing base hyperparameter "{}" with value <{}> for <{}>.'.format(key, base[key],
-                                                                                                      new[key]))
+                    print('INFO: Replacing base hyperparameter "{}" with value < {} > for < {} >.'.format(key,
+                                                                                                          base[key],
+                                                                                                          new[key]))
                     base[key] = new[key]
             else:
                 print('Warn: Hyperparameter "{key}" not present in base hyperparameters.'.format(key=key))
@@ -111,6 +112,7 @@ class AbstractTrainer():
                 # Optimize
                 self.optimizer.zero_grad()
                 anchors, regressions, classifications = self.model(images)
+                anchors = anchors.to(self.device)
                 del images
                 classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
                                                                       annotations)

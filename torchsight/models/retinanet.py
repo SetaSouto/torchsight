@@ -74,9 +74,9 @@ class FeaturePyramid(nn.Module):
 
         # The paper names the output for each layer a C_x where x is the number of the layer
         # ResNet output feature maps has this depths for each layer
-        c5_depth = self.backbone.output_depths[0]
-        c4_depth = self.backbone.output_depths[1]
-        c3_depth = self.backbone.output_depths[2]
+        c5_depth = self.backbone.output_channels[0]
+        c4_depth = self.backbone.output_channels[1]
+        c3_depth = self.backbone.output_channels[2]
 
         # The paper names the feature maps as P. We start from the last output, the more rich semantically.
 

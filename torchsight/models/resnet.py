@@ -220,10 +220,10 @@ class ResNet(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
         # The first layer does not apply stride because we use maxPool with stride 2
-        self.layer2 = self._make_layer(block, depths[0], layers[0])
-        self.layer3 = self._make_layer(block, depths[1], layers[1], stride=2)
-        self.layer4 = self._make_layer(block, depths[2], layers[2], stride=2)
-        self.layer5 = self._make_layer(block, depths[3], layers[3], stride=2)
+        self.layer1 = self._make_layer(block, depths[0], layers[0])
+        self.layer2 = self._make_layer(block, depths[1], layers[1], stride=2)
+        self.layer3 = self._make_layer(block, depths[2], layers[2], stride=2)
+        self.layer4 = self._make_layer(block, depths[3], layers[3], stride=2)
 
         self.classifier = False
         if num_classes is not None and num_classes > 0:
@@ -298,30 +298,30 @@ class ResNet(nn.Module):
                 If the module is a feature extractor (no num classes given) then returns a tuple
                 with the output of the last 3 layers.
                 The shapes are:
-                    - layer 5: (batch size, 512 * block.expansion, height / 32, width / 32)
-                    - layer 4: (batch size, 256 * block.expansion, height / 16, width / 16)
-                    - layer 3: (batch size, 128 * block.expansion, height / 8,  width / 8)
+                    - layer 4: (batch size, 512 * block.expansion, height / 32, width / 32)
+                    - layer 3: (batch size, 256 * block.expansion, height / 16, width / 16)
+                    - layer 2: (batch size, 128 * block.expansion, height / 8,  width / 8)
         """
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
         x = self.maxpool(x)
-        x = self.layer2(x)
+        x = self.layer1(x)
 
         if self.classifier:
+            x = self.layer2(x)
             x = self.layer3(x)
             x = self.layer4(x)
-            x = self.layer5(x)
             x = self.avgpool(x)
             x = x.view(x.size(0), -1)
             x = self.fully(x)
             return x
 
-        output3 = self.layer3(x)
+        output2 = self.layer2(x)
+        output3 = self.layer3(output2)
         output4 = self.layer4(output3)
-        output5 = self.layer5(output4)
 
-        return output5, output4, output3
+        return output4, output3, output2
 
 
 def resnet18(pretrained=False, **kwargs):
@@ -331,7 +331,7 @@ def resnet18(pretrained=False, **kwargs):
     """
     model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet18']))
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet18']), strict=False)
     return model
 
 
@@ -342,7 +342,7 @@ def resnet34(pretrained=False, **kwargs):
     """
     model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet34']))
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet34']), strict=False)
     return model
 
 
@@ -353,7 +353,7 @@ def resnet50(pretrained=False, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet50']))
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet50']), strict=False)
     return model
 
 
@@ -364,7 +364,7 @@ def resnet101(pretrained=False, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet101']))
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet101']), strict=False)
     return model
 
 
@@ -375,5 +375,5 @@ def resnet152(pretrained=False, **kwargs):
     """
     model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet152']))
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS['resnet152']), strict=False)
     return model
