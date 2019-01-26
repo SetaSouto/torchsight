@@ -47,7 +47,7 @@ class RetinaNetTrainer(AbstractTrainer):
             'class_names': ()  # () indicates all classes
         },
         'dataloaders': {
-            'batch_size': 4,
+            'batch_size': 3,
             'shuffle': True,
             'num_workers': 1
         },
@@ -58,9 +58,9 @@ class RetinaNetTrainer(AbstractTrainer):
         },
         'transforms': {
             'resize': {
-                'min_side': 608,
-                'max_side': 960,
-                'stride': 32
+                'min_side': 640,
+                'max_side': 1024,
+                'stride': 128
             },
             'normalize': {
                 'mean': [0.485, 0.456, 0.406],
@@ -183,8 +183,6 @@ class RetinaNetTrainer(AbstractTrainer):
             images = [image for image, _ in data]
             max_width = max([image.shape[-1] for image in images])
             max_height = max([image.shape[-2] for image in images])
-
-            print(max_height, max_width)
 
             def pad_image(image):
                 aux = torch.zeros((image.shape[0], max_height, max_width))

@@ -82,8 +82,8 @@ class FocalLoss(nn.Module):
             annotations = annotations[annotations[:, -1] != -1]
 
             if annotations.shape[0] == 0:
-                classification_losses.append(torch.Tensor([0]).to(self.device))
-                regression_losses.append(torch.Tensor([0]).to(self.device))
+                classification_losses.append(torch.zeros((1,)).mean().to(self.device))
+                regression_losses.append(torch.zeros((1,)).mean().to(self.device))
                 continue
 
             iou = compute_iou(anchors, annotations)  # (number of anchors, number of annotations)
@@ -115,7 +115,7 @@ class FocalLoss(nn.Module):
             alpha = torch.where(targets == 1, alpha, 1. - alpha)
             # Generate the focal weight
             focal = torch.where(targets == 1, classifications, 1 - classifications)
-            focal = alpha * torch.exp(focal, self.gamma)
+            focal = alpha * (focal ** self.gamma)
             # Get the binary cross entropy
             bce = -(targets * torch.log(classifications) + (1. - targets) * torch.log(1 - classifications))
             # Free memory
@@ -125,7 +125,7 @@ class FocalLoss(nn.Module):
             ignored_anchors = 1 - selected_anchors
             bce[ignored_anchors, :] = 0
             # Append to the classification losses
-            classification_losses.append((focal * bce).sum() / selected_anchors.sum())
+            classification_losses.append((focal * bce).sum() / selected_anchors.sum().type(torch.float))
             # Free memory
             del alpha, focal, bce, ignored_anchors, classifications, selected_anchors_backgrounds
 
@@ -133,13 +133,15 @@ class FocalLoss(nn.Module):
 
             # Append zero loss if there is no object
             if not selected_anchors_objects.sum() > 0:
-                regression_losses.append(torch.Tensor([0]).to(self.device))
+                regression_losses.append(torch.zeros((1,)).mean().to(self.device))
                 continue
 
             # Get the assigned ground truths to each one of the selected anchors to train the regression
-            assigned_annotations = assigned_annotations[selected_anchors_objects, :-1]
+            assigned_annotations = assigned_annotations[selected_anchors_objects, :-1]  # Shape (n selected anchors, 4)
             # Keep only the regressions for the selected anchors
-            regressions = regressions[selected_anchors_objects, :]
+            regressions = regressions[selected_anchors_objects, :]  # Shape (n selected anchors, 4)
+            # Keep only the selected anchors for regression
+            anchors = anchors[selected_anchors_objects, :]  # Shape (n selected anchors, 4)
             # Free memory
             del selected_anchors_objects
 
@@ -165,7 +167,7 @@ class FocalLoss(nn.Module):
             targets = torch.stack([targets_dx, targets_dy, targets_dw, targets_dh], dim=1)
 
             # Append the squared error
-            regression_losses.append(torch.abs(targets - regressions) ** 2)
+            regression_losses.append((torch.abs(targets - regressions) ** 2).mean())
 
         # Return the mean classification loss and the mean regression loss
         return torch.stack(classification_losses).mean(), torch.stack(regression_losses).mean()

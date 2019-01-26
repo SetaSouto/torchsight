@@ -22,7 +22,7 @@ class Resize():
     better the feature map.
     """
 
-    def __init__(self, min_side=608, max_side=928, stride=32):
+    def __init__(self, min_side=640, max_side=1024, stride=128):
         self.min_side = min_side
         self.max_side = max_side
         self.stride = stride
