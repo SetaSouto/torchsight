@@ -1,4 +1,5 @@
 """Base trainer module."""
+import json
 import os
 import time
 
@@ -58,9 +59,13 @@ class AbstractTrainer():
             if not os.path.exists(self.logs_dir):
                 os.makedirs(self.logs_dir)
             # Description of this instance are the hyperparameters of the training
-            description = "\n".join(["{}: {}".format(key, value) for key, value in self.hyperparameters.items()])
+            description = ['Hyperparameters\n\n', json.dumps(self.hyperparameters, indent=2)]
+
+            if checkpoint is not None:
+                description.append('\n\nCheckpoint epoch: {}'.format(self.checkpoint_epoch))
+
             with open(os.path.join(self.logs_dir, 'description.txt'), 'w') as file:
-                file.write(description)
+                file.write('\n'.join(description))
 
     def merge_hyperparameters(self, base, new, path=None):
         """Merge the base hyperparameters (if there's any) with the given hyperparameters.
@@ -182,6 +187,10 @@ class AbstractTrainer():
         checkpoint = torch.load(checkpoint)
         self.model.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
+        for state in self.optimizer.state.values():
+            for k, val in state.items():
+                if torch.is_tensor(val):
+                    state[k] = val.to(self.device)
         return checkpoint['epoch']
 
     def validate(self):
