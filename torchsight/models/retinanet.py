@@ -293,7 +293,8 @@ class RetinaNet(nn.Module):
                      'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
                      'ratios': [0.5, 1, 2]
                  },
-                 pretrained=True):
+                 pretrained=True,
+                 device=None):
         """Initialize the network.
 
         Args:
@@ -309,6 +310,8 @@ class RetinaNet(nn.Module):
                 This pretraining is provided by the torchvision package.
         """
         super(RetinaNet, self).__init__()
+
+        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         # Modules
         self.fpn = FeaturePyramid(resnet=resnet, features=features['pyramid'], pretrained=pretrained)
@@ -326,7 +329,7 @@ class RetinaNet(nn.Module):
                                              features=features['classification'])
 
         # Set the base threshold for evaluating mode
-        self.threshold = 0.1
+        self.threshold = 0.6
         self.iou_threshold = 0.5
 
     def eval(self, threshold=None, iou_threshold=None):
@@ -393,13 +396,14 @@ class RetinaNet(nn.Module):
 
         if self.training:
             return anchors, regressions, classifications
-        else:
-            bounding_boxes = self.anchors.transform(anchors, regressions)
-            del regressions
-            # Clip the boxes to fit in the image
-            bounding_boxes = self.anchors.clip(images, bounding_boxes)
-            # Generate a sequence of (bounding_boxes, classifications) for each image
-            return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
+
+        anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
+        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+        # Generate a sequence of (bounding_boxes, classifications) for each image
+        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
 
     def nms(self, boxes, classifications):
         """Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
@@ -418,11 +422,15 @@ class RetinaNet(nn.Module):
             torch.Tensor: The probabilities for each class for each bounding box keeped.
         """
         # Get the max score of any class for each anchor
-        scores = classifications.max(dim=1)[0]  # Shape (total anchors,)
+        scores, _ = classifications.max(dim=1)  # Shape (total anchors,)
         # Keep only the bounding boxes and classifications over the threshold
         scores_over_threshold = scores > self.threshold
         boxes = boxes[scores_over_threshold, :]
         classifications = classifications[scores_over_threshold, :]
+
+        if not classifications.shape[0] > 0:
+            return torch.zeros((0)).to(self.device), torch.zeros((0)).to(self.device)
+
         # Update the scores to keep only the keeped boxes
         scores = classifications.max(dim=1)[0]
 
@@ -438,20 +446,21 @@ class RetinaNet(nn.Module):
         picked = []
 
         # Get the coordinates
-        x1 = boxes[:, 0]
-        y1 = boxes[:, 1]
-        x2 = boxes[:, 2]
-        y2 = boxes[:, 3]
+        x1 = boxes[:, 0].detach()
+        y1 = boxes[:, 1].detach()
+        x2 = boxes[:, 2].detach()
+        y2 = boxes[:, 3].detach()
 
         # Compute the area of the bounding boxes
-        areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+        areas = ((x2 - x1 + 1) * (y2 - y1 + 1)).detach()
 
         # Get the indexes of the detections sorted by score (lowest score first)
         _, indexes = scores.sort()
+        del scores
 
-        while indexes.shape[0] > 0:
+        while indexes.shape[0] > 1:
             # Take the last index (highest score) and add it to the picked
-            actual = indexes[-1]
+            actual = int(indexes[-1])
             picked.append(actual)
 
             # We need to find the overlap of the bounding boxes with the actual picked bounding box
@@ -468,14 +477,16 @@ class RetinaNet(nn.Module):
             # Compute width and height to compute the intersection over union
             w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
             h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+            del xx1, yy1, xx2, yy2
             intersection = (w * h)
+            del h, w
             union = areas[actual] + areas[indexes[:-1]] - intersection
             iou = intersection / union
 
             # Delete the last index
             indexes = indexes[:-1]
             # Keep only the indexes that has overlap lower than the threshold
-            indexes = indexes[iou < self.iou_threshold]
+            indexes = indexes[iou < self.iou_threshold].detach()
 
         # Return the filtered bounding boxes and classifications
-        return boxes[picked], classifications[picked]
+        return boxes[picked].detach(), classifications[picked].detach()

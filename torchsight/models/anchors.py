@@ -60,7 +60,8 @@ class Anchors(nn.Module):
                  sizes=[32, 64, 128, 256, 512],
                  scales=[2 ** 0, 2 ** (1/3), 2 ** (2/3)],
                  ratios=[0.5, 1, 2],
-                 strides=[8, 16, 32, 64, 128]):
+                 strides=[8, 16, 32, 64, 128],
+                 device=None):
         """Initialize the network.
 
         The base values are from the original paper of RetinaNet.
@@ -72,6 +73,7 @@ class Anchors(nn.Module):
             ratios (sequence, optional): The aspect ratios to deform the scaled base anchors.
             strides (sequence, optional): The stride applied to the image to generate the feature map
                 for each base anchor size.
+            device (str): The device where to run the computations.
         """
         super(Anchors, self).__init__()
 
@@ -82,6 +84,7 @@ class Anchors(nn.Module):
 
         self.strides = strides
         self.n_anchors = len(scales) * len(ratios)
+        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.base_anchors = self.generate_anchors(sizes, scales, ratios)
 
     def forward(self, images):
@@ -143,12 +146,12 @@ class Anchors(nn.Module):
                 # We need a tensor with shape (feature_height, feature_width, 4)
                 # shift_x shape: (feature_height, feature_width, 1) where each location has the index of the
                 # x position of the location in the feature map plus the shift value
-                shift_x = stride * torch.arange(feature_width).unsqueeze(0).unsqueeze(2).repeat(feature_height, 1, 1)
-                shift_x += shift
+                shift_x = torch.arange(feature_width).to(self.device)
+                shift_x = stride * shift_x.unsqueeze(0).unsqueeze(2).repeat(feature_height, 1, 1) + shift
                 # shift_y shape: (feature_height, feature_width, 1) where each location has the index of the
                 # y position of the location in the feature map plus the shift value
-                shift_y = stride * torch.arange(feature_height).unsqueeze(1).unsqueeze(2).repeat(1, feature_width, 1)
-                shift_y += shift
+                shift_y = torch.arange(feature_height).to(self.device)
+                shift_y = stride * shift_y.unsqueeze(1).unsqueeze(2).repeat(1, feature_width, 1) + shift
                 # The final shift will have shape (feature_height, feature_width, 4 * n_anchors)
                 shift = torch.cat([shift_x, shift_y, shift_x, shift_y], dim=2).repeat(1, 1, self.n_anchors)
                 # As pytorch interpret the channels in the first dimension it could be better to have a shift
@@ -201,10 +204,10 @@ class Anchors(nn.Module):
             torch.Tensor: Tensor with shape (len(anchors_sizes), len(scales) * len(ratios), 4).
         """
         # First we are going to compute the anchors as center_x, center_y, height, width
-        anchors = torch.zeros((len(sizes), self.n_anchors, 4), dtype=torch.float)
-        sizes, scales, ratios = [torch.Tensor(x) for x in [sizes, scales, ratios]]
+        anchors = torch.zeros((len(sizes), self.n_anchors, 4), dtype=torch.float).to(self.device)
+        sizes, scales, ratios = [torch.Tensor(x).to(self.device) for x in [sizes, scales, ratios]]
         # Start with height = width = 1
-        anchors[:, :, 2:] = torch.Tensor([1., 1.])
+        anchors[:, :, 2:] = torch.Tensor([1., 1.]).to(self.device)
         # Scale each anchor to the correspondent size. We use unsqueeze to get sizes with shape (len(sizes), 1, 1)
         # and broadcast to (len(sizes), n_anchors, 4)
         anchors *= sizes.unsqueeze(1).unsqueeze(1)

@@ -7,6 +7,7 @@ from torchvision import transforms
 from ..datasets import CocoDataset
 from ..transforms.detection import Normalize, Resize, ToTensor
 from ..losses import FocalLoss
+from ..metrics import MeanAP
 from ..models import RetinaNet
 from .abstract import AbstractTrainer
 
@@ -44,7 +45,9 @@ class RetinaNetTrainer(AbstractTrainer):
         },
         'datasets': {
             'root': '/media/souto/DATA/HDD/datasets/coco',
-            'class_names': ()  # () indicates all classes
+            'class_names': (),  # () indicates all classes
+            'train': 'train2017',
+            'validation': 'val2017'
         },
         'dataloaders': {
             'batch_size': 3,
@@ -69,14 +72,50 @@ class RetinaNetTrainer(AbstractTrainer):
         }
     }
 
-    def __init__(self, hyperparameters={}, logs='./logs'):
+    def __init__(self, hyperparameters={}, logs='./logs', checkpoint=None):
         """Initialize the trainer.
 
         Arguments:
             hyperparameters (dict): The hyperparameters for the training.
             logs (str): Path to where store the logs. If None is provided it does not log the training.
+            checkpoint (str): Path to any checkpoint.
         """
-        super(RetinaNetTrainer, self).__init__(hyperparameters, logs)
+        self.compute_map = MeanAP()
+        super(RetinaNetTrainer, self).__init__(hyperparameters, logs, checkpoint)
+
+    def validate(self):
+        """Compute mAP over validation dataset."""
+        print('--------- VALIDATING --------')
+
+        self.model.to(self.device)
+        self.model.eval()
+
+        mAP = []
+        aps = []
+
+        for batch_index, (images, annotations) in enumerate(self.valid_dataloader):
+            images, annotations = images.to(self.device), annotations.to(self.device)
+            for index, (boxes, classifications) in enumerate(self.model(images)):
+                detections = torch.zeros((boxes.shape[0], 6)).to(self.device)
+
+                if not boxes.shape[0] > 0:
+                    mAP.append(torch.zeros((1)).mean().to(self.device))
+                    aps.append(torch.zeros((self.compute_map.iou_thresholds.shape[0])).to(self.device))
+                    continue
+
+                detections[:, :4] = boxes
+                prob, label = classifications.max(dim=1)
+                detections[:, 4] = label
+                detections[:, 5] = prob
+                actual_map, actual_aps = self.compute_map(annotations[index], detections)
+                mAP.append(actual_map)
+                aps.append(actual_aps)
+            print('[Validating] [Batch {}] [mAP {:.3f}] [APs {}]'.format(
+                batch_index,
+                torch.stack(mAP).mean().item(),
+                ' '.join(['{:.3f}'.format(ap.item()) for ap in torch.stack(aps).mean(dim=0)])))
+
+        self.model.train()
 
     def get_model(self):
         """Initialize and get the RetinaNet.
@@ -138,13 +177,13 @@ class RetinaNetTrainer(AbstractTrainer):
         return (
             CocoDataset(
                 root=hyperparameters['root'],
-                dataset='train2017',
+                dataset=hyperparameters['train'],
                 classes_names=hyperparameters['class_names'],
                 transform=transform
             ),
             CocoDataset(
                 root=hyperparameters['root'],
-                dataset='val2017',
+                dataset=hyperparameters['validation'],
                 classes_names=hyperparameters['class_names'],
                 transform=transform
             )

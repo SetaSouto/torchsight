@@ -16,7 +16,7 @@ class MeanAP():
     https://medium.com/@timothycarlen/understanding-the-map-evaluation-metric-for-object-detection-a07fe6962cf3
     """
 
-    def __init__(self, start=0.5, stop=0.95, step=0.05):
+    def __init__(self, start=0.5, stop=0.95, step=0.05, device=None):
         """Initialize the instance. Set the IoU thresholds.
 
         It evaluates AP from IoU@<start> to Iou@<stop> with a step between of <step>.
@@ -27,9 +27,8 @@ class MeanAP():
             stop (float): The final IoU to calculate AP.
             step (float): The step to advance from the 'start' to the 'stop'.
         """
-        self.start = start
-        self.stop = stop
-        self.step = step
+        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu:0'
+        self.iou_thresholds = torch.range(start, stop, step).to(self.device)
 
     def __call__(self, annotations, detections):
         """Computes the mAP given the ground truth (annotations) and the detections.
@@ -76,17 +75,21 @@ class MeanAP():
         # Create a tensor that indicates with a 1 if the label of the detection correspond to its assigned annotation
         correct = annotations[assigned_annotation, -1] == detections[:, -2]  # Shape (number of detections)
 
-        iou_thresholds = torch.range(self.start, self.stop, self.step)
-        average_precisions = torch.zeros((iou_thresholds.shape[0]))
+        average_precisions = torch.zeros((self.iou_thresholds.shape[0])).to(self.device)
 
-        for i, threshold in enumerate(iou_thresholds):
+        for i, threshold in enumerate(self.iou_thresholds):
             # Keep only detections with an IoU with its assigned annotation over the threshold
             mask = iou_max >= threshold
             # Create the metrics tensor. It contains 3 metrics: Correct (0 or 1), Precision, Recall; per each detection
             # ordered by the confidence. So the recall must increase over the dimension 0 (the detections are ordered
             # by confidence at that dimension).
             n_current_detections = mask.sum()
-            metrics = torch.zeros((n_current_detections, 3))
+
+            if not n_current_detections > 0:
+                average_precisions[i] = torch.zeros((1)).mean().to(self.device)
+                continue
+
+            metrics = torch.zeros((n_current_detections, 3)).to(self.device)
             metrics[:, 0] = correct[mask]
             # Get the number of expected correct labels
             n_total_annotations = annotations.shape[0]
@@ -102,8 +105,8 @@ class MeanAP():
                 metrics[j, 1] = precision
                 metrics[j, 2] = recall
             # Get the max precision over each recall between (0, 0.1, 0.2, ..., 1.0):
-            precisions = torch.zeros((11))
-            for j, recall in enumerate(torch.range(0, 1, 0.1)):
+            precisions = torch.zeros((11)).to(self.device)
+            for j, recall in enumerate(torch.range(0, 1, 0.1).to(self.device)):
                 # Generate the mask to keep only precisions over the current recall
                 mask = metrics[:, 2] >= recall
                 # Set the precision

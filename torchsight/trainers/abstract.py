@@ -118,7 +118,6 @@ class AbstractTrainer():
                 # Optimize
                 self.optimizer.zero_grad()
                 anchors, regressions, classifications = self.model(images)
-                anchors = anchors.to(self.device)
                 del images
                 classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
                                                                       annotations)
