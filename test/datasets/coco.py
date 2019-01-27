@@ -21,4 +21,4 @@ if ARGUMENTS.no_random:
     random.shuffle(INDEXES)
 
 for index in INDEXES:
-    DATASET.visualize(index)
+    DATASET.visualize_annotations(index)

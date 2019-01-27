@@ -155,16 +155,17 @@ class CocoDataset(Dataset):
 
         return image, bounding_boxes
 
-    def visualize(self, index, n_colors=20):
-        """Visualize an image with its bounding boxes.
+    def visualize(self, image, boxes, initial_time=None, n_colors=20):
+        """Visualize an image and its bounding boxes.
 
-        Args:
-            index (int): The index of the image in the dataset to be loaded.
-            n_colors (int, optional): The number of colors to use. Optional. Already in the max value.
+        Arguments:
+            image (torch.Tensor or ndarray): The image to visualize.
+            boxes (torch.Tensor or ndarray): The bounding boxes to visualize in the image.
+                It must contains the x1, y1, x2, y2 points and the label in the last value. 
+                Shape:
+                    (number of annotations, 5)
         """
-        initial_time = time.time()
-
-        image, bounding_boxes = self.__getitem__(index)
+        initial_time = initial_time if initial_time is not None else time.time()
 
         if torch.is_tensor(image):
             image = image.numpy().transpose(1, 2, 0)
@@ -181,9 +182,9 @@ class CocoDataset(Dataset):
         _, axes = matplotlib.pyplot.subplots(1)
 
         # Generate rectangles
-        for i in range(bounding_boxes.shape[0]):
+        for i in range(boxes.shape[0]):
             # We need the top left corner of the rectangle and its width and height
-            x, y, x2, y2, label = bounding_boxes[i]
+            x, y, x2, y2, label = boxes[i]
             w, h = x2 - x, y2 - y
             color = colors[int(label) % n_colors]
             # Generate and add rectangle to plot
@@ -193,7 +194,17 @@ class CocoDataset(Dataset):
             matplotlib.pyplot.text(x, y, s=class_name, color='white',
                                    verticalalignment='top', bbox={'color': color, 'pad': 0})
         # Print stats
-        print('-----\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, bounding_boxes))
+        print('-----\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, boxes))
         # Show image and plot
         axes.imshow(image)
         matplotlib.pyplot.show()
+
+    def visualize_annotations(self, index, *args, **kwargs):
+        """Visualize an image with its bounding boxes.
+
+        Args:
+            index (int): The index of the image in the dataset to be loaded.
+            n_colors (int, optional): The number of colors to use. Optional. Already in the max value.
+        """
+        image, boxes = self.__getitem__(index)
+        self.visualize(image, boxes, *args, **kwargs)
