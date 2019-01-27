@@ -330,7 +330,7 @@ class RetinaNet(nn.Module):
 
         # Set the base threshold for evaluating mode
         self.threshold = 0.6
-        self.iou_threshold = 0.5
+        self.iou_threshold = 0.1
 
     def eval(self, threshold=None, iou_threshold=None):
         """Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
