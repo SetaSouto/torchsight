@@ -109,6 +109,8 @@ class FocalLoss(nn.Module):
             # Get the label for each anchor based on its assigned annotation ant turn it on. Do this only
             # for the assigned anchors.
             targets[selected_anchors_objects, assigned_annotations[selected_anchors_objects, 4].long()] = 1.
+            # Avoid NaN in log clamping the classifications probabilities
+            classifications = classifications.clamp(min=1e-4, max=1 - 1e-4)
             # Generate the alpha factor
             alpha = self.alpha * torch.ones(targets.shape).to(self.device)
             # It must be alpha for the correct label and 1 - alpha for the others
