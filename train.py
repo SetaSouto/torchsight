@@ -5,8 +5,8 @@ RetinaNetTrainer(
     hyperparameters={
         'RetinaNet': {'classes': 1, 'resnet': 18},
         'datasets': {'class_names': ('person',), 'train': 'val2017', 'validation': 'val2017'},
-        'optimizer': {'learning_rate': 1e-3}
+        'optimizer': {'learning_rate': 1e-5}
     },
     logs='./logs/retinanet',
-    checkpoint='./logs/retinanet/1548542842/checkpoint_epoch_1.pth.tar'
-).train()
+    checkpoint='./logs/retinanet/1548616852/checkpoint_epoch_3.pth.tar'
+).train(validate=False)

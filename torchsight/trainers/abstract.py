@@ -5,6 +5,8 @@ import time
 
 import torch
 
+from ..loggers import Logger
+
 
 class AbstractTrainer():
     """Abstract trainer to train a pytorch object detection model.
@@ -54,18 +56,16 @@ class AbstractTrainer():
             self.checkpoint_epoch = 0
 
         # Configure the logs
-        self.logs_dir = os.path.join(logs_dir, str(int(time.time()))) if logs_dir else None
-        if self.logs_dir:
-            if not os.path.exists(self.logs_dir):
-                os.makedirs(self.logs_dir)
+        self.logger = None
+        if logs_dir:
+            logs_dir = os.path.join(logs_dir, str(int(time.time())))
+
             # Description of this instance are the hyperparameters of the training
-            description = ['Hyperparameters\n\n', json.dumps(self.hyperparameters, indent=2)]
-
+            description = ['Hyperparameters:\n', json.dumps(self.hyperparameters, indent=2)]
             if checkpoint is not None:
-                description.append('\n\nCheckpoint epoch: {}'.format(self.checkpoint_epoch))
+                description.append('\nCheckpoint: {}'.format(checkpoint))
 
-            with open(os.path.join(self.logs_dir, 'description.txt'), 'w') as file:
-                file.write('\n'.join(description))
+            self.logger = Logger(description='\n'.join(description), directory=logs_dir)
 
     def merge_hyperparameters(self, base, new, path=None):
         """Merge the base hyperparameters (if there's any) with the given hyperparameters.
@@ -94,24 +94,24 @@ class AbstractTrainer():
                 print('Warn: Hyperparameter "{key}" not present in base hyperparameters.'.format(key=key))
         return base
 
-    def train(self, epochs=100):
+    def train(self, epochs=100, validate=True):
         """Train the model for the given epochs.
 
         Args:
             epochs (int): Number of epochs to run. An epoch is a full pass over all the images of the dataset.
+            validate (bool): Flag that indicates if it must run the validation method.
         """
         self.model.to(self.device)
 
         print('----- Training started ------')
         print('Using device: {}'.format(self.device))
 
-        if self.logs_dir:
-            print('Logs can be found at {}'.format(self.logs_dir))
+        if self.logger:
+            print('Logs can be found at {}'.format(self.logger.log_file))
 
         for epoch in range(epochs):
             epoch = epoch + 1 + self.checkpoint_epoch
             last_endtime = time.time()
-            epoch_losses = {'regression': 0, 'classification': 0, 'total': 0}
 
             # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
             # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
@@ -137,25 +137,22 @@ class AbstractTrainer():
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
                 self.optimizer.step()
 
-                # Increment epoch loss
-                epoch_losses['classification'] += classification_loss
-                epoch_losses['regression'] += regression_loss
-                epoch_losses['total'] += float(loss)
-
                 # Log the batch
                 batch_time = time.time() - last_endtime
                 last_endtime = time.time()
-                string = '[Epoch: {}] [Batch: {}] [Time: {:.3f}] '.format(epoch, batch_index, batch_time)
-                string += '[Classification: {:.5f}] [Regression: {:.5f}] [Total: {:.5f}]'.format(classification_loss,
-                                                                                                 regression_loss,
-                                                                                                 loss)
-                print(string)
+                self.logger.log({
+                    'Epoch': epoch,
+                    'Batch': batch_index,
+                    'Time': '{:.3f}'.format(batch_time),
+                    'Classification': '{:.5f}'.format(classification_loss),
+                    'Regression': '{:.5f}'.format(regression_loss),
+                    'Total': '{:.5f}'.format(loss)
+                })
 
-            # Save weights
             self.save_checkpoint(epoch)
 
-            # Validate
-            self.validate()
+            if validate:
+                self.validate()
 
     def save_checkpoint(self, epoch):
         """Save the training's parameters.
@@ -165,7 +162,7 @@ class AbstractTrainer():
         Arguments:
             epoch (int): The epoch when this checkpoint was generated.
         """
-        path = os.path.join(self.logs_dir, 'checkpoint_epoch_{}.pth.tar'.format(epoch))
+        path = os.path.join(self.logger.directory, 'checkpoint_epoch_{}.pth.tar'.format(epoch))
         print("[Epoch {}] Saving model's and optimizer's state dict to: {}".format(epoch, path))
         checkpoint = {
             'epoch': epoch,
