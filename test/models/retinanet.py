@@ -15,14 +15,14 @@ PARSER.add_argument('root', help='The root directory where is the data.')
 PARSER.add_argument('-d', '--dataset', nargs='?', default='val2017', help='The dataset to be loaded. Ex: "val2017"')
 PARSER.add_argument('--no-random', action='store_const', const=True, default=False, help='Not show random images.')
 PARSER.add_argument('checkpoint', help='The checkpoint to load the model')
-PARSER.add_argument('-c', '--classes', nargs='?', default=1, help='The number of classes that the model can detect')
-PARSER.add_argument('-r', '--resnet', nargs='?', default=18, help='The ResNet backbone to use in the RetinaNet model.')
+PARSER.add_argument('-c', '--classes', nargs='?', default=80, help='The number of classes that the model can detect')
+PARSER.add_argument('-r', '--resnet', nargs='?', default=50, help='The ResNet backbone to use in the RetinaNet model.')
 
 
 ARGUMENTS = PARSER.parse_args()
 
 TRANSFORMS = transforms.Compose([Resize(), ToTensor(), Normalize()])
-DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=('person'), transform=TRANSFORMS)
+DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(), transform=TRANSFORMS)
 INDEXES = list(range(len(DATASET)))
 
 MODEL = RetinaNet(classes=ARGUMENTS.classes, resnet=ARGUMENTS.resnet)
