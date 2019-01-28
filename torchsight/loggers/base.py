@@ -2,11 +2,13 @@
 import json
 import os
 
+import torch
+
 
 class Logger():
     """Base Logger class."""
 
-    def __init__(self, description=None, directory='./logs', filename='logs.txt'):
+    def __init__(self, description=None, directory='./logs', filename='logs.json'):
         """Initialize the logger and create the directory that will contain the logs.
 
         Arguments:
@@ -68,11 +70,7 @@ class Logger():
         Arguments:
             data (dict): The dict with the data to append to the log file.
         """
-        if os.path.exists(self.log_file):
-            with open(self.log_file, 'r') as file:
-                logs = json.loads(file.read())
-        else:
-            logs = {}
+        logs = {}
 
         for key, value in data.items():
             if not key in logs:
@@ -81,3 +79,37 @@ class Logger():
 
         with open(self.log_file, 'w') as file:
             file.write(json.dumps(logs, indent=2))
+
+    def read(self):
+        """Read the logs from the file (if exists) and return the dict.
+        If there is no file it returns an empty dict.
+
+        Returns:
+            dict: The json saved with the logs.
+        """
+        if os.path.exists(self.log_file):
+            with open(self.log_file, 'r') as file:
+                return json.loads(file.read())
+        return {}
+
+    def average_loss(self, key='loss', window=1e3):
+        """Average the loss with the given window size and show it.
+
+        Basically it gets the loss from the log file with the given key, average the values for each
+        window consecutive times and returns the reduced array.
+        For example, if we have 1e5 values for the loss and a window size of 1e3 it average each 1e3
+        losses and return an array with 1e2 values.
+
+        If the loss array does not have a multiply of the window size it cuts the oldest values.
+
+        Return:
+            torch.Tensor: The tensor with the averaged loss with the given window size.
+        """
+        losses = torch.Tensor([float(val) for val in self.read()[key]])
+
+        n_losses = losses.shape[0]
+        if n_losses % window != 0:
+            losses = losses[int(n_losses % window):]
+
+        losses = losses.view(-1, window)
+        return losses.mean(dim=1)
