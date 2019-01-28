@@ -11,7 +11,7 @@ from ..metrics import iou as compute_iou
 class FocalLoss(nn.Module):
     """Loss to penalize the detection of objects."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, iou_thresholds={'background': 0.4, 'object': 0.5}, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds={'background': 0.4, 'object': 0.5}, device=None):
         """Initialize the loss.
 
         Train as background (minimize all the probabilities of the classes) if the IoU is below the 'background'
@@ -19,8 +19,9 @@ class FocalLoss(nn.Module):
         Ignore the anchors between both thresholds.
 
         Args:
-            alpha (float): Alpha parameter for the loss.
-            gamma (float): Gamma parameter for the loss.
+            alpha (float): Alpha parameter for the focal loss.
+            gamma (float): Gamma parameter for the focal loss.
+            sigma (float): Point that defines the change from L1 loss to L2 loss (smooth L1).
             iou_thresholds (dict): Indicates the thresholds to assign an anchor as background or object.
             device (str, optional): Indicates the device where to run the loss.
         """
@@ -28,6 +29,7 @@ class FocalLoss(nn.Module):
 
         self.alpha = alpha
         self.gamma = gamma
+        self.sigma = sigma
         self.iou_background = iou_thresholds['background']
         self.iou_object = iou_thresholds['object']
         self.device = device if device else 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -167,9 +169,16 @@ class FocalLoss(nn.Module):
 
             # Stack the targets as it could come from the regression module
             targets = torch.stack([targets_dx, targets_dy, targets_dw, targets_dh], dim=1)
+            regression_diff = torch.abs(targets - regressions)
+            # Compute Smooth L1 loss
+            regression_loss = torch.where(
+                regression_diff <= 1 / (self.sigma**2),
+                0.5 * (self.sigma * regression_diff) ** 2,
+                regression_diff - (0.5 / (self.sigma ** 2))
+            )
 
             # Append the squared error
-            regression_losses.append((torch.abs(targets - regressions) ** 2).mean())
+            regression_losses.append(regression_loss.mean())
 
         # Return the mean classification loss and the mean regression loss
         return torch.stack(classification_losses).mean(), torch.stack(regression_losses).mean()
