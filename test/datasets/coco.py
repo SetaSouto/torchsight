@@ -1,6 +1,7 @@
 """Visualize some images from the Coco dataset"""
 import argparse
 import random
+import sys
 
 from torchsight.datasets import CocoDataset
 from torchsight.transforms.detection import Resize
@@ -14,7 +15,7 @@ PARSER.add_argument('--no-random', action='store_const', const=False, default=Tr
 ARGUMENTS = PARSER.parse_args()
 
 TRANSFORMS = transforms.Compose([Resize()])
-DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=('person'), transform=TRANSFORMS)
+DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(), transform=TRANSFORMS)
 INDEXES = list(range(len(DATASET)))
 
 if ARGUMENTS.no_random:
