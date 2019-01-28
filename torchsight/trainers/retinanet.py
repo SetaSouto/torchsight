@@ -50,14 +50,14 @@ class RetinaNetTrainer(AbstractTrainer):
             'validation': 'val2017'
         },
         'dataloaders': {
-            'batch_size': 3,
+            'batch_size': 1,
             'shuffle': True,
             'num_workers': 1
         },
         'optimizer': {
-            'learning_rate': 1e-4,
+            'learning_rate': 1e-2,
             'momentum': 0.9,
-            'weight_decay': 5e-4
+            'weight_decay': 1e-4
         },
         'transforms': {
             'resize': {
@@ -72,16 +72,10 @@ class RetinaNetTrainer(AbstractTrainer):
         }
     }
 
-    def __init__(self, hyperparameters={}, logs='./logs', checkpoint=None):
-        """Initialize the trainer.
-
-        Arguments:
-            hyperparameters (dict): The hyperparameters for the training.
-            logs (str): Path to where store the logs. If None is provided it does not log the training.
-            checkpoint (str): Path to any checkpoint.
-        """
+    def __init__(self, *args, **kwargs):
+        """Initialize the trainer."""
         self.compute_map = MeanAP()
-        super(RetinaNetTrainer, self).__init__(hyperparameters, logs, checkpoint)
+        super(RetinaNetTrainer, self).__init__(*args, **kwargs)
 
     def validate(self):
         """Compute mAP over validation dataset."""

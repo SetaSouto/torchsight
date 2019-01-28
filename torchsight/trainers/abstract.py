@@ -150,7 +150,7 @@ class AbstractTrainer():
                 })
 
                 # Save the weights for this epoch every some batches
-                if batch_index % 99 == 0:
+                if batch_index % 100 == 0:
                     self.save_checkpoint(epoch)
 
             # Save the weights at the end of the epoch
