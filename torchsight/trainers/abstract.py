@@ -149,6 +149,11 @@ class AbstractTrainer():
                     'Total': '{:.5f}'.format(loss)
                 })
 
+                # Save the weights for this epoch every some batches
+                if batch_index % 99 == 0:
+                    self.save_checkpoint(epoch)
+
+            # Save the weights at the end of the epoch
             self.save_checkpoint(epoch)
 
             if validate:
