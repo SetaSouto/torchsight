@@ -1,4 +1,4 @@
-"""Abstract logger module."""
+"""Base Logger module."""
 import json
 import os
 
@@ -70,7 +70,7 @@ class Logger():
         Arguments:
             data (dict): The dict with the data to append to the log file.
         """
-        logs = {}
+        logs = self.read()
 
         for key, value in data.items():
             if not key in logs:
