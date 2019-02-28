@@ -11,7 +11,7 @@ from ..metrics import iou as compute_iou
 class FocalLoss(nn.Module):
     """Loss to penalize the detection of objects."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds={'background': 0.4, 'object': 0.5}, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None):
         """Initialize the loss.
 
         Train as background (minimize all the probabilities of the classes) if the IoU is below the 'background'
@@ -30,9 +30,11 @@ class FocalLoss(nn.Module):
         self.alpha = alpha
         self.gamma = gamma
         self.sigma = sigma
+        if iou_thresholds is None:
+            iou_thresholds = {'background': 0.4, 'object': 0.5}
         self.iou_background = iou_thresholds['background']
         self.iou_object = iou_thresholds['object']
-        self.device = device if device else 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     def forward(self, anchors, regressions, classifications, annotations):
         """Forward pass to get the loss.
@@ -112,13 +114,13 @@ class FocalLoss(nn.Module):
             # for the assigned anchors.
             targets[selected_anchors_objects, assigned_annotations[selected_anchors_objects, 4].long()] = 1.
             # Avoid NaN in log clamping the classifications probabilities
-            classifications = classifications.clamp(min=1e-4, max=1 - 1e-4)
+            classifications = classifications.clamp(min=1e-5, max=1 - 1e-5)
             # Generate the alpha factor
             alpha = self.alpha * torch.ones(targets.shape).to(self.device)
             # It must be alpha for the correct label and 1 - alpha for the others
             alpha = torch.where(targets == 1, alpha, 1. - alpha)
             # Generate the focal weight
-            focal = torch.where(targets == 1, classifications, 1 - classifications)
+            focal = torch.where(targets == 1, 1 - classifications, classifications)
             focal = alpha * (focal ** self.gamma)
             # Get the binary cross entropy
             bce = -(targets * torch.log(classifications) + (1. - targets) * torch.log(1 - classifications))
