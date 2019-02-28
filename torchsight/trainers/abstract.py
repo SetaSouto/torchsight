@@ -144,9 +144,9 @@ class AbstractTrainer():
                     'Epoch': epoch,
                     'Batch': batch_index,
                     'Time': '{:.3f}'.format(batch_time),
-                    'Classification': '{:.5f}'.format(classification_loss),
-                    'Regression': '{:.5f}'.format(regression_loss),
-                    'Total': '{:.5f}'.format(loss)
+                    'Classification': '{:.7f}'.format(classification_loss),
+                    'Regression': '{:.7f}'.format(regression_loss),
+                    'Total': '{:.7f}'.format(loss)
                 })
 
                 # Save the weights for this epoch every some batches
