@@ -34,18 +34,22 @@ if CUDA:
 if not ARGUMENTS.no_random:
     random.shuffle(INDEXES)
 
-MODEL.eval()
+MODEL.eval(threshold=0.4)
 
 for index in INDEXES:
-    image, _ = DATASET[index]
+    image, ground = DATASET[index]
+    print(ground)
     image = image.unsqueeze(0).type(torch.float)  # To simulate a batch
     if CUDA:
         image = image.to('cuda')
     boxes, classifications = MODEL(image)[0]  # Get the first result of the fake batch
+    if boxes.shape[0] == 0:
+        print('No detections')
+        continue
     detections = torch.zeros((boxes.shape[0], 5))
     detections[:, :4] = boxes
     prob, label = classifications.max(dim=1)
     detections[:, 4] = label
-    detections = detections[:100]
-    print(prob)
+    print(detections)
+    print(classifications)
     DATASET.visualize(image[0].cpu(), detections.cpu())
