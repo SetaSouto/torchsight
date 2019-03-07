@@ -78,7 +78,7 @@ class Logger():
             logs[key].append(value)
 
         with open(self.log_file, 'w') as file:
-            file.write(json.dumps(logs, indent=2))
+            file.write(json.dumps(logs))
 
     def read(self):
         """Read the logs from the file (if exists) and return the dict.
@@ -113,3 +113,28 @@ class Logger():
 
         losses = losses.view(-1, window)
         return losses.mean(dim=1)
+
+    def epoch_losses(self, epoch_key='epoch', loss_key='loss'):
+        """Get the average loss per each epoch.
+
+        Arguments:
+            epoch_key (str): The key in the logs dictionary to get the epochs array.
+            loss_key (str): The key in the logs dictionary to get the losses array.
+
+        Returns:
+            torch.Tensor: The Tensor with the average loss per each epoch.
+        """
+        logs = self.read()
+        epochs = logs[epoch_key]
+        losses = logs[loss_key]
+        # Create a dict with the epoch as the key and inside a dict with 'sum' and 'count'
+        epochs_losses = {}
+        # Iterate over the logs
+        for index, loss in enumerate(losses):
+            epoch = epochs[index]
+            if epoch not in epochs_losses:
+                epochs_losses[epoch] = {'sum': 0, 'total': 0}
+            epochs_losses[epoch]['sum'] += float(loss)
+            epochs_losses[epoch]['total'] += 1
+
+        return torch.Tensor([epochs_losses[epoch]['sum'] / epochs_losses[epoch]['total'] for epoch in epochs_losses])
