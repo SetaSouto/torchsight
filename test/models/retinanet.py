@@ -21,11 +21,11 @@ PARSER.add_argument('-r', '--resnet', nargs='?', default=50, help='The ResNet ba
 
 ARGUMENTS = PARSER.parse_args()
 
-TRANSFORMS = transforms.Compose([Resize(), ToTensor(), Normalize()])
-DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(), transform=TRANSFORMS)
+TRANSFORMS = transforms.Compose([Resize(), ToTensor()]) # , Normalize()])
+DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=('airplane', 'kite'), transform=TRANSFORMS)
 INDEXES = list(range(len(DATASET)))
 
-MODEL = RetinaNet(classes=ARGUMENTS.classes, resnet=ARGUMENTS.resnet)
+MODEL = RetinaNet(classes=int(ARGUMENTS.classes), resnet=ARGUMENTS.resnet)
 MODEL.load_state_dict(torch.load(ARGUMENTS.checkpoint)['model'])
 CUDA = torch.cuda.is_available()
 if CUDA:
@@ -34,15 +34,17 @@ if CUDA:
 if not ARGUMENTS.no_random:
     random.shuffle(INDEXES)
 
-MODEL.eval(threshold=0.4)
+MODEL.eval(threshold=0.5, iou_threshold=0.2)
 
 for index in INDEXES:
     image, ground = DATASET[index]
-    print(ground)
+    print('Ground truth:\n', ground)
     image = image.unsqueeze(0).type(torch.float)  # To simulate a batch
     if CUDA:
         image = image.to('cuda')
     boxes, classifications = MODEL(image)[0]  # Get the first result of the fake batch
+    boxes, classifications = boxes[:100], classifications[:100]
+    print('Classifications:\n', classifications)
     if boxes.shape[0] == 0:
         print('No detections')
         continue
@@ -50,6 +52,5 @@ for index in INDEXES:
     detections[:, :4] = boxes
     prob, label = classifications.max(dim=1)
     detections[:, 4] = label
-    print(detections)
-    print(classifications)
+    # print('Detections:\n', detections)
     DATASET.visualize(image[0].cpu(), detections.cpu())

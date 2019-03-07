@@ -128,6 +128,7 @@ class AbstractTrainer():
                                                                       annotations)
                 del anchors, regressions, classifications, annotations
 
+                classification_loss *= 1e5
                 loss = classification_loss + regression_loss
                 # Set as float to free memory
                 classification_loss = float(classification_loss)
