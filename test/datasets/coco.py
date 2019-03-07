@@ -1,7 +1,6 @@
 """Visualize some images from the Coco dataset"""
 import argparse
 import random
-import sys
 
 from torchsight.datasets import CocoDataset
 from torchsight.transforms.detection import Resize
