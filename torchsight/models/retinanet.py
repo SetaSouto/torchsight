@@ -331,8 +331,9 @@ class RetinaNet(nn.Module):
         # Set the base threshold for evaluating mode
         self.threshold = 0.6
         self.iou_threshold = 0.5
+        self.evaluate_loss = False
 
-    def eval(self, threshold=None, iou_threshold=None):
+    def eval(self, threshold=None, iou_threshold=None, loss=False):
         """Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
         over threshold.
 
@@ -340,12 +341,16 @@ class RetinaNet(nn.Module):
             threshold (float): The threshold to keep only bounding boxes with a class' probability over it.
             iou_threshold (float): If two bounding boxes has Intersection Over Union more than this
                 threshold they are detecting the same object.
+            loss (bool): If true the forward pass does not do NMS and return the same output as if it is
+                training. Why? To compute the loss over the validation dataset for example.
         """
         if threshold is not None:
             self.threshold = threshold
 
         if iou_threshold is not None:
             self.iou_threshold = iou_threshold
+
+        self.evaluate_loss = loss
 
         return super(RetinaNet, self).eval()
 
@@ -396,6 +401,8 @@ class RetinaNet(nn.Module):
 
         if self.training:
             return anchors, regressions, classifications
+        if self.evaluate_loss:
+            return anchors.detach(), regressions.detach(), classifications.detach()
 
         anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
         bounding_boxes = self.anchors.transform(anchors, regressions).detach()

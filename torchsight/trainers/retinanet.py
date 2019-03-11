@@ -168,7 +168,10 @@ class RetinaNetTrainer(AbstractTrainer):
     def validate(self, epoch):
         """Compute the loss over the validation dataset."""
         self.model.to(self.device)
-        self.model.eval(**self.hyperparameters['RetinaNet']['evaluation'])
+        hyperparameters = self.hyperparameters['RetinaNet']['evaluation']
+        self.model.eval(threshold=hyperparameters['threshold'],
+                        iou_threshold=hyperparameters['iou_threshold'],
+                        loss=True)
 
         weights = self.hyperparameters['FocalLoss']['weights']
 
@@ -206,14 +209,14 @@ class RetinaNetTrainer(AbstractTrainer):
                 'Validating': '',
                 'Epoch': epoch,
                 'Batch': batch,
-                'Classification': torch.stack(classification_losses).mean(),
-                'Regression': torch.stack(regression_losses).mean(),
-                'Total': torch.stack(losses).mean(),
-                'Time': batch_time,
-                'Total time': total_time
+                'Classification': '{:.7f}'.format(torch.Tensor(classification_losses).mean().item()),
+                'Regression': '{:.7f}'.format(torch.Tensor(regression_losses).mean().item()),
+                'Total': '{:.7f}'.format(torch.Tensor(losses).mean().item()),
+                'Time': '{:.3f}'.format(batch_time),
+                'Total time': '{:.3f}'.format(total_time)
             })
 
-        return torch.stack(losses).mean()
+        return torch.Tensor(losses).mean()
 
     def validate_map(self):
         """Compute mAP over validation dataset.
