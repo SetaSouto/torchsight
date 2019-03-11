@@ -9,9 +9,9 @@ from ..loggers import Logger
 
 
 class AbstractTrainer():
-    """Abstract trainer to train a pytorch object detection model.
+    """Abstract trainer to train a pytorch model.
 
-    To create a trainer please override the getters methods.
+    To create a trainer please override the getters methods and the train method.
 
     Attributes:
         hyperparameters (dict): The hyperparameters for the training.
@@ -94,70 +94,9 @@ class AbstractTrainer():
                 print('Warn: Hyperparameter "{key}" not present in base hyperparameters.'.format(key=key))
         return base
 
-    def train(self, epochs=100, validate=True):
-        """Train the model for the given epochs.
-
-        Args:
-            epochs (int): Number of epochs to run. An epoch is a full pass over all the images of the dataset.
-            validate (bool): Flag that indicates if it must run the validation method.
-        """
-        self.model.to(self.device)
-
-        print('----- Training started ------')
-        print('Using device: {}'.format(self.device))
-
-        if self.logger:
-            print('Logs can be found at {}'.format(self.logger.log_file))
-
-        for epoch in range(epochs):
-            epoch = epoch + 1 + self.checkpoint_epoch
-            last_endtime = time.time()
-
-            # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
-            # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
-            self.model.train()
-
-            for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-                images, annotations = images.to(self.device), annotations.to(self.device)
-
-                # Optimize
-                self.optimizer.zero_grad()
-                anchors, regressions, classifications = self.model(images)
-                del images
-                classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
-                                                                      annotations)
-                del anchors, regressions, classifications, annotations
-
-                loss = classification_loss + regression_loss
-                # Set as float to free memory
-                classification_loss = float(classification_loss)
-                regression_loss = float(regression_loss)
-                # Optimize
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
-                self.optimizer.step()
-
-                # Log the batch
-                batch_time = time.time() - last_endtime
-                last_endtime = time.time()
-                self.logger.log({
-                    'Epoch': epoch,
-                    'Batch': batch_index,
-                    'Time': '{:.3f}'.format(batch_time),
-                    'Classification': '{:.7f}'.format(classification_loss),
-                    'Regression': '{:.7f}'.format(regression_loss),
-                    'Total': '{:.7f}'.format(loss)
-                })
-
-                # Save the weights for this epoch every some batches
-                if batch_index % 100 == 0:
-                    self.save_checkpoint(epoch)
-
-            # Save the weights at the end of the epoch
-            self.save_checkpoint(epoch)
-
-            if validate:
-                self.validate()
+    def train(self):
+        """Train the model. You must implement this method according to your model."""
+        raise NotImplementedError()
 
     def save_checkpoint(self, epoch):
         """Save the training's parameters.

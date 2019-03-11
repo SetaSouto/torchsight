@@ -1,14 +1,16 @@
 """RetinaNet trainer."""
+import time
+
 import torch
 from torch.utils.data import DataLoader
 
 from torchvision import transforms
 
 from ..datasets import CocoDataset
-from ..transforms.detection import Normalize, Resize, ToTensor
 from ..losses import FocalLoss
 from ..metrics import MeanAP
 from ..models import RetinaNet
+from ..transforms.detection import Normalize, Resize, ToTensor
 from .abstract import AbstractTrainer
 
 
@@ -41,10 +43,12 @@ class RetinaNetTrainer(AbstractTrainer):
             'iou_thresholds': {
                 'background': 0.4,
                 'object': 0.5
-            }
+            },
+            # Weight of each loss. See train method.
+            'weights': {'classification': 1e5, 'regression': 1}
         },
         'datasets': {
-            'root': '/media/souto/DATA/HDD/datasets/coco',
+            'root': './datasets/coco',
             'class_names': (),  # () indicates all classes
             'train': 'train2017',
             'validation': 'val2017'
@@ -76,6 +80,76 @@ class RetinaNetTrainer(AbstractTrainer):
         """Initialize the trainer."""
         self.compute_map = MeanAP()
         super(RetinaNetTrainer, self).__init__(*args, **kwargs)
+
+    def train(self, epochs=100, validate=True):
+        """Train the model for the given epochs.
+
+        Arguments:
+            epochs (int): The number of epochs to train.
+            validate (bool): If true it validates the model after each epoch using the validate method.
+        """
+        self.model.to(self.device)
+
+        # Weights for each loss, to increase or decrease their values
+        weights = self.hyperparameters['FocalLoss']['weights']
+
+        print('----- Training started ------')
+        print('Using device: {}'.format(self.device))
+
+        if self.logger:
+            print('Logs can be found at {}'.format(self.logger.log_file))
+
+        for epoch in range(epochs):
+            epoch = epoch + 1 + self.checkpoint_epoch
+            last_endtime = time.time()
+
+            # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
+            # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
+            self.model.train()
+
+            for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
+                images, annotations = images.to(self.device), annotations.to(self.device)
+
+                # Optimize
+                self.optimizer.zero_grad()
+                anchors, regressions, classifications = self.model(images)
+                del images
+                classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
+                                                                      annotations)
+                del anchors, regressions, classifications, annotations
+
+                classification_loss *= weights['classification']
+                regression_loss *= weights['regression']
+                loss = classification_loss + regression_loss
+                # Set as float to free memory
+                classification_loss = float(classification_loss)
+                regression_loss = float(regression_loss)
+                # Optimize
+                loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
+                self.optimizer.step()
+
+                # Log the batch
+                batch_time = time.time() - last_endtime
+                last_endtime = time.time()
+                self.logger.log({
+                    'Epoch': epoch,
+                    'Batch': batch_index,
+                    'Time': '{:.3f}'.format(batch_time),
+                    'Classification': '{:.7f}'.format(classification_loss),
+                    'Regression': '{:.7f}'.format(regression_loss),
+                    'Total': '{:.7f}'.format(loss)
+                })
+
+                # Save the weights for this epoch every some batches
+                if batch_index % 100 == 0:
+                    self.save_checkpoint(epoch)
+
+            # Save the weights at the end of the epoch
+            self.save_checkpoint(epoch)
+
+            if validate:
+                self.validate()
 
     def validate(self):
         """Compute mAP over validation dataset."""
