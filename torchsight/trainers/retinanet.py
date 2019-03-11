@@ -2,6 +2,7 @@
 import time
 
 import torch
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 
 from torchvision import transforms
@@ -35,7 +36,11 @@ class RetinaNetTrainer(AbstractTrainer):
                 'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
                 'ratios': [0.5, 1, 2]
             },
-            'pretrained': True
+            'pretrained': True,
+            'evaluation': {
+                'threshold': 0.5,
+                'iou_threshold': 0.5
+            }
         },
         'FocalLoss': {
             'alpha': 0.25,
@@ -62,6 +67,11 @@ class RetinaNetTrainer(AbstractTrainer):
             'learning_rate': 1e-2,
             'momentum': 0.9,
             'weight_decay': 1e-4
+        },
+        'scheduler': {
+            'factor': 0.1,
+            'patience': 2,
+            'threshold': 0.1
         },
         'transforms': {
             'resize': {
@@ -149,41 +159,126 @@ class RetinaNetTrainer(AbstractTrainer):
             self.save_checkpoint(epoch)
 
             if validate:
-                self.validate()
+                validation_loss = self.validate(epoch)
+                self.scheduler.step(validation_loss)
 
-    def validate(self):
-        """Compute mAP over validation dataset."""
+    def validate(self, epoch):
+        """Compute the loss over the validation dataset."""
+        self.model.to(self.device)
+        self.model.eval(**self.hyperparameters['RetinaNet']['evaluation'])
+
+        weights = self.hyperparameters['FocalLoss']['weights']
+
+        classification_losses = []
+        regression_losses = []
+        losses = []
+
+        start_time = time.time()
+        last_endtime = time.time()
+
+        for batch, (images, annotations) in enumerate(self.valid_dataloader):
+            images, annotations = images.to(self.device), annotations.to(self.device)
+
+            anchors, regressions, classifications = self.model(images)
+            del images
+
+            classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+            del anchors, regressions, classifications, annotations
+
+            classification_loss *= weights['classification']
+            regression_loss *= weights['regression']
+            classification_loss = float(classification_loss)
+            regression_loss = float(regression_loss)
+
+            classification_losses.append(classification_loss)
+            regression_losses.append(regression_loss)
+            losses.append(classification_loss + regression_loss)
+            del classification_loss, regression_loss
+
+            batch_time = time.time() - last_endtime
+            last_endtime = time.time()
+            total_time = time.time() - start_time
+
+            self.valid_logger.log({
+                'Validating': '',
+                'Epoch': epoch,
+                'Batch': batch,
+                'Classification': torch.stack(classification_losses).mean(),
+                'Regression': torch.stack(regression_losses).mean(),
+                'Total': torch.stack(losses).mean(),
+                'Time': batch_time,
+                'Total time': total_time
+            })
+
+        return torch.stack(losses).mean()
+
+    def validate_map(self):
+        """Compute mAP over validation dataset.
+
+        We iterate over the images in the validation dataset, compute the detections using the current
+        state of the model, generate the detections tensor and compute the mAP using the MeanAP class.
+
+        As the MeanAP class does not computes the mAP for each class (it computes for the entire image),
+        we must filter the annotations by each class, compute mAP and store the value for the class and
+        continue.
+
+        Returns:
+            torch.Tensor: The mAP averaged over all the classes.
+        """
         print('--------- VALIDATING --------')
 
         self.model.to(self.device)
-        self.model.eval()
+        self.model.eval(**self.hyperparameters['RetinaNet']['evaluation'])
 
-        mAP = []
-        aps = []
+        mAP = {}  # The array of mAP per each class per each image
+        # mAP is something like {'0': [0.15, ..., 0.87]} where the length of the list is the number of images
+        # in the validation dataset
+        aps = {}  # The array with the Average Precision for each IoU threshold, for each image, for each class
+        # aps is something like {'0': [[0.67, ..., 0.54], ..., []]} where the length of the bigger array is the
+        # number of images that contains that label and the inner arrays is the number of IoU thresholds to compute
+        # the Average Precisions
 
         for batch_index, (images, annotations) in enumerate(self.valid_dataloader):
             images, annotations = images.to(self.device), annotations.to(self.device)
             for index, (boxes, classifications) in enumerate(self.model(images)):
+                # Generate the detections
                 detections = torch.zeros((boxes.shape[0], 6)).to(self.device)
-
-                if not boxes.shape[0] > 0:
-                    mAP.append(torch.zeros((1)).mean().to(self.device))
-                    aps.append(torch.zeros((self.compute_map.iou_thresholds.shape[0])).to(self.device))
-                    continue
-
                 detections[:, :4] = boxes
                 prob, label = classifications.max(dim=1)
                 detections[:, 4] = label
                 detections[:, 5] = prob
-                actual_map, actual_aps = self.compute_map(annotations[index], detections)
-                mAP.append(actual_map)
-                aps.append(actual_aps)
-            print('[Validating] [Batch {}] [mAP {:.3f}] [APs {}]'.format(
-                batch_index,
-                torch.stack(mAP).mean().item(),
-                ' '.join(['{:.3f}'.format(ap.item()) for ap in torch.stack(aps).mean(dim=0)])))
 
+                # Get the actual annotations, clean and iterate over each unique label
+                actual_annotations = annotations[index].clone()
+                # Remove dummy annotations created by the data loader (label == -1)
+                mask = actual_annotations[:, -1] == -1
+                actual_annotations = actual_annotations[mask]
+                # Get the true labels in the actual annotation
+                labels = [int(label) for label in actual_annotations[:, -1].unique()]
+                # Iterate over each label to compute mAP per class
+                for label in labels:
+                    if label not in mAP:
+                        mAP[label] = []
+                    if label not in aps:
+                        aps[label] = []
+                    # Add zero values if there are no detections
+                    if not boxes.shape[0] > 0:
+                        mAP[label].append(torch.zeros((1)).mean().to(self.device))
+                        aps[label].append(torch.zeros((self.compute_map.iou_thresholds.shape[0])).to(self.device))
+                        continue
+                    # Compute mAP
+                    actual_map, actual_aps = self.compute_map(actual_annotations, detections)
+                    mAP[label].append(actual_map)
+                    aps[label].append(actual_aps)
+
+            print('[Validating] [Batch {}]'.format(batch_index))
+
+        # Set the model to train again
         self.model.train()
+        # Compute the average of the map over all the classes
+        final_map = [torch.stack(mAP[label]).mean() for label in mAP]
+        final_aps = {label: torch.stack(aps[label]).mean(dim=0) for label in aps}
+        return torch.stack(final_map).mean(), final_aps
 
     def get_model(self):
         """Initialize and get the RetinaNet.
@@ -332,4 +427,20 @@ class RetinaNetTrainer(AbstractTrainer):
             lr=hyperparameters['learning_rate'],
             momentum=hyperparameters['momentum'],
             weight_decay=hyperparameters['weight_decay']
+        )
+
+    def get_scheduler(self):
+        """Get the learning rate scheduler.
+
+        Returns:
+            torch.optim.lr_scheduler.ReduceLROnPlateau: The learning rate scheduler.
+        """
+        hyperparameters = self.hyperparameters['scheduler']
+        return ReduceLROnPlateau(
+            optimizer=self.optimizer,
+            mode='min',
+            factor=hyperparameters['factor'],
+            patience=hyperparameters['patience'],
+            verbose=True,
+            threshold=hyperparameters['threshold']
         )

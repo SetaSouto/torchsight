@@ -7,7 +7,7 @@ from ..metrics import iou as compute_iou
 class MeanAP():
     """Class to compute the Mean Average Precision.
 
-    It follows the mAP fro COCO challenge:
+    It follows the mAP from COCO challenge:
     http://cocodataset.org/#detection-eval
 
     Inspired by Jonathan Hui from:
@@ -37,7 +37,7 @@ class MeanAP():
         of the bounding box) and the label of the class.
 
         The detections must have 6 values: The same 5 as ground truth but also a 6th value with the
-        confidence of the detection (useful for sort the detections).
+        confidence of the detection (useful to sort the detections).
 
         Arguments:
             annotations (torch.Tensor): The ground truth.

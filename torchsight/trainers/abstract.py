@@ -24,6 +24,7 @@ class AbstractTrainer():
         valid_dataloader (torch.utils.data.Dataloader): The dataloader for the validation dataset.
         criterion (torch.nn.Module): The criterion -or loss- function for the training.
         optimizer (torch.optim.Optimizer): The optimizer for the training.
+        scheduler (torch.optim.lr_scheduler.*): The scheduler for the optimizer, to adjust the learning rate.
     """
 
     hyperparameters = {}  # Base hyperparameters
@@ -48,6 +49,7 @@ class AbstractTrainer():
         self.dataloader, self.valid_dataloader = self.get_dataloaders()
         self.criterion = self.get_criterion()
         self.optimizer = self.get_optimizer()
+        self.scheduler = self.get_scheduler()
 
         # Load the checkpoint if there is any
         if checkpoint is not None:
@@ -57,6 +59,7 @@ class AbstractTrainer():
 
         # Configure the logs
         self.logger = None
+        self.valid_logger = None
         if logs_dir:
             logs_dir = os.path.join(logs_dir, str(int(time.time())))
 
@@ -66,6 +69,7 @@ class AbstractTrainer():
                 description.append('\nCheckpoint: {}'.format(checkpoint))
 
             self.logger = Logger(description='\n'.join(description), directory=logs_dir)
+            self.valid_logger = Logger(directory=logs_dir, filename='validation_logs.json')
 
     def merge_hyperparameters(self, base, new, path=None):
         """Merge the base hyperparameters (if there's any) with the given hyperparameters.
@@ -193,5 +197,15 @@ class AbstractTrainer():
         Returns:
             optimizer (torch.optim.Optimizer): The optimizer of the training.
                 For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+        """
+        raise NotImplementedError()
+
+    def get_scheduler(self):
+        """Get the learning rate scheduler for the optimizer.
+
+        Returns:
+            torch.optim.lr_scheduler.*: The learning rate scheduler.
+            For schedulers see:
+                https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
         """
         raise NotImplementedError()
