@@ -199,7 +199,6 @@ class RetinaNetTrainer(AbstractTrainer):
             classification_losses.append(classification_loss)
             regression_losses.append(regression_loss)
             losses.append(classification_loss + regression_loss)
-            del classification_loss, regression_loss
 
             batch_time = time.time() - last_endtime
             last_endtime = time.time()
@@ -209,9 +208,9 @@ class RetinaNetTrainer(AbstractTrainer):
                 'Validating': '',
                 'Epoch': epoch,
                 'Batch': batch,
-                'Classification': '{:.7f}'.format(torch.Tensor(classification_losses).mean().item()),
-                'Regression': '{:.7f}'.format(torch.Tensor(regression_losses).mean().item()),
-                'Total': '{:.7f}'.format(torch.Tensor(losses).mean().item()),
+                'Classification': '{:.7f}'.format(classification_loss),
+                'Regression': '{:.7f}'.format(regression_loss),
+                'Total': '{:.7f}'.format(losses[-1]),
                 'Time': '{:.3f}'.format(batch_time),
                 'Total time': '{:.3f}'.format(total_time)
             })
