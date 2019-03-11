@@ -143,7 +143,7 @@ class RetinaNetTrainer(AbstractTrainer):
                 batch_time = time.time() - last_endtime
                 last_endtime = time.time()
                 # Get the actual learning rate (modified by the scheduler)
-                learning_rates = [param_group['lr'] for i, param_group in enumerate(self.optimizer.param_groups)]
+                learning_rates = [str(param_group['lr']) for i, param_group in enumerate(self.optimizer.param_groups)]
                 self.logger.log({
                     'Epoch': epoch,
                     'Batch': batch_index,
