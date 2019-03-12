@@ -2,9 +2,10 @@
 import argparse
 import random
 
+from torchvision import transforms
+
 from torchsight.datasets import CocoDataset
 from torchsight.transforms.detection import Resize
-from torchvision import transforms
 
 PARSER = argparse.ArgumentParser(description='Visualize some images from the CocoDataset.')
 PARSER.add_argument('root', help='The root directory where is the data.')
