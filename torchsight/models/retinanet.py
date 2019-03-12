@@ -84,11 +84,11 @@ class FeaturePyramid(nn.Module):
         self.p5_conv1 = nn.Conv2d(c5_depth, features, kernel_size=1, stride=1, padding=0)
         self.p5_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
         # Upsample to sum with c_4
-        self.p5_upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.p5_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode='nearest')
 
         self.p4_conv1 = nn.Conv2d(c4_depth, features, kernel_size=1, stride=1, padding=0)
         self.p4_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
-        self.p4_upsample = nn.Upsample(scale_factor=2, mode='nearest')
+        self.p4_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode='nearest')
 
         # We don't need to upsample c3 because we are not using c2
         self.p3_conv1 = nn.Conv2d(c3_depth, features, kernel_size=1, stride=1, padding=0)

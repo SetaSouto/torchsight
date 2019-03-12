@@ -50,7 +50,7 @@ class Resize():
         padding_height = self.stride - (new_height % self.stride)
         padding_height = 0 if padding_height == 32 else padding_height
 
-        image = resize(image, (new_height, new_width), mode='constant')
+        image = resize(image, (new_height, new_width), mode='constant', anti_aliasing=True)
         height, width, channels = image.shape
 
         final = np.zeros((new_height + padding_height, new_width + padding_width, channels))

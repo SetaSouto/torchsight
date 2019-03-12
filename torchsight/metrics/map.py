@@ -28,7 +28,7 @@ class MeanAP():
             step (float): The step to advance from the 'start' to the 'stop'.
         """
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu:0'
-        self.iou_thresholds = torch.range(start, stop, step).to(self.device)
+        self.iou_thresholds = torch.arange(start, stop + step, step).to(self.device)
 
     def __call__(self, annotations, detections):
         """Computes the mAP given the ground truth (annotations) and the detections.
@@ -106,7 +106,7 @@ class MeanAP():
                 metrics[j, 2] = recall
             # Get the max precision over each recall between (0, 0.1, 0.2, ..., 1.0):
             precisions = torch.zeros((11)).to(self.device)
-            for j, recall in enumerate(torch.range(0, 1, 0.1).to(self.device)):
+            for j, recall in enumerate(torch.arange(0, 1.1, 0.1).to(self.device)):
                 # Generate the mask to keep only precisions over the current recall
                 mask = metrics[:, 2] >= recall
                 # Set the precision

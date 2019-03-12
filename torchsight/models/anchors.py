@@ -146,11 +146,11 @@ class Anchors(nn.Module):
                 # We need a tensor with shape (feature_height, feature_width, 4)
                 # shift_x shape: (feature_height, feature_width, 1) where each location has the index of the
                 # x position of the location in the feature map plus the shift value
-                shift_x = torch.arange(feature_width).to(self.device)
+                shift_x = torch.arange(feature_width).to(self.device).type(torch.float)
                 shift_x = stride * shift_x.unsqueeze(0).unsqueeze(2).repeat(feature_height, 1, 1) + shift
                 # shift_y shape: (feature_height, feature_width, 1) where each location has the index of the
                 # y position of the location in the feature map plus the shift value
-                shift_y = torch.arange(feature_height).to(self.device)
+                shift_y = torch.arange(feature_height).to(self.device).type(torch.float)
                 shift_y = stride * shift_y.unsqueeze(1).unsqueeze(2).repeat(1, feature_width, 1) + shift
                 # The final shift will have shape (feature_height, feature_width, 4 * n_anchors)
                 shift = torch.cat([shift_x, shift_y, shift_x, shift_y], dim=2).repeat(1, 1, self.n_anchors)

@@ -111,11 +111,12 @@ class AbstractTrainer():
             epoch (int): The epoch when this checkpoint was generated.
         """
         path = os.path.join(self.logger.directory, 'checkpoint_epoch_{}.pth.tar'.format(epoch))
-        print("[Epoch {}] Saving model's and optimizer's state dict to: {}".format(epoch, path))
+        print("[Epoch {}] Saving model's, optimizer's  and scheduler's state dict to: {}".format(epoch, path))
         checkpoint = {
             'epoch': epoch,
             'model': self.model.state_dict(),
-            'optimizer': self.optimizer.state_dict()
+            'optimizer': self.optimizer.state_dict(),
+            'scheduler': self.scheduler.state_dict()
         }
         torch.save(checkpoint, path)
 
@@ -136,6 +137,10 @@ class AbstractTrainer():
             for k, val in state.items():
                 if torch.is_tensor(val):
                     state[k] = val.to(self.device)
+
+        if 'scheduler' in checkpoint:
+            self.scheduler.load_state_dict(checkpoint['scheduler'])
+
         return checkpoint['epoch']
 
     def validate(self):
