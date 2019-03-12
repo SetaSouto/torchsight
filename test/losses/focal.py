@@ -31,10 +31,10 @@ class TestFocalLoss(unittest.TestCase):
         self.assertEqual(0., float(classification))
         self.assertEqual(0., float(regression))
 
-    def get_loss_arguments(self):
+    def get_loss_arguments(self, classes=5):
         """Return the arguments for the loss.
 
-        Simulate a batch with size 1, 5 classes and 3 annotations for an image of size 450x450.
+        Simulate a batch with size 1, 'classes' classes and 3 annotations for an image of size 450x450.
 
         It returns the anchors, regressions, classifications and annotations for a fake image.
         The classification and the regressions are the "perfect" ones, it must be the minimum loss,
@@ -50,7 +50,7 @@ class TestFocalLoss(unittest.TestCase):
             torch.Tensor: The classifications probabilities for each class. Each classification value
                 has the correct value, i.e. has all the values as 0 but no the correct one that is 1.
                 Shape:
-                    (total anchors, 5)
+                    (total anchors, classes)
             torch.Tensor: The fake annotations for the fake image.
                 Shape:
                     (3, 5)
@@ -81,7 +81,7 @@ class TestFocalLoss(unittest.TestCase):
         th = torch.log(h/ha)
         regressions = torch.stack([tx, ty, tw, th], dim=1)
         # Get the classification probs according to their assigned annotations
-        classifications = torch.zeros((anchors.shape[0], 5)).to(self.device)
+        classifications = torch.zeros((anchors.shape[0], classes)).to(self.device)
         selected_anchors = iou > self.loss.iou_object  # Anchors below that threshold are background
         classifications[selected_anchors, assigned_annotations[selected_anchors, -1].long()] = 1.
 
@@ -103,7 +103,9 @@ class TestFocalLoss(unittest.TestCase):
         How can we do this? By taking the perfect classification and increasing the classification score
         by a little value to all the other non-correct labels. The loss always must increase.
         """
-        anchors, regressions, classifications, annotations = self.get_loss_arguments()
+        classes = 80
+        print('Using {} classes.'.format(classes))
+        anchors, regressions, classifications, annotations = self.get_loss_arguments(classes=classes)
         # Take the MAXIMUM value that the loss could be theoretically by changing all the labels.
         # Change the labels to turn on all the other labels but not the correct one
         classifications_test = 1 - classifications
@@ -115,6 +117,7 @@ class TestFocalLoss(unittest.TestCase):
         last_loss = float(self.loss(anchors, regressions, classifications, annotations)[0])
         mask = classifications != 1
         classifications_test = classifications.clone()
+        print('Increasing bad labels:')
         for _ in range(int(1 / increase_by)):
             classifications_test[mask] += increase_by
             loss = float(self.loss(anchors, regressions, classifications_test, annotations)[0])
@@ -125,6 +128,7 @@ class TestFocalLoss(unittest.TestCase):
 
         # Check if the loss decreases if the correct ones increases from zero to one
         print('------------------')
+        print('Increasing correct label:')
         mask = classifications == 1
         classifications_test = classifications.clone()
         classifications_test[mask] = 0
