@@ -323,15 +323,33 @@ class RetinaNet(nn.Module):
         self.regression = Regression(in_channels=features['pyramid'],
                                      anchors=self.anchors.n_anchors,
                                      features=features['regression'])
-        self.classification = Classification(in_channels=features['pyramid'],
-                                             classes=classes,
-                                             anchors=self.anchors.n_anchors,
-                                             features=features['classification'])
+        self.classification = self.get_classification_module(in_channels=features['pyramid'],
+                                                             classes=classes,
+                                                             anchors=self.anchors.n_anchors,
+                                                             features=features['classification'])
 
         # Set the base threshold for evaluating mode
         self.threshold = 0.6
         self.iou_threshold = 0.5
         self.evaluate_loss = False
+
+    def get_classification_module(self, in_channels, classes, anchors, features):
+        """Get the classification module to generate the probability of each anchor
+        to be any class.
+
+        Why to do a getter? Because this allow to override this method and compute the
+        classification with another method.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+        Returns:
+            torch.nn.Module: The classification module for the net.
+        """
+        return Classification(in_channels=in_channels, classes=classes, anchors=anchors, features=features)
 
     def eval(self, threshold=None, iou_threshold=None, loss=False):
         """Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
