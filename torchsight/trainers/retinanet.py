@@ -370,7 +370,7 @@ class RetinaNetTrainer(AbstractTrainer):
             Why is this important?
             Because as each image could contain different amounts of annotated objects the tensor
             for the batch could not be created, so we need to "fill" the annotations tensors with -1
-            to giv them the same shapes and stack them.
+            to give them the same shapes and stack them.
             Why -1?
             Because the FocalLoss could interpret that label and ingore it for the loss.
 
