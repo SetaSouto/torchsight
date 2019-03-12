@@ -2,6 +2,7 @@
 import argparse
 
 import matplotlib.pyplot as plt
+import torch
 
 from torchsight.loggers import Logger
 
@@ -27,8 +28,13 @@ VALID_LOGGER = Logger(description=None, directory=ARGUMENTS.root, filename=ARGUM
 
 # PRINT THE DATA
 TRAIN_LOSSES = TRAIN_LOGGER.epoch_losses(epoch_key=ARGUMENTS.epoch_key, loss_key=ARGUMENTS.loss_key)
-VALID_LOSSES = VALID_LOGGER.epoch_losses(epoch_key=ARGUMENTS.epoch_key, loss_key=ARGUMENTS.loss_key)
 EPOCHS = TRAIN_LOGGER.get_epochs(ARGUMENTS.epoch_key)
+
+try:
+    VALID_LOSSES = VALID_LOGGER.epoch_losses(epoch_key=ARGUMENTS.epoch_key, loss_key=ARGUMENTS.loss_key)
+except KeyError:
+    # There is no validation yet
+    VALID_LOSSES = torch.zeros((len(TRAIN_LOSSES)))
 
 PADDING = 15
 print('{} | {} | {}'.format('EPOCH'.rjust(PADDING//3), 'TRAIN LOSS'.rjust(PADDING), 'VALIDATION LOSS'.rjust(PADDING)))
