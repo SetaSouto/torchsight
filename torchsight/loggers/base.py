@@ -138,3 +138,14 @@ class Logger():
             epochs_losses[epoch]['total'] += 1
 
         return torch.Tensor([epochs_losses[epoch]['sum'] / epochs_losses[epoch]['total'] for epoch in epochs_losses])
+
+    def get_epochs(self, epoch_key='epoch'):
+        """Return the unique array of epochs.
+
+        Arguments:
+            epoch_key (str): The key of the epochs in the logs dict.
+
+        Returns:
+            list: The unique list of the epochs number.
+        """
+        return list(set(self.read()[epoch_key]))
