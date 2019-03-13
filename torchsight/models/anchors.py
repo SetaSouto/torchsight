@@ -2,6 +2,8 @@
 import torch
 from torch import nn
 
+from ..metrics import iou as compute_iou
+
 
 class Anchors(nn.Module):
     """Module to generate anchors for a given image.
@@ -317,3 +319,64 @@ class Anchors(nn.Module):
         boxes[:, :, 3] = torch.clamp(boxes[:, :, 3], max=height)
 
         return boxes
+
+    @staticmethod
+    def assign(anchors, annotations, thresholds=None):
+        """Assign the correspondent annotation to each anchor.
+
+        We know that in a feature map we'll have A anchors per location (i.e. feature map's height * width * A total
+        anchors), where these A anchors has different sizes and aspect ratios.
+        Each one of this anchors could have an 'assigned annotation', that is the annotation that has bigger
+        Intersection over Union (IoU) with the anchor.
+
+        So, all the anchors could have an assigned annotation, but, what we do with the anchors that are containing
+        background and none object? That's the reason that we must provide some thresholds: one to keep only the
+        anchors that are containing objects and on threshold to decide if the anchor is background or not.
+        The anchors that has IoU between those threshold are ignored.
+
+        With this we can train anchors to fit the annotation and others to fit the background class. And obviously
+        keep a centralized way to handle this behavior.
+
+        Arguments:
+            anchors (torch.Tensor): The base anchors. They must have 4 values: x1, y1 (top left corner), x2, y2 (bottom
+                right corner).
+                Shape:
+                    (number of anchors, 4)
+            annotations (torch.Tensor): The real ground truth annotations of the image. They must have at least the
+                same 4 values.
+                Shape:
+                    (number of annotations, 4+)
+            thresholds (dict): A dict with the 'object' (float) threshold and the 'background' threshold.
+                If the IoU between an anchor and an annotation is bigger than 'object' threshold it's selected as
+                an object anchor, if the IoU is below the 'background' threshold is selected as a 'background' anchor.
+
+        Returns:
+            torch.Tensor: The assigned annotations. The annotation at index i is the annotation associated to the
+                anchor at index i. So for example, if we have the anchors tensor and we want to get the annotation to
+                the i-th anchor we could simply take this value returned and the get i-th element too. Example:
+                >>> assigned_annotations, _* = Anchors.assign(anchors, annotations)
+                >>> assigned_annotations[10]  # The annotation assigned to the 10th anchor.
+                    Shape:
+                        (number of anchors, 4+)
+            torch.Tensor: A mask that indicates which anchors are selected to be objects.
+            torch.Tensor: A mask that indicates which anchors are selected to be background.
+                Keep in mind that if the thresholds are not the same some anchors could not be objects nor background.
+        """
+        default_thresholds = {'object': 0.5, 'background': 0.4}
+
+        if thresholds is None:
+            thresholds = default_thresholds
+        if 'object' not in thresholds:
+            thresholds['object'] = default_thresholds['object']
+        if 'background' not in thresholds:
+            thresholds['background'] = default_thresholds['background']
+
+        iou = compute_iou(anchors, annotations)  # (number of anchors, number of annotations)
+        iou_max, iou_argmax = iou.max(dim=1)  # (number of anchors)
+        # Each anchor is associated to a bounding box. Which one? The one that has bigger iou with the anchor
+        assigned_annotations = annotations[iou_argmax, :]  # (number of anchors, 4+)
+        # Only train bounding boxes where its base anchor has an iou with an annotation over iou_object threshold
+        selected_anchors_objects = iou_max > thresholds['object']
+        selected_anchors_backgrounds = iou_max < thresholds['background']
+
+        return assigned_annotations, selected_anchors_objects, selected_anchors_backgrounds

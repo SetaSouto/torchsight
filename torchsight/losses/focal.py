@@ -6,6 +6,7 @@ https://arxiv.org/pdf/1708.02002.pdf
 import torch
 from torch import nn
 from ..metrics import iou as compute_iou
+from ..models import Anchors
 
 
 class FocalLoss(nn.Module):
@@ -90,25 +91,21 @@ class FocalLoss(nn.Module):
                 regression_losses.append(torch.zeros((1,)).mean().to(self.device))
                 continue
 
-            iou = compute_iou(anchors, annotations)  # (number of anchors, number of annotations)
-            iou_max, iou_argmax = iou.max(dim=1)  # (number of anchors)
-            # Free memory
-            del iou
-            # Each anchor is associated to a bounding box. Which one? The one that has bigger iou with the anchor
-            assigned_annotations = annotations[iou_argmax, :]  # (number of anchors, 5)
-            # Free memory
-            del iou_argmax
-            # Only train bounding boxes where its base anchor has an iou with an annotation over iou_object threshold
-            selected_anchors_objects = iou_max > self.iou_object
-            selected_anchors_backgrounds = iou_max < self.iou_background
-            n_classes = classifications.shape[1]
-            # Free memory
-            del iou_max
+            # Get assignations of the annotations to the anchors
+            # Get the assigned annotations (the i-th assigned annotation is the annotation assigned to the i-th
+            # anchor)
+            # Get the masks to select the anchors assigned to an object (IoU bigger than iou_object threshold)
+            # Get the mask to select the anchors assigned to background (IoU lower than iou_background)
+            assignations = Anchors.assign(anchors,
+                                          annotations,
+                                          thresholds={'object': self.iou_object, 'background': self.iou_background})
+            assigned_annotations, selected_anchors_objects, selected_anchors_backgrounds = assignations
 
             # Compute classification loss
 
             # Create the target tensor. Shape (number anchors, number of classes) where the
             # index of the class for the annotation has a 1 and all the others zero.
+            n_classes = classifications.shape[1]
             targets = torch.zeros((anchors.shape[0], n_classes)).to(self.device)
             # Get the label for each anchor based on its assigned annotation ant turn it on. Do this only
             # for the assigned anchors.
