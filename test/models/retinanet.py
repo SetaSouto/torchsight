@@ -21,8 +21,11 @@ PARSER.add_argument('-r', '--resnet', nargs='?', default=50, help='The ResNet ba
 
 ARGUMENTS = PARSER.parse_args()
 
-TRANSFORMS = transforms.Compose([Resize(), ToTensor(), Normalize()])
-DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(), transform=TRANSFORMS)
+DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(),
+                      transform=transforms.Compose([Resize(), ToTensor(), Normalize()]))
+# Not normalize the picture for human sight
+DATASET_HUMAN = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(),
+                            transform=transforms.Compose([Resize(), ToTensor()]))
 INDEXES = list(range(len(DATASET)))
 
 MODEL = RetinaNet(classes=int(ARGUMENTS.classes), resnet=ARGUMENTS.resnet)
@@ -38,19 +41,20 @@ MODEL.eval(threshold=0.5, iou_threshold=0.2)
 
 for index in INDEXES:
     image, ground = DATASET[index]
-    print('Ground truth:\n', ground)
+    image_human, _ = DATASET_HUMAN[index]
+    # print('Ground truth:\n', ground)
     image = image.unsqueeze(0).type(torch.float)  # To simulate a batch
     if CUDA:
         image = image.to('cuda')
     boxes, classifications = MODEL(image)[0]  # Get the first result of the fake batch
     boxes, classifications = boxes[:100], classifications[:100]
-    print('Classifications:\n', classifications)
+    # print('Classifications:\n', classifications)
     if boxes.shape[0] == 0:
-        print('No detections')
+        DATASET.visualize(image_human)
         continue
     detections = torch.zeros((boxes.shape[0], 5))
     detections[:, :4] = boxes
     prob, label = classifications.max(dim=1)
     detections[:, 4] = label
     # print('Detections:\n', detections)
-    DATASET.visualize(image[0].cpu(), detections.cpu())
+    DATASET.visualize(image_human, detections.cpu())
