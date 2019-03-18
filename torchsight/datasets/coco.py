@@ -155,7 +155,7 @@ class CocoDataset(Dataset):
 
         return image, bounding_boxes
 
-    def visualize(self, image, boxes, initial_time=None, n_colors=20):
+    def visualize(self, image, boxes=None, initial_time=None, n_colors=20):
         """Visualize an image and its bounding boxes.
 
         Arguments:
@@ -182,17 +182,18 @@ class CocoDataset(Dataset):
         _, axes = matplotlib.pyplot.subplots(1)
 
         # Generate rectangles
-        for i in range(boxes.shape[0]):
-            # We need the top left corner of the rectangle and its width and height
-            x, y, x2, y2, label = boxes[i]
-            w, h = x2 - x, y2 - y
-            color = colors[int(label) % n_colors]
-            # Generate and add rectangle to plot
-            axes.add_patch(matplotlib.patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=color, facecolor='none'))
-            # Generate text if there are any classes
-            class_name = self.classes['names'][int(label)]
-            matplotlib.pyplot.text(x, y, s=class_name, color='white',
-                                   verticalalignment='top', bbox={'color': color, 'pad': 0})
+        if boxes is not None:
+            for i in range(boxes.shape[0]):
+                # We need the top left corner of the rectangle and its width and height
+                x, y, x2, y2, label = boxes[i]
+                w, h = x2 - x, y2 - y
+                color = colors[int(label) % n_colors]
+                # Generate and add rectangle to plot
+                axes.add_patch(matplotlib.patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=color, facecolor='none'))
+                # Generate text if there are any classes
+                class_name = self.classes['names'][int(label)]
+                matplotlib.pyplot.text(x, y, s=class_name, color='white',
+                                    verticalalignment='top', bbox={'color': color, 'pad': 0})
         # Print stats
         print('-----\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, boxes))
         # Show image and plot
