@@ -106,9 +106,6 @@ class RetinaNetTrainer(AbstractTrainer):
         print('----- Training started ------')
         print('Using device: {}'.format(self.device))
 
-        if self.logger:
-            print('Logs can be found at {}'.format(self.logger.log_file))
-
         for epoch in range(epochs):
             epoch = epoch + 1 + self.checkpoint_epoch
             last_endtime = time.time()
@@ -145,6 +142,7 @@ class RetinaNetTrainer(AbstractTrainer):
                 # Get the actual learning rate (modified by the scheduler)
                 learning_rates = [str(param_group['lr']) for i, param_group in enumerate(self.optimizer.param_groups)]
                 self.logger.log({
+                    'Training': None,
                     'Epoch': epoch,
                     'Batch': batch_index,
                     'Time': '{:.3f}'.format(batch_time),
@@ -204,8 +202,8 @@ class RetinaNetTrainer(AbstractTrainer):
             last_endtime = time.time()
             total_time = time.time() - start_time
 
-            self.valid_logger.log({
-                'Validating': '',
+            self.logger.log({
+                'Validating': None,
                 'Epoch': epoch,
                 'Batch': batch,
                 'Classification': '{:.7f}'.format(classification_loss),

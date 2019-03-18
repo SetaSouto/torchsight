@@ -5,7 +5,7 @@ import time
 
 import torch
 
-from ..loggers import Logger
+from ..loggers import PrintLogger
 
 
 class AbstractTrainer():
@@ -59,7 +59,6 @@ class AbstractTrainer():
 
         # Configure the logs
         self.logger = None
-        self.valid_logger = None
         if logs_dir:
             logs_dir = os.path.join(logs_dir, str(int(time.time())))
 
@@ -68,8 +67,7 @@ class AbstractTrainer():
             if checkpoint is not None:
                 description.append('\nCheckpoint: {}'.format(checkpoint))
 
-            self.logger = Logger(description='\n'.join(description), directory=logs_dir)
-            self.valid_logger = Logger(directory=logs_dir, filename='validation_logs.json')
+            self.logger = PrintLogger(description='\n'.join(description), directory=logs_dir)
 
     def merge_hyperparameters(self, base, new, path=None):
         """Merge the base hyperparameters (if there's any) with the given hyperparameters.

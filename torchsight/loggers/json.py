@@ -1,12 +1,14 @@
-"""Base Logger module."""
+"""JSON Logger module."""
 import json
 import os
 
 import torch
 
+from .abstract import AbstractLogger
 
-class Logger():
-    """Base Logger class."""
+
+class JSONLogger(AbstractLogger):
+    """JSON Logger class to save logs in a json format."""
 
     def __init__(self, description=None, directory='./logs', filename='logs.json'):
         """Initialize the logger and create the directory that will contain the logs.
