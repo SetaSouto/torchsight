@@ -36,7 +36,7 @@ class AbstractTrainer():
             logs_dir (str): Path to the directory where to save the logs.
             checkpoint (str): Path to a checkpoint dict.
         """
-        print('\n--------- TRAINER ----------\n')
+        print('\n--------- TRAINER ----------')
         self.hyperparameters = self.merge_hyperparameters(self.hyperparameters, hyperparameters)
 
         # Set the datasets

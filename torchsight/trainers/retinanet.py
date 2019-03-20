@@ -91,6 +91,9 @@ class RetinaNetTrainer(AbstractTrainer):
         self.compute_map = MeanAP()
         super(RetinaNetTrainer, self).__init__(*args, **kwargs)
 
+    def get_model_hyperparameters(self):
+        return self.hyperparameters['RetinaNet']
+
     def forward(self, images, *args, **kwargs):
         """Forward pass through the network.
 
@@ -179,7 +182,7 @@ class RetinaNetTrainer(AbstractTrainer):
     def validate(self, epoch):
         """Compute the loss over the validation dataset."""
         self.model.to(self.device)
-        hyperparameters = self.hyperparameters['RetinaNet']['evaluation']
+        hyperparameters = self.get_model_hyperparameters()['evaluation']
         self.model.eval(threshold=hyperparameters['threshold'],
                         iou_threshold=hyperparameters['iou_threshold'],
                         loss=True)
@@ -346,10 +349,10 @@ class RetinaNetTrainer(AbstractTrainer):
         transform = self.get_transform()
         hyperparameters = self.hyperparameters['datasets']
 
-        retina_classes = self.hyperparameters['RetinaNet']['classes']
+        model_classes = self.get_model_hyperparameters()['classes']
         dataset_classes = len(hyperparameters['class_names'])
-        if dataset_classes > 0 and retina_classes != dataset_classes:
-            raise ValueError(' '.join(['The amount of classes for the RetinaNet model ({})'.format(retina_classes),
+        if dataset_classes > 0 and model_classes != dataset_classes:
+            raise ValueError(' '.join(['The amount of classes for the model ({})'.format(model_classes),
                                        'must be the same to the length of "class_names" in',
                                        'the "dataset" hyperparameters ({}).'.format(dataset_classes)]))
 

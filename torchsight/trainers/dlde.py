@@ -75,9 +75,22 @@ class DLDENetTrainer(RetinaNetTrainer):
         }
     }
 
+    def get_model_hyperparameters(self):
+        return self.hyperparameters['DLDENet']
+
     def get_model(self):
         """Initialize and get a DLDENet model instance."""
-        return DLDENet(**self.hyperparameters['DLDENet'])
+        hyperparameters = self.get_model_hyperparameters()
+        return DLDENet(
+            classes=hyperparameters['classes'],
+            resnet=hyperparameters['resnet'],
+            features=hyperparameters['features'],
+            anchors=hyperparameters['anchors'],
+            embedding_size=hyperparameters['embedding_size'],
+            concentration=hyperparameters['concentration'],
+            assignation_thresholds=hyperparameters['assignation_thresholds'],
+            pretrained=hyperparameters['pretrained']
+        )
 
     def forward(self, images, annotations):
         """Forward pass through the network during training."""
