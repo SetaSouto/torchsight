@@ -1,7 +1,6 @@
 """Base trainer module."""
 import json
 import os
-import time
 
 import torch
 
@@ -60,8 +59,6 @@ class AbstractTrainer():
         # Configure the logs
         self.logger = None
         if logs_dir:
-            logs_dir = os.path.join(logs_dir, str(int(time.time())))
-
             # Description of this instance are the hyperparameters of the training
             description = ['Hyperparameters:\n', json.dumps(self.hyperparameters, indent=2)]
             if checkpoint is not None:
