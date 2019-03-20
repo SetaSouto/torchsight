@@ -161,9 +161,10 @@ class CocoDataset(Dataset):
         Arguments:
             image (torch.Tensor or ndarray): The image to visualize.
             boxes (torch.Tensor or ndarray): The bounding boxes to visualize in the image.
-                It must contains the x1, y1, x2, y2 points and the label in the last value. 
+                It must contains the x1, y1, x2, y2 points and the label in the 4th index.
+                You could provide the probability of the label too optionally in the 5th index.
                 Shape:
-                    (number of annotations, 5)
+                    (number of annotations, 5 or 6)
         """
         initial_time = initial_time if initial_time is not None else time.time()
 
@@ -185,15 +186,21 @@ class CocoDataset(Dataset):
         if boxes is not None:
             for i in range(boxes.shape[0]):
                 # We need the top left corner of the rectangle and its width and height
-                x, y, x2, y2, label = boxes[i]
+                if boxes[i].shape[0] == 6:
+                    x, y, x2, y2, label, prob = boxes[i]
+                    prob = ' {:.2f}'.format(prob)
+                else:
+                    x, y, x2, y2, label = boxes[i]
+                    prob = ''
                 w, h = x2 - x, y2 - y
                 color = colors[int(label) % n_colors]
                 # Generate and add rectangle to plot
-                axes.add_patch(matplotlib.patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=color, facecolor='none'))
+                axes.add_patch(matplotlib.patches.Rectangle((x, y), w, h, linewidth=2,
+                                                            edgecolor=color, facecolor='none'))
                 # Generate text if there are any classes
-                class_name = self.classes['names'][int(label)]
-                matplotlib.pyplot.text(x, y, s=class_name, color='white',
-                                    verticalalignment='top', bbox={'color': color, 'pad': 0})
+                tag = '{}{}'.format(self.classes['names'][int(label)], prob)
+                matplotlib.pyplot.text(x, y, s=tag, color='white',
+                                       verticalalignment='top', bbox={'color': color, 'pad': 0})
         # Print stats
         print('-----\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, boxes))
         # Show image and plot

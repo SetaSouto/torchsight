@@ -55,9 +55,10 @@ for index in INDEXES:
     if boxes.shape[0] == 0:
         DATASET.visualize(image_human)
         continue
-    detections = torch.zeros((boxes.shape[0], 5))
+    detections = torch.zeros((boxes.shape[0], 6))
     detections[:, :4] = boxes
     prob, label = classifications.max(dim=1)
     detections[:, 4] = label
+    detections[:, 5] = prob
     # print('Detections:\n', detections)
     DATASET.visualize(image_human, detections.cpu())
