@@ -17,7 +17,10 @@ PARSER.add_argument('--no-random', action='store_const', const=True, default=Fal
 PARSER.add_argument('checkpoint', help='The checkpoint to load the model')
 PARSER.add_argument('-c', '--classes', nargs='?', default=80, help='The number of classes that the model can detect')
 PARSER.add_argument('-r', '--resnet', nargs='?', default=50, help='The ResNet backbone to use in the RetinaNet model.')
-
+PARSER.add_argument('--threshold', default=0.5,
+                    help='Keep only boxes with probability over this threshold. Default: 0.5')
+PARSER.add_argument('--iou-threshold', default=0.2,
+                    help='Set two boxes as the same if their IoU is over this threshold. Default: 0.2')
 
 ARGUMENTS = PARSER.parse_args()
 
@@ -37,7 +40,7 @@ if CUDA:
 if not ARGUMENTS.no_random:
     random.shuffle(INDEXES)
 
-MODEL.eval(threshold=0.5, iou_threshold=0.2)
+MODEL.eval(threshold=float(ARGUMENTS.threshold), iou_threshold=float(ARGUMENTS.iou_threshold))
 
 for index in INDEXES:
     image, ground = DATASET[index]
