@@ -1,4 +1,6 @@
 """DLDENet trainer"""
+import torch
+
 from ..models import DLDENet
 from .retinanet import RetinaNetTrainer
 
@@ -99,10 +101,23 @@ class DLDENetTrainer(RetinaNetTrainer):
     def train(self, epochs=100, validate=True):
         """Train the model for the given epochs.
 
+        If there is no checkpoint (i.e. checkpoint_epoch == 0) before training we make a loop over the training
+        dataset to initialize the means with the random generated embeddings.
+
         Arguments:
             epochs (int): The number of epochs to train.
             validate (bool): If true it validates the model after each epoch using the validate method.
         """
+        self.model.to(self.device)
+        self.model.train()
+
+        if self.checkpoint_epoch == 0:
+            # Initialize the means of the classes
+            with torch.no_grad():
+                for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
+                    print('[Initializing] [Batch {}]'.format(batch_index))
+                    self.forward(images.to(self.device), annotations.to(self.device))
+
         def callback(epoch):
             print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
             self.model.update_means()
