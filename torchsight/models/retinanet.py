@@ -280,36 +280,27 @@ class RetinaNet(nn.Module):
     (N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class' label.
     """
 
-    def __init__(self,
-                 classes,
-                 resnet=18,
-                 features={
-                     'pyramid': 256,
-                     'regression': 256,
-                     'classification': 256
-                 },
-                 anchors={
-                     'sizes': [32, 64, 128, 256, 512],
-                     'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
-                     'ratios': [0.5, 1, 2]
-                 },
-                 pretrained=True,
-                 device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
         """Initialize the network.
 
-        Args:
+        Arguments:
             classes (int): The number of classes to detect.
             resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
             features (dict, optional): The dict that indicates the features for each module of the network.
-            anchors (int, optional): The number of anchors to use per location of the feature map.
-            anchors_sizes (sequence, optional): The sizes of the anchors (one side, not area) to use at each different
-                scale of the FPN. Must have length 5, for each level of the FPN.
-            anchors_scales (sequence, optional): The scales to multiply each anchor size.
-            anchors_ratios (sequence, optional): The aspect ratios that the anchors must follow.
+            anchors (dict, optional): The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
+                the Anchors module.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
+            device (str, optional): The device where the module will run.
         """
         super(RetinaNet, self).__init__()
+
+        if features is None:
+            features = {'pyramid': 256, 'regression': 256, 'classification': 256}
+        if anchors is None:
+            anchors = {'sizes': [32, 64, 128, 256, 512],
+                       'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
+                       'ratios': [0.5, 1, 2]}
 
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -372,6 +363,36 @@ class RetinaNet(nn.Module):
 
         return super(RetinaNet, self).eval()
 
+    def transform(self, images, anchors, regressions, classifications):
+        """Transform, clip and apply NMS to the predictions.
+
+        Arguments:
+            images (torch.Tensor): The images that passed through the network. Useful for clipping
+                the predicted bounding boxes.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors generated for the images.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            classifications (torch.Tensor): The probabilities for each class for each anchor.
+                Shape:
+                    (batch size, amount of anchors, amount of classes)
+
+        Returns:
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        """
+        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+        # Generate a sequence of (bounding_boxes, classifications) for each image
+        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
+
     def forward(self, images):
         """Forward pass of the network. Returns the anchors and the probability for each class per anchor.
 
@@ -423,12 +444,7 @@ class RetinaNet(nn.Module):
             return anchors.detach(), regressions.detach(), classifications.detach()
 
         anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
-        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
-        del regressions
-        # Clip the boxes to fit in the image
-        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
-        # Generate a sequence of (bounding_boxes, classifications) for each image
-        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
+        return self.transform(images, anchors, regressions, classifications)
 
     def nms(self, boxes, classifications):
         """Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
