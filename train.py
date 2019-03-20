@@ -11,10 +11,10 @@ from torchsight.trainers import RetinaNetTrainer
 PARSER = argparse.ArgumentParser(description='Train a RetinaNet model using COCO dataset.')
 PARSER.add_argument('model', help='The model to train. Currently only supported "RetinaNet".', default='RetinaNet')
 PARSER.add_argument('-r', '--root', help='Root directory of the COCO dataset (cocoapi).', required=True)
-PARSER.add_argument('-b', '--batch-size', help='Batch size', default=8)
+PARSER.add_argument('-b', '--batch-size', help='Batch size', default=1)
 PARSER.add_argument('--resnet', help='ResNet backbone to use.', default=50)
 PARSER.add_argument('-l', '--logs-dir', help='Directory where to save the logs and checkpoints.',
-                    default='./logs/retinanet')
+                    default='./logs')
 PARSER.add_argument('-c', '--checkpoint', help='Absolute path to the checkpoint to continue an old training')
 
 ARGUMENTS = PARSER.parse_args()
@@ -31,3 +31,4 @@ if ARGUMENTS.model.lower() == 'retinanet':
     ).train()
 else:
     raise ValueError('The model "{}" is not supported.'.format(ARGUMENTS.model))
+
