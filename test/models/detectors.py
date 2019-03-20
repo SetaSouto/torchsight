@@ -6,15 +6,16 @@ import torch
 from torchvision import transforms
 
 from torchsight.datasets import CocoDataset
-from torchsight.models import RetinaNet
+from torchsight.models import DLDENet, RetinaNet
 from torchsight.transforms.detection import Normalize, Resize, ToTensor
 
 PARSER = argparse.ArgumentParser(
-    description='Visualize some images from the CocoDataset with the predictions of the RetinaNet model.')
+    description='Visualize some images from the CocoDataset with the predictions of the indicated model.')
 PARSER.add_argument('root', help='The root directory where is the data.')
+PARSER.add_argument('model', help='The model to use. Options: "RetinaNet" and "DLDENet".')
+PARSER.add_argument('checkpoint', help='The checkpoint to load the model')
 PARSER.add_argument('-d', '--dataset', nargs='?', default='val2017', help='The dataset to be loaded. Ex: "val2017"')
 PARSER.add_argument('--no-random', action='store_const', const=True, default=False, help='Not show random images.')
-PARSER.add_argument('checkpoint', help='The checkpoint to load the model')
 PARSER.add_argument('-c', '--classes', nargs='?', default=80, help='The number of classes that the model can detect')
 PARSER.add_argument('-r', '--resnet', nargs='?', default=50, help='The ResNet backbone to use in the RetinaNet model.')
 PARSER.add_argument('--threshold', default=0.5,
@@ -31,8 +32,17 @@ DATASET_HUMAN = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(),
                             transform=transforms.Compose([Resize(), ToTensor()]))
 INDEXES = list(range(len(DATASET)))
 
-MODEL = RetinaNet(classes=int(ARGUMENTS.classes), resnet=ARGUMENTS.resnet)
+
+if ARGUMENTS.model.lower() == 'retinanet':
+    MODEL = RetinaNet(classes=int(ARGUMENTS.classes), resnet=ARGUMENTS.resnet)
+elif ARGUMENTS.model.lower() == 'dldenet':
+    MODEL = DLDENet(classes=int(ARGUMENTS.classes), resnet=ARGUMENTS.resnet)
+else:
+    raise ValueError('There is no model with name {}'.format(ARGUMENTS.model))
+
 MODEL.load_state_dict(torch.load(ARGUMENTS.checkpoint)['model'])
+
+
 CUDA = torch.cuda.is_available()
 if CUDA:
     MODEL.to('cuda')
