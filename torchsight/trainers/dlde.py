@@ -116,7 +116,9 @@ class DLDENetTrainer(RetinaNetTrainer):
             with torch.no_grad():
                 for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
                     print('[Initializing] [Batch {}]'.format(batch_index))
-                    self.forward(images.to(self.device), annotations.to(self.device))
+                    self.model(images.to(self.device), annotations.to(self.device), initializing=True)
+                self.model.update_means()
+                print('[Initializing] Means updated.')
 
         def callback(epoch):
             print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
