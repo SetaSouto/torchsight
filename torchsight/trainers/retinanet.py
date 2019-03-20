@@ -91,12 +91,21 @@ class RetinaNetTrainer(AbstractTrainer):
         self.compute_map = MeanAP()
         super(RetinaNetTrainer, self).__init__(*args, **kwargs)
 
-    def train(self, epochs=100, validate=True):
+    def forward(self, images, *args, **kwargs):
+        """Forward pass through the network.
+
+        Why this method? Is a software decision, that gives the freedom to override the forward pass
+        through the network and reuse all the other code. See the DLDE trainer for an example.
+        """
+        return self.model(images)
+
+    def train(self, epochs=100, validate=True, epoch_callback=None):
         """Train the model for the given epochs.
 
         Arguments:
             epochs (int): The number of epochs to train.
             validate (bool): If true it validates the model after each epoch using the validate method.
+            epoch_callback (function, optional): An optional function to call after each epoch.
         """
         self.model.to(self.device)
 
@@ -119,7 +128,7 @@ class RetinaNetTrainer(AbstractTrainer):
 
                 # Optimize
                 self.optimizer.zero_grad()
-                anchors, regressions, classifications = self.model(images)
+                anchors, regressions, classifications = self.forward(images, annotations)
                 del images
                 classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
                                                                       annotations)
@@ -155,6 +164,10 @@ class RetinaNetTrainer(AbstractTrainer):
                 # Save the weights for this epoch every some batches
                 if batch_index % 100 == 0:
                     self.save_checkpoint(epoch)
+
+            # Call the epoch callback
+            if epoch_callback is not None:
+                epoch_callback(epoch)
 
             # Save the weights at the end of the epoch
             self.save_checkpoint(epoch)
