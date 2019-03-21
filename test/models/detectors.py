@@ -42,7 +42,6 @@ else:
 
 MODEL.load_state_dict(torch.load(ARGUMENTS.checkpoint)['model'])
 
-
 CUDA = torch.cuda.is_available()
 if CUDA:
     MODEL.to('cuda')

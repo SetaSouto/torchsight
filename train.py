@@ -10,7 +10,7 @@ from torchsight.trainers import DLDENetTrainer, RetinaNetTrainer
 
 PARSER = argparse.ArgumentParser(description='Train a RetinaNet model using COCO dataset.')
 PARSER.add_argument('model', help='The model to train. Supported "RetinaNet" and "DLDENet".', default='RetinaNet')
-PARSER.add_argument('-r', '--root', help='Root directory of the COCO dataset (cocoapi).', required=True)
+PARSER.add_argument('root', help='Root directory of the COCO dataset (cocoapi).')
 PARSER.add_argument('-b', '--batch-size', help='Batch size', default=1)
 PARSER.add_argument('--resnet', help='ResNet backbone to use.', default=50)
 PARSER.add_argument('-l', '--logs-dir', help='Directory where to save the logs and checkpoints.',
