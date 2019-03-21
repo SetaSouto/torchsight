@@ -6,8 +6,7 @@ from torchsight.loggers import PrintLogger
 PARSER = argparse.ArgumentParser(
     description='Get the mean loss per epoch over the training dataset and validation dataset.'
 )
-PARSER.add_argument('-l', '--logs', help='Name of the file that contains the training logs.',
-                    default='./logs.txt')
+PARSER.add_argument('logs', help='Name of the file that contains the training logs.')
 PARSER.add_argument('-ek', '--epoch-key', help='The key in the logs that indicates the epoch',
                     default='Epoch')
 PARSER.add_argument('-lk', '--loss-key', help='The key in the logs that indicates the loss of the batch.',
