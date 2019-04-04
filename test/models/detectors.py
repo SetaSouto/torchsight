@@ -11,8 +11,8 @@ from torchsight.transforms.detection import Normalize, Resize, ToTensor
 
 PARSER = argparse.ArgumentParser(
     description='Visualize some images from the CocoDataset with the predictions of the indicated model.')
-PARSER.add_argument('root', help='The root directory where is the data.')
 PARSER.add_argument('model', help='The model to use. Options: "RetinaNet" and "DLDENet".')
+PARSER.add_argument('root', help='The root directory where is the data.')
 PARSER.add_argument('checkpoint', help='The checkpoint to load the model')
 PARSER.add_argument('-d', '--dataset', nargs='?', default='val2017', help='The dataset to be loaded. Ex: "val2017"')
 PARSER.add_argument('--no-random', action='store_const', const=True, default=False, help='Not show random images.')
@@ -62,7 +62,7 @@ for index in INDEXES:
     boxes, classifications = boxes[:100], classifications[:100]
     # print('Classifications:\n', classifications)
     if boxes.shape[0] == 0:
-        DATASET.visualize(image_human)
+        # DATASET.visualize(image_human)
         continue
     detections = torch.zeros((boxes.shape[0], 6))
     detections[:, :4] = boxes
