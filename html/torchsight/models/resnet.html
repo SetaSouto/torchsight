@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.3" />
+<title>torchsight.models.resnet API documentation</title>
+<meta name="description" content="Module that contains ResNet implementation …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.models.resnet</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Module that contains ResNet implementation.</p>
+<p>ResNet could contains several depths. The paper includes 5 different models
+and the model_zoo contains pretrained weights for each one:</p>
+<ul>
+<li>ResNet 18</li>
+<li>ResNet 34</li>
+<li>ResNet 50</li>
+<li>ResNet 101</li>
+<li>ResNet 152</li>
+</ul>
+<p>Each one of this different architectures is based on "blocks" that help to
+reduce complexity of the network. There are two type of blocks:</p>
+<ul>
+<li>Basic: Only applies two 3x3 convolutions. Used in the 18 and 34 architectures.</li>
+<li>Bottleneck: Applies a 1x1 convolution to reduce the channel size of the feature
+map to a 1/4 (i.e. a feature map with 512 channels is reduced to 128 channels),
+then applies a 3x3 convolution with this reduced channels and finally increase
+the channel dimensions again to the original size using a 1x1 convolution.
+This help to reduce the weights to learn and the complexity of the network.</li>
+</ul>
+<p>After each convolution it applies a batch normalization and after each block applies
+a "Residual connection" that implies to sum the input of the block to the output of it.
+This is helpful to learn identity maps, because if F(x) is the output of the block
+the final output is F(x) + x, so if the weights went to zero, the output of the block
+is only x. The hypothesis of the authors were that is more easy to learn zero weights
+than learning 1 weights.</p>
+<p>Finally, an architecture is composed by several "layers" that contains several "blocks".
+All architectures has 5 layers, the difference is the kind of block and how many of them
+are used in each one. The first layer is only a single convolutional layer with kernel
+7x7 with stride 2, so the layers that contains blocks are only 4.</p>
+<p>To see the architectures in detail you can go to the Table 1 in the original paper.</p>
+<p>Original paper:
+<a href="https://arxiv.org/pdf/1512.03385.pdf">https://arxiv.org/pdf/1512.03385.pdf</a></p>
+<p>Heavily inspired by the original code at:
+<a href="https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py">https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py</a></p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Module that contains ResNet implementation.
+
+ResNet could contains several depths. The paper includes 5 different models
+and the model_zoo contains pretrained weights for each one:
+
+- ResNet 18
+- ResNet 34
+- ResNet 50
+- ResNet 101
+- ResNet 152
+
+Each one of this different architectures is based on &#34;blocks&#34; that help to
+reduce complexity of the network. There are two type of blocks:
+
+- Basic: Only applies two 3x3 convolutions. Used in the 18 and 34 architectures.
+- Bottleneck: Applies a 1x1 convolution to reduce the channel size of the feature
+    map to a 1/4 (i.e. a feature map with 512 channels is reduced to 128 channels),
+    then applies a 3x3 convolution with this reduced channels and finally increase
+    the channel dimensions again to the original size using a 1x1 convolution.
+    This help to reduce the weights to learn and the complexity of the network.
+
+After each convolution it applies a batch normalization and after each block applies
+a &#34;Residual connection&#34; that implies to sum the input of the block to the output of it.
+This is helpful to learn identity maps, because if F(x) is the output of the block
+the final output is F(x) + x, so if the weights went to zero, the output of the block
+is only x. The hypothesis of the authors were that is more easy to learn zero weights
+than learning 1 weights.
+
+Finally, an architecture is composed by several &#34;layers&#34; that contains several &#34;blocks&#34;.
+All architectures has 5 layers, the difference is the kind of block and how many of them
+are used in each one. The first layer is only a single convolutional layer with kernel
+7x7 with stride 2, so the layers that contains blocks are only 4.
+
+To see the architectures in detail you can go to the Table 1 in the original paper.
+
+Original paper:
+https://arxiv.org/pdf/1512.03385.pdf
+
+Heavily inspired by the original code at:
+https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
+&#34;&#34;&#34;
+from torch import nn
+from torch.utils import model_zoo
+
+
+__all__ = [&#39;ResNet&#39;, &#39;resnet18&#39;, &#39;resnet34&#39;, &#39;resnet50&#39;, &#39;resnet101&#39;, &#39;resnet152&#39;]
+
+
+MODEL_URLS = {
+    &#39;resnet18&#39;: &#39;https://download.pytorch.org/models/resnet18-5c106cde.pth&#39;,
+    &#39;resnet34&#39;: &#39;https://download.pytorch.org/models/resnet34-333f7ec4.pth&#39;,
+    &#39;resnet50&#39;: &#39;https://download.pytorch.org/models/resnet50-19c8e357.pth&#39;,
+    &#39;resnet101&#39;: &#39;https://download.pytorch.org/models/resnet101-5d3b4d8f.pth&#39;,
+    &#39;resnet152&#39;: &#39;https://download.pytorch.org/models/resnet152-b121ed2d.pth&#39;,
+}
+
+
+class BasicBlock(nn.Module):
+    &#34;&#34;&#34;Basic block for ResNet.
+
+    It applies two 3x3 convolutions to the input. After each convolution
+    applies a batch normalization.
+
+    You can provide a downsample module to downsample the input and sum
+    to the output (Residual connection) if not provided it assumes that
+    the input has the same dimension of the output.
+
+    This block has no expansion (i.e. = 1), this means that the number of
+    channels of the output feature map are the same as the input.
+    &#34;&#34;&#34;
+
+    expansion = 1
+
+    def __init__(self, in_channels, channels, stride=1, downsample=None):
+        &#34;&#34;&#34;Initialize the block and set all the modules needed.
+
+        Args:
+            in_channels (int): Number of channels of the input feature map.
+            channels (int): Number of channels that the block must have.
+                Also, this is the number of channels to output.
+            stride (int): The stride of the convolutional layers.
+            downsample (torch.nn.Module): Module downsample the output.
+        &#34;&#34;&#34;
+        super(BasicBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(channels)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        &#34;&#34;&#34;Forward pass of the block.
+
+        Args:
+            x (torch.Tensor): Any tensor with shape (batch size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the block with shape
+                (batch size, channels, height / stride, width / stride)
+        &#34;&#34;&#34;
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
+class Bottleneck(nn.Module):
+    &#34;&#34;&#34;Bottleneck block for ResNet.
+
+    Applies a convolution of kernel 1x1 to reduce the number of channels from
+    in_channels to channels, then applies a 3x3 convolution and finally expand
+    the channels to 4 * channels (i.e. expansion = 4) with a 1x1 convolution.
+
+    You can provide a downsample module to downsample the input and sum
+    to the output (Residual connection) if not provided it assumes that
+    the input has the same dimension of the output.
+    &#34;&#34;&#34;
+    expansion = 4
+
+    def __init__(self, in_channels, channels, stride=1, downsample=None):
+        super(Bottleneck, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, channels, kernel_size=1, stride=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+
+        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(channels)
+
+        self.conv3 = nn.Conv2d(channels, channels * self.expansion, kernel_size=1, stride=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(channels * self.expansion)
+
+        self.relu = nn.ReLU(inplace=True)
+        self.downsample = downsample
+        self.stride = stride
+
+    def forward(self, x):
+        &#34;&#34;&#34;Forward pass of the block.
+
+        Args:
+            x (torch.Tensor): Any tensor with shape (batch size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The output of the block with shape
+                (batch size, channels * expansion, height / stride, width / stride)
+        &#34;&#34;&#34;
+        residual = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.relu(out)
+
+        return out
+
+
+class ResNet(nn.Module):
+    &#34;&#34;&#34;ResNet architecture.
+
+    Implements a ResNet given the type of block and the depth of the layers.
+
+    If you provide the number of classes it can be used as a classifier, if not
+    it return the output of each layer starting from the deepest.
+
+    Keep in mind that for the first layer the stride is 2 ** 2 = 4, and the
+    consecutive ones are 2 ** 3 = 8, 2 ** 4 = 16, 2 ** 5 = 32.
+
+    So, if you provide an image with shape (3, 800, 800) the output of the last layer
+    will be (512 * block.expansion, 25, 25).
+    &#34;&#34;&#34;
+
+    def __init__(self, block, layers, num_classes=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Args:
+            block (torch.nn.Module): Indicates the block to use in the network. Must be
+                a BasicBlock or a Bottleneck.
+            layers (seq): Sequence to indicate the number of blocks per each layer.
+                It must have length 4.
+            num_classes (int, optional): If present initialize the architecture as a classifier
+                 and append a fully connected layer to map from the feature map to the class
+                 probabilities. If not present, the module returns the output of each layer.
+        &#34;&#34;&#34;
+        super(ResNet, self).__init__()
+        # Set the expansion of the net
+        self.expansion = block.expansion
+        # The depths of each layer
+        depths = [64, 128, 256, 512]
+        # in_channels help us to keep track of the number of channels before each block
+        self.in_channels = depths[0]
+
+        # Layer 1
+        self.conv1 = nn.Conv2d(3, self.in_channels, kernel_size=7, stride=2, padding=3, bias=False)
+        self.bn1 = nn.BatchNorm2d(self.in_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+        # The first layer does not apply stride because we use maxPool with stride 2
+        self.layer1 = self._make_layer(block, depths[0], layers[0])
+        self.layer2 = self._make_layer(block, depths[1], layers[1], stride=2)
+        self.layer3 = self._make_layer(block, depths[2], layers[2], stride=2)
+        self.layer4 = self._make_layer(block, depths[3], layers[3], stride=2)
+
+        self.classifier = False
+        if num_classes is not None and num_classes &gt; 0:
+            # Set the classifier
+            self.classifier = True
+            self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+            self.fully = nn.Linear(512 * block.expansion, num_classes)
+        else:
+            # Set the output&#39;s number of channels for each layer, useful to get the output depth outside this module
+            # when using it as feature extractor
+            self.output_channels = [depth * self.expansion for depth in depths[-3:]]
+            self.output_channels.reverse()
+
+        # Initialize network
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.kaiming_normal_(module.weight, mode=&#39;fan_out&#39;, nonlinearity=&#39;relu&#39;)
+            elif isinstance(module, nn.BatchNorm2d):
+                nn.init.constant_(module.weight, 1)
+                nn.init.constant_(module.bias, 0)
+
+    def _make_layer(self, block, channels, blocks, stride=1):
+        &#34;&#34;&#34;Creates a layer for the ResNet architecture.
+
+        It uses the given &#39;block&#39; for the layer and repeat it &#39;blocks&#39; times.
+        Each block expands the number of channels by a factor of block.expansion
+        times, so the &#39;in_channels&#39; for every block after the first is block.expansion
+        times the &#39;channel&#39; amount.
+
+        This method modifies the in_channels attribute of the object to keep track of the
+        number of channels before each block.
+
+        Args:
+            block (Module): Block class to use as the base block of the layer.
+            channels (int): The number of channels that the block must have.
+            blocks (int): How many blocks the layer must have.
+            stride (int): Stride that the first block must apply. None other block
+                applies stride.
+        &#34;&#34;&#34;
+        downsample = None
+
+        if stride != 1 or self.in_channels != channels * block.expansion:
+            # Apply a module to reduce the width and height of the input feature map with the given stride
+            # or to adjust the number of channels that the first block will receive
+            downsample = nn.Sequential(
+                nn.Conv2d(self.in_channels, channels * block.expansion, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(channels * block.expansion),
+            )
+
+        layers = []
+        # Only the first block applies a stride to the input
+        layers.append(block(self.in_channels, channels, stride, downsample))
+        # Now the in_channels are the output of the block that is the channels times block.expansion
+        self.in_channels = channels * block.expansion
+
+        for _ in range(1, blocks):
+            layers.append(block(self.in_channels, channels))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        &#34;&#34;&#34;Forward pass of the module.
+
+        Pass the input tensor for the layers and has two different outputs depending
+        if the module is used as a classifier or not.
+
+        Args:
+            x (torch.Tensor): A tensor with shape (batch size, 3, height, width).
+
+        Returns:
+            torch.Tensor: If the module is a classifier returns a tensor as (batch size, num_classes).
+                If the module is a feature extractor (no num classes given) then returns a tuple
+                with the output of the last 3 layers.
+                The shapes are:
+                    - layer 4: (batch size, 512 * block.expansion, height / 32, width / 32)
+                    - layer 3: (batch size, 256 * block.expansion, height / 16, width / 16)
+                    - layer 2: (batch size, 128 * block.expansion, height / 8,  width / 8)
+        &#34;&#34;&#34;
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        x = self.layer1(x)
+
+        if self.classifier:
+            x = self.layer2(x)
+            x = self.layer3(x)
+            x = self.layer4(x)
+            x = self.avgpool(x)
+            x = x.view(x.size(0), -1)
+            x = self.fully(x)
+            return x
+
+        output2 = self.layer2(x)
+        output3 = self.layer3(output2)
+        output4 = self.layer4(output3)
+
+        return output4, output3, output2
+
+
+def resnet18(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-18 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet18&#39;]), strict=False)
+    return model
+
+
+def resnet34(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-34 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet34&#39;]), strict=False)
+    return model
+
+
+def resnet50(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet50&#39;]), strict=False)
+    return model
+
+
+def resnet101(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-101 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet101&#39;]), strict=False)
+    return model
+
+
+def resnet152(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-152 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet152&#39;]), strict=False)
+    return model</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="torchsight.models.resnet.resnet101"><code class="name flex">
+<span>def <span class="ident">resnet101</span></span>(<span>pretrained=False, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructs a ResNet-101 model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, returns a model pre-trained on ImageNet</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resnet101(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-101 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet101&#39;]), strict=False)
+    return model</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.resnet.resnet152"><code class="name flex">
+<span>def <span class="ident">resnet152</span></span>(<span>pretrained=False, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructs a ResNet-152 model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, returns a model pre-trained on ImageNet</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resnet152(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-152 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet152&#39;]), strict=False)
+    return model</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.resnet.resnet18"><code class="name flex">
+<span>def <span class="ident">resnet18</span></span>(<span>pretrained=False, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructs a ResNet-18 model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, returns a model pre-trained on ImageNet</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resnet18(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-18 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet18&#39;]), strict=False)
+    return model</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.resnet.resnet34"><code class="name flex">
+<span>def <span class="ident">resnet34</span></span>(<span>pretrained=False, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructs a ResNet-34 model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, returns a model pre-trained on ImageNet</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resnet34(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-34 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet34&#39;]), strict=False)
+    return model</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.resnet.resnet50"><code class="name flex">
+<span>def <span class="ident">resnet50</span></span>(<span>pretrained=False, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Constructs a ResNet-50 model.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If True, returns a model pre-trained on ImageNet</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resnet50(pretrained=False, **kwargs):
+    &#34;&#34;&#34;Constructs a ResNet-50 model.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    &#34;&#34;&#34;
+    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(MODEL_URLS[&#39;resnet50&#39;]), strict=False)
+    return model</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.models.resnet.ResNet"><code class="flex name class">
+<span>class <span class="ident">ResNet</span></span>
+<span>(</span><span><small>ancestors:</small> torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>ResNet architecture.</p>
+<p>Implements a ResNet given the type of block and the depth of the layers.</p>
+<p>If you provide the number of classes it can be used as a classifier, if not
+it return the output of each layer starting from the deepest.</p>
+<p>Keep in mind that for the first layer the stride is 2 <strong> 2 = 4, and the
+consecutive ones are 2 </strong> 3 = 8, 2 <strong> 4 = 16, 2 </strong> 5 = 32.</p>
+<p>So, if you provide an image with shape (3, 800, 800) the output of the last layer
+will be (512 * block.expansion, 25, 25).</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class ResNet(nn.Module):
+    &#34;&#34;&#34;ResNet architecture.
+
+    Implements a ResNet given the type of block and the depth of the layers.
+
+    If you provide the number of classes it can be used as a classifier, if not
+    it return the output of each layer starting from the deepest.
+
+    Keep in mind that for the first layer the stride is 2 ** 2 = 4, and the
+    consecutive ones are 2 ** 3 = 8, 2 ** 4 = 16, 2 ** 5 = 32.
+
+    So, if you provide an image with shape (3, 800, 800) the output of the last layer
+    will be (512 * block.expansion, 25, 25).
+    &#34;&#34;&#34;
+
+    def __init__(self, block, layers, num_classes=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Args:
+            block (torch.nn.Module): Indicates the block to use in the network. Must be
+                a BasicBlock or a Bottleneck.
+            layers (seq): Sequence to indicate the number of blocks per each layer.
+                It must have length 4.
+            num_classes (int, optional): If present initialize the architecture as a classifier
+                 and append a fully connected layer to map from the feature map to the class
+                 probabilities. If not present, the module returns the output of each layer.
+        &#34;&#34;&#34;
+        super(ResNet, self).__init__()
+        # Set the expansion of the net
+        self.expansion = block.expansion
+        # The depths of each layer
+        depths = [64, 128, 256, 512]
+        # in_channels help us to keep track of the number of channels before each block
+        self.in_channels = depths[0]
+
+        # Layer 1
+        self.conv1 = nn.Conv2d(3, self.in_channels, kernel_size=7, stride=2, padding=3, bias=False)
+        self.bn1 = nn.BatchNorm2d(self.in_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+        # The first layer does not apply stride because we use maxPool with stride 2
+        self.layer1 = self._make_layer(block, depths[0], layers[0])
+        self.layer2 = self._make_layer(block, depths[1], layers[1], stride=2)
+        self.layer3 = self._make_layer(block, depths[2], layers[2], stride=2)
+        self.layer4 = self._make_layer(block, depths[3], layers[3], stride=2)
+
+        self.classifier = False
+        if num_classes is not None and num_classes &gt; 0:
+            # Set the classifier
+            self.classifier = True
+            self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+            self.fully = nn.Linear(512 * block.expansion, num_classes)
+        else:
+            # Set the output&#39;s number of channels for each layer, useful to get the output depth outside this module
+            # when using it as feature extractor
+            self.output_channels = [depth * self.expansion for depth in depths[-3:]]
+            self.output_channels.reverse()
+
+        # Initialize network
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.kaiming_normal_(module.weight, mode=&#39;fan_out&#39;, nonlinearity=&#39;relu&#39;)
+            elif isinstance(module, nn.BatchNorm2d):
+                nn.init.constant_(module.weight, 1)
+                nn.init.constant_(module.bias, 0)
+
+    def _make_layer(self, block, channels, blocks, stride=1):
+        &#34;&#34;&#34;Creates a layer for the ResNet architecture.
+
+        It uses the given &#39;block&#39; for the layer and repeat it &#39;blocks&#39; times.
+        Each block expands the number of channels by a factor of block.expansion
+        times, so the &#39;in_channels&#39; for every block after the first is block.expansion
+        times the &#39;channel&#39; amount.
+
+        This method modifies the in_channels attribute of the object to keep track of the
+        number of channels before each block.
+
+        Args:
+            block (Module): Block class to use as the base block of the layer.
+            channels (int): The number of channels that the block must have.
+            blocks (int): How many blocks the layer must have.
+            stride (int): Stride that the first block must apply. None other block
+                applies stride.
+        &#34;&#34;&#34;
+        downsample = None
+
+        if stride != 1 or self.in_channels != channels * block.expansion:
+            # Apply a module to reduce the width and height of the input feature map with the given stride
+            # or to adjust the number of channels that the first block will receive
+            downsample = nn.Sequential(
+                nn.Conv2d(self.in_channels, channels * block.expansion, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(channels * block.expansion),
+            )
+
+        layers = []
+        # Only the first block applies a stride to the input
+        layers.append(block(self.in_channels, channels, stride, downsample))
+        # Now the in_channels are the output of the block that is the channels times block.expansion
+        self.in_channels = channels * block.expansion
+
+        for _ in range(1, blocks):
+            layers.append(block(self.in_channels, channels))
+
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        &#34;&#34;&#34;Forward pass of the module.
+
+        Pass the input tensor for the layers and has two different outputs depending
+        if the module is used as a classifier or not.
+
+        Args:
+            x (torch.Tensor): A tensor with shape (batch size, 3, height, width).
+
+        Returns:
+            torch.Tensor: If the module is a classifier returns a tensor as (batch size, num_classes).
+                If the module is a feature extractor (no num classes given) then returns a tuple
+                with the output of the last 3 layers.
+                The shapes are:
+                    - layer 4: (batch size, 512 * block.expansion, height / 32, width / 32)
+                    - layer 3: (batch size, 256 * block.expansion, height / 16, width / 16)
+                    - layer 2: (batch size, 128 * block.expansion, height / 8,  width / 8)
+        &#34;&#34;&#34;
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+        x = self.layer1(x)
+
+        if self.classifier:
+            x = self.layer2(x)
+            x = self.layer3(x)
+            x = self.layer4(x)
+            x = self.avgpool(x)
+            x = x.view(x.size(0), -1)
+            x = self.fully(x)
+            return x
+
+        output2 = self.layer2(x)
+        output3 = self.layer3(output2)
+        output4 = self.layer4(output3)
+
+        return output4, output3, output2</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.resnet.ResNet.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, block, layers, num_classes=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the network.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>block</code></strong> :&ensp;<code>torch.nn.Module</code></dt>
+<dd>Indicates the block to use in the network. Must be
+a BasicBlock or a Bottleneck.</dd>
+<dt><strong><code>layers</code></strong> :&ensp;<code>seq</code></dt>
+<dd>Sequence to indicate the number of blocks per each layer.
+It must have length 4.</dd>
+<dt><strong><code>num_classes</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>If present initialize the architecture as a classifier
+and append a fully connected layer to map from the feature map to the class
+probabilities. If not present, the module returns the output of each layer.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, block, layers, num_classes=None):
+    &#34;&#34;&#34;Initialize the network.
+
+    Args:
+        block (torch.nn.Module): Indicates the block to use in the network. Must be
+            a BasicBlock or a Bottleneck.
+        layers (seq): Sequence to indicate the number of blocks per each layer.
+            It must have length 4.
+        num_classes (int, optional): If present initialize the architecture as a classifier
+             and append a fully connected layer to map from the feature map to the class
+             probabilities. If not present, the module returns the output of each layer.
+    &#34;&#34;&#34;
+    super(ResNet, self).__init__()
+    # Set the expansion of the net
+    self.expansion = block.expansion
+    # The depths of each layer
+    depths = [64, 128, 256, 512]
+    # in_channels help us to keep track of the number of channels before each block
+    self.in_channels = depths[0]
+
+    # Layer 1
+    self.conv1 = nn.Conv2d(3, self.in_channels, kernel_size=7, stride=2, padding=3, bias=False)
+    self.bn1 = nn.BatchNorm2d(self.in_channels)
+    self.relu = nn.ReLU(inplace=True)
+    self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
+    # The first layer does not apply stride because we use maxPool with stride 2
+    self.layer1 = self._make_layer(block, depths[0], layers[0])
+    self.layer2 = self._make_layer(block, depths[1], layers[1], stride=2)
+    self.layer3 = self._make_layer(block, depths[2], layers[2], stride=2)
+    self.layer4 = self._make_layer(block, depths[3], layers[3], stride=2)
+
+    self.classifier = False
+    if num_classes is not None and num_classes &gt; 0:
+        # Set the classifier
+        self.classifier = True
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fully = nn.Linear(512 * block.expansion, num_classes)
+    else:
+        # Set the output&#39;s number of channels for each layer, useful to get the output depth outside this module
+        # when using it as feature extractor
+        self.output_channels = [depth * self.expansion for depth in depths[-3:]]
+        self.output_channels.reverse()
+
+    # Initialize network
+    for module in self.modules():
+        if isinstance(module, nn.Conv2d):
+            nn.init.kaiming_normal_(module.weight, mode=&#39;fan_out&#39;, nonlinearity=&#39;relu&#39;)
+        elif isinstance(module, nn.BatchNorm2d):
+            nn.init.constant_(module.weight, 1)
+            nn.init.constant_(module.bias, 0)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.resnet.ResNet.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Forward pass of the module.</p>
+<p>Pass the input tensor for the layers and has two different outputs depending
+if the module is used as a classifier or not.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>x</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>A tensor with shape (batch size, 3, height, width).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: If the module is a classifier returns a tensor as (batch size, num_classes).
+If the module is a feature extractor (no num classes given) then returns a tuple
+with the output of the last 3 layers.
+The shapes are:
+- layer 4: (batch size, 512 * block.expansion, height / 32, width / 32)
+- layer 3: (batch size, 256 * block.expansion, height / 16, width / 16)
+- layer 2: (batch size, 128 * block.expansion, height / 8,
+width / 8)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, x):
+    &#34;&#34;&#34;Forward pass of the module.
+
+    Pass the input tensor for the layers and has two different outputs depending
+    if the module is used as a classifier or not.
+
+    Args:
+        x (torch.Tensor): A tensor with shape (batch size, 3, height, width).
+
+    Returns:
+        torch.Tensor: If the module is a classifier returns a tensor as (batch size, num_classes).
+            If the module is a feature extractor (no num classes given) then returns a tuple
+            with the output of the last 3 layers.
+            The shapes are:
+                - layer 4: (batch size, 512 * block.expansion, height / 32, width / 32)
+                - layer 3: (batch size, 256 * block.expansion, height / 16, width / 16)
+                - layer 2: (batch size, 128 * block.expansion, height / 8,  width / 8)
+    &#34;&#34;&#34;
+    x = self.conv1(x)
+    x = self.bn1(x)
+    x = self.relu(x)
+    x = self.maxpool(x)
+    x = self.layer1(x)
+
+    if self.classifier:
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fully(x)
+        return x
+
+    output2 = self.layer2(x)
+    output3 = self.layer3(output2)
+    output4 = self.layer4(output3)
+
+    return output4, output3, output2</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.models" href="index.html">torchsight.models</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="torchsight.models.resnet.resnet101" href="#torchsight.models.resnet.resnet101">resnet101</a></code></li>
+<li><code><a title="torchsight.models.resnet.resnet152" href="#torchsight.models.resnet.resnet152">resnet152</a></code></li>
+<li><code><a title="torchsight.models.resnet.resnet18" href="#torchsight.models.resnet.resnet18">resnet18</a></code></li>
+<li><code><a title="torchsight.models.resnet.resnet34" href="#torchsight.models.resnet.resnet34">resnet34</a></code></li>
+<li><code><a title="torchsight.models.resnet.resnet50" href="#torchsight.models.resnet.resnet50">resnet50</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.models.resnet.ResNet" href="#torchsight.models.resnet.ResNet">ResNet</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.resnet.ResNet.__init__" href="#torchsight.models.resnet.ResNet.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.resnet.ResNet.forward" href="#torchsight.models.resnet.ResNet.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.3</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

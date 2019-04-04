@@ -26,17 +26,17 @@ class DirectionalClassification(nn.Module):
     direction, we must have a threshold, so we can model this with a Von Mises-Fisher distribution.
 
     At this point we need a picture, check this and create your mental image:
-    https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDBP4M7VABT1wGuXccdg707MzyQPTpb5O6D3TUCZFapDBG_jiX
+    ![](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDBP4M7VABT1wGuXccdg707MzyQPTpb5O6D3TUCZFapDBG_jiX)
 
     So, we want that semantically similar objects points to similar directions, so the direction of the
     embedding contains the semantic of the object without losing much visual detail.
 
     I was inspired by the following paper:
 
-    Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval.
-    Arxiv: https://arxiv.org/abs/1802.09662
+    _Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval._
+    [Paper in Arxiv](https://arxiv.org/abs/1802.09662)
 
-    ----- How does it work -----
+    # How does it work
 
     Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
     with size d for images of C classes. Assuming that y is the correct label for the image x,

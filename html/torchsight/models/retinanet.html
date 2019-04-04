@@ -1,0 +1,2023 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.3" />
+<title>torchsight.models.retinanet API documentation</title>
+<meta name="description" content="Retinanet module …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.models.retinanet</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Retinanet module.</p>
+<p>This module contains an implementation of each one of the modules needed in the
+Retinanet architecture.</p>
+<p>Retinanet original paper:
+<a href="https://arxiv.org/pdf/1708.02002.pdf">https://arxiv.org/pdf/1708.02002.pdf</a></p>
+<ul>
+<li>
+<p>Feature pyramid: Based on a ResNet backbone, takes the output of each layer
+and generate a pyramid of the features.
+Original paper:
+<a href="https://arxiv.org/pdf/1612.03144.pdf">https://arxiv.org/pdf/1612.03144.pdf</a></p>
+</li>
+<li>
+<p>Regression: A module to compute the regressions for each bounding box.</p>
+</li>
+<li>Classification: A module to classify the class of each bounding box.</li>
+</ul>
+<p>This code is heavily inspired by yhenon:
+<a href="https://github.com/yhenon/pytorch-retinanet">https://github.com/yhenon/pytorch-retinanet</a></p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Retinanet module.
+
+This module contains an implementation of each one of the modules needed in the
+Retinanet architecture.
+
+Retinanet original paper:
+https://arxiv.org/pdf/1708.02002.pdf
+
+- Feature pyramid: Based on a ResNet backbone, takes the output of each layer
+    and generate a pyramid of the features.
+    Original paper:
+    https://arxiv.org/pdf/1612.03144.pdf
+
+- Regression: A module to compute the regressions for each bounding box.
+- Classification: A module to classify the class of each bounding box.
+
+This code is heavily inspired by yhenon:
+https://github.com/yhenon/pytorch-retinanet
+&#34;&#34;&#34;
+import torch
+from torch import nn
+
+from .resnet import resnet18, resnet34, resnet50, resnet101, resnet152
+from .anchors import Anchors
+
+
+class FeaturePyramid(nn.Module):
+    &#34;&#34;&#34;Feature pyramid network.
+
+    It takes the natural architecture of a convolutional network to generate a pyramid
+    of features with little extra effort.
+
+    It merges the outputs of each one of the ResNet layers with the previous one to give
+    more semantically meaning (the deepest the layer the more semantic meaning it has)
+    and the strong localization features of the first layers.
+
+    For more information please read the original paper:
+    https://arxiv.org/pdf/1612.03144.pdf
+
+    This implementation also used the exact provided at RetinaNet paper:
+    https://arxiv.org/pdf/1708.02002.pdf
+
+    Each time that a decision in the code mention &#34;the paper&#34; is the RetinaNet paper.
+    &#34;&#34;&#34;
+
+    strides = [8, 16, 32, 64, 128]  # The stride applied to obtain each output
+
+    def __init__(self, resnet=18, features=256, pretrained=True):
+        &#34;&#34;&#34;Initialize the network.
+
+        It init a ResNet with the given depth and use &#39;features&#39; as the number of
+        channels for each feature map.
+
+        Args:
+            resnet (int): Indicates the depth of the resnet backbone.
+            features (int): Indicates the depth (number of channels) of each feature map
+                of the pyramid.
+            pretrained (bool): Indicates if the backbone must be pretrained.
+        &#34;&#34;&#34;
+        super(FeaturePyramid, self).__init__()
+
+        if resnet == 18:
+            self.backbone = resnet18(pretrained)
+        elif resnet == 34:
+            self.backbone = resnet34(pretrained)
+        elif resnet == 50:
+            self.backbone = resnet50(pretrained)
+        elif resnet == 101:
+            self.backbone = resnet101(pretrained)
+        elif resnet == 152:
+            self.backbone = resnet152(pretrained)
+        else:
+            raise ValueError(&#39;Invalid ResNet depth: {}&#39;.format(resnet))
+
+        # The paper names the output for each layer a C_x where x is the number of the layer
+        # ResNet output feature maps has this depths for each layer
+        c5_depth = self.backbone.output_channels[0]
+        c4_depth = self.backbone.output_channels[1]
+        c3_depth = self.backbone.output_channels[2]
+
+        # The paper names the feature maps as P. We start from the last output, the more rich semantically.
+
+        # Conv 1x1 to set features dimension and conv 3x3 to generate feature map
+        self.p5_conv1 = nn.Conv2d(c5_depth, features, kernel_size=1, stride=1, padding=0)
+        self.p5_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        # Upsample to sum with c_4
+        self.p5_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode=&#39;nearest&#39;)
+
+        self.p4_conv1 = nn.Conv2d(c4_depth, features, kernel_size=1, stride=1, padding=0)
+        self.p4_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.p4_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode=&#39;nearest&#39;)
+
+        # We don&#39;t need to upsample c3 because we are not using c2
+        self.p3_conv1 = nn.Conv2d(c3_depth, features, kernel_size=1, stride=1, padding=0)
+        self.p3_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+
+        # In the paper the generate also a p6 and p7 feature maps
+
+        # p6 is obtained via a 3x3 convolution with stride 2 over c5
+        self.p6_conv = nn.Conv2d(c5_depth, features, kernel_size=3, stride=2, padding=1)
+
+        # p7 is computed by applying ReLU followed with by a 3x3 convolution with stride 2 on p6
+        self.p7_relu = nn.ReLU()
+        self.p7_conv = nn.Conv2d(features, features, kernel_size=3, stride=2, padding=1)
+
+    def forward(self, images):
+        &#34;&#34;&#34;Generate the Feature Pyramid given the images as tensor.
+
+        Args:
+            images (torch.Tensor): A tensor with shape (batch size, 3, width, height).
+
+        Returns:
+            tuple: A tuple with the output for each level from 3 to 7.
+                Shapes:
+                - p3: (batch size, features, width / 8, height / 8)
+                - p4: (batch size, features, width / 16, height / 16)
+                - p5: (batch size, features, width / 32, height / 32)
+                - p6: (batch size, features, width / 64, height / 64)
+                - p7: (batch size, features, width / 128, height / 128)
+        &#34;&#34;&#34;
+        # Bottom-up pathway with resnet backbone
+        c5, c4, c3 = self.backbone(images)
+
+        # Top-down pathway and lateral connections
+        p5 = self.p5_conv1(c5)
+        p5_upsampled = self.p5_upsample(p5)
+        p5 = self.p5_conv2(p5)
+
+        p4 = self.p4_conv1(c4)
+        p4 = p4 + p5_upsampled
+        p4_upsampled = self.p4_upsample(p4)
+        p4 = self.p4_conv2(p4)
+
+        p3 = self.p3_conv1(c3)
+        p3 = p3 + p4_upsampled
+        p3 = self.p3_conv2(p3)
+
+        p6 = self.p6_conv(c5)
+
+        p7 = self.p7_relu(p6)
+        p7 = self.p7_conv(p7)
+
+        return p3, p4, p5, p6, p7
+
+
+class SubModule(nn.Module):
+    &#34;&#34;&#34;Base class for the regression and classification submodules.&#34;&#34;&#34;
+
+    def __init__(self, in_channels, outputs, anchors=9, features=256):
+        &#34;&#34;&#34;Initialize the components of the network.
+
+        Args:
+            in_channels (int): Indicates the number of features (or channels) of the feature map.
+            outputs (int): The number of outputs per anchor.
+            anchors (int, optional): Indicates the number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of features that the conv layers must have.
+        &#34;&#34;&#34;
+        super(SubModule, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channels, features, kernel_size=3, stride=1, padding=1)
+        self.act1 = nn.ReLU()
+
+        self.conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act2 = nn.ReLU()
+
+        self.conv3 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act3 = nn.ReLU()
+
+        self.conv4 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act4 = nn.ReLU()
+
+        self.last_conv = nn.Conv2d(features, outputs * anchors, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, feature_map):
+        &#34;&#34;&#34;Generates the outputs for each anchor and location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, width, height).
+
+        Returns:
+            torch.Tensor: The tensor with outputs values for each location and anchor in the feature map.
+                Shape:
+                    (batch size, outputs * anchors, width, height)
+        &#34;&#34;&#34;
+        out = self.conv1(feature_map)
+        out = self.act1(out)
+        out = self.conv2(out)
+        out = self.act2(out)
+        out = self.conv3(out)
+        out = self.act3(out)
+        out = self.conv4(out)
+        out = self.act4(out)
+        out = self.last_conv(out)
+
+        return out
+
+
+class Regression(SubModule):
+    &#34;&#34;&#34;Regression submodule of RetinaNet.
+
+    It generates, given a feature map, a tensor with the values of regression for each
+    anchor.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, anchors=9, features=256):
+        &#34;&#34;&#34;Initialize the components of the network.
+
+        Args:
+            in_channels (int): Indicates the number of features (or channels) of the feature map.
+            anchors (int, optional): Indicates the number of anchors (i.e. bounding boxes) per location
+                in the feature map.
+            features (int, optional): Indicates the number of features that the conv layers must have.
+        &#34;&#34;&#34;
+        super(Regression, self).__init__(in_channels, outputs=4, anchors=anchors, features=features)
+
+    def forward(self, feature_map):
+        &#34;&#34;&#34;Generates the bounding box regression for each anchor and location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The tensor with bounding boxes values for the feature map.
+                Shape:
+                    (batch size, height * width * number of anchors, 4)
+        &#34;&#34;&#34;
+        out = super(Regression, self).forward(feature_map)
+
+        # Now, out has shape (batch size, 4 * number of anchors, width, height)
+        out = out.permute(0, 2, 3, 1).contiguous()  # Set regression values as the last dimension
+        return out.view(out.shape[0], -1, 4)  # Change the shape of the tensor
+
+
+class Classification(SubModule):
+    &#34;&#34;&#34;Classification submodule of RetinaNet.
+
+    It generates, given a feature map, a tensor with the probability of each class.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, classes, anchors=9, features=256):
+        &#34;&#34;&#34;Initialize the network.
+
+        Args:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+        &#34;&#34;&#34;
+        super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+        self.classes = classes
+        self.activation = nn.Sigmoid()
+
+    def forward(self, feature_map):
+        &#34;&#34;&#34;Generates the probabilities for each class for each anchor for each location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The tensour with the probability of each class for each anchor and location in the
+                feature map. Shape: (batch size, height * width * anchors, classes)
+        &#34;&#34;&#34;
+        out = super(Classification, self).forward(feature_map)
+        out = self.activation(out)
+
+        # Now out has shape (batch size, classes * anchors, height, width)
+        out = out.permute(0, 2, 3, 1).contiguous()  # Move the outputs to the last dim
+        return out.view(out.shape[0], -1, self.classes)
+
+
+class RetinaNet(nn.Module):
+    &#34;&#34;&#34;RetinaNet network.
+
+    This Network is for object detection, so its outputs are the regressions
+    for the bounding boxes for each anchor and the probabilities for each class for each anchor.
+
+    In training mode returns all the predicted values (all bounding boxes and classes for all the anchors)
+    and in evaluation mode applies Non-Maximum suppresion to return only the relevant detections with shape
+    (N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class&#39; label.
+    &#34;&#34;&#34;
+
+    def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Arguments:
+            classes (int): The number of classes to detect.
+            resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+            features (dict, optional): The dict that indicates the features for each module of the network.
+            anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+                the Anchors module.
+            pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+                This pretraining is provided by the torchvision package.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        super(RetinaNet, self).__init__()
+
+        if features is None:
+            features = {&#39;pyramid&#39;: 256, &#39;regression&#39;: 256, &#39;classification&#39;: 256}
+        if anchors is None:
+            anchors = {&#39;sizes&#39;: [32, 64, 128, 256, 512],
+                       &#39;scales&#39;: [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
+                       &#39;ratios&#39;: [0.5, 1, 2]}
+
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+        # Modules
+        self.fpn = FeaturePyramid(resnet=resnet, features=features[&#39;pyramid&#39;], pretrained=pretrained)
+
+        if len(anchors[&#39;sizes&#39;]) != 5:
+            raise ValueError(&#39;anchors_size must have length 5 to work with the FPN&#39;)
+        self.anchors = Anchors(anchors[&#39;sizes&#39;], anchors[&#39;scales&#39;], anchors[&#39;ratios&#39;], self.fpn.strides)
+
+        self.regression = Regression(in_channels=features[&#39;pyramid&#39;],
+                                     anchors=self.anchors.n_anchors,
+                                     features=features[&#39;regression&#39;])
+        self.classification = self.get_classification_module(in_channels=features[&#39;pyramid&#39;],
+                                                             classes=classes,
+                                                             anchors=self.anchors.n_anchors,
+                                                             features=features[&#39;classification&#39;])
+
+        # Set the base threshold for evaluating mode
+        self.threshold = 0.6
+        self.iou_threshold = 0.5
+        self.evaluate_loss = False
+
+    def get_classification_module(self, in_channels, classes, anchors, features):
+        &#34;&#34;&#34;Get the classification module to generate the probability of each anchor
+        to be any class.
+
+        Why to do a getter? Because this allow to override this method and compute the
+        classification with another method.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+        Returns:
+            torch.nn.Module: The classification module for the net.
+        &#34;&#34;&#34;
+        return Classification(in_channels=in_channels, classes=classes, anchors=anchors, features=features)
+
+    def eval(self, threshold=None, iou_threshold=None, loss=False):
+        &#34;&#34;&#34;Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
+        over threshold.
+
+        Args:
+            threshold (float): The threshold to keep only bounding boxes with a class&#39; probability over it.
+            iou_threshold (float): If two bounding boxes has Intersection Over Union more than this
+                threshold they are detecting the same object.
+            loss (bool): If true the forward pass does not do NMS and return the same output as if it is
+                training. Why? To compute the loss over the validation dataset for example.
+        &#34;&#34;&#34;
+        if threshold is not None:
+            self.threshold = threshold
+
+        if iou_threshold is not None:
+            self.iou_threshold = iou_threshold
+
+        self.evaluate_loss = loss
+
+        return super(RetinaNet, self).eval()
+
+    def transform(self, images, anchors, regressions, classifications):
+        &#34;&#34;&#34;Transform, clip and apply NMS to the predictions.
+
+        Arguments:
+            images (torch.Tensor): The images that passed through the network. Useful for clipping
+                the predicted bounding boxes.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors generated for the images.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            classifications (torch.Tensor): The probabilities for each class for each anchor.
+                Shape:
+                    (batch size, amount of anchors, amount of classes)
+
+        Returns:
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        &#34;&#34;&#34;
+        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+        # Generate a sequence of (bounding_boxes, classifications) for each image
+        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
+
+    def forward(self, images):
+        &#34;&#34;&#34;Forward pass of the network. Returns the anchors and the probability for each class per anchor.
+
+        In training mode (calling `model.train()`) it returns all the anchors ans classes&#39; probabilities
+        but in evaluation mode (calling `model.eval()`) it applies Non-Maximum Supresion to keep only
+        the predictions that do not collide.
+
+        On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+        different images could have different amounts of predictions over the threshold so we cannot keep
+        all them in a single tensor.
+        To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+        for each image.
+
+        Args:
+            images (torch.Tensor): Tensor with the batch of images.
+                Shape:
+                    (batch size, channels, height, width)
+
+        Returns:
+            In training mode:
+
+            torch.Tensor: A tensor with the base anchors.
+                Shape:
+                    (batch size, total anchors, 4)
+            torch.Tensor: A tensor with the regression values to adjust the anchors to a bounding box.
+                Shape:
+                    (batch size, total anchors, 4)
+            torch.Tensor: A tensor with the probability of each class for each anchor.
+                Shape:
+                    (batch size, total anchors, number of classes)
+
+            In evaluation mode:
+
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        &#34;&#34;&#34;
+        feature_maps = self.fpn(images)
+        # Get regressions and classifications values with shape (batch size, total anchors, 4)
+        regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
+        classifications = torch.cat([self.classification(feature_map) for feature_map in feature_maps], dim=1)
+        del feature_maps
+        # Transform the anchors to bounding boxes
+        anchors = self.anchors(images)
+
+        if self.training:
+            return anchors, regressions, classifications
+        if self.evaluate_loss:
+            return anchors.detach(), regressions.detach(), classifications.detach()
+
+        anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
+        return self.transform(images, anchors, regressions, classifications)
+
+    def nms(self, boxes, classifications):
+        &#34;&#34;&#34;Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
+        the same object.
+
+        Args:
+            boxes (torch.Tensor): Tensor with the bounding boxes.
+                Shape:
+                    (total anchors, 4)
+            classifications (torch.Tensor): Tensor with the scores for each class for each anchor.
+                Shape:
+                    (total anchors, number of classes)
+
+        Returns:
+            torch.Tensor: The bounding boxes to keep.
+            torch.Tensor: The probabilities for each class for each bounding box keeped.
+        &#34;&#34;&#34;
+        # Get the max score of any class for each anchor
+        scores, _ = classifications.max(dim=1)  # Shape (total anchors,)
+        # Keep only the bounding boxes and classifications over the threshold
+        scores_over_threshold = scores &gt; self.threshold
+        boxes = boxes[scores_over_threshold, :]
+        classifications = classifications[scores_over_threshold, :]
+
+        if not classifications.shape[0] &gt; 0:
+            return torch.zeros((0)).to(self.device), torch.zeros((0)).to(self.device)
+
+        # Update the scores to keep only the keeped boxes
+        scores = classifications.max(dim=1)[0]
+
+        # If there aren&#39;t detections return empty
+        if boxes.shape[0] == 0:
+            return torch.zeros(0).cuda()
+
+        # Get the numpy version
+        # was_cuda = detections.is_cuda
+        # detections = detections.cpu().numpy()
+
+        # Start the picked indexes list empty
+        picked = []
+
+        # Get the coordinates
+        x1 = boxes[:, 0].detach()
+        y1 = boxes[:, 1].detach()
+        x2 = boxes[:, 2].detach()
+        y2 = boxes[:, 3].detach()
+
+        # Compute the area of the bounding boxes
+        areas = ((x2 - x1 + 1) * (y2 - y1 + 1)).detach()
+
+        # Get the indexes of the detections sorted by score (lowest score first)
+        _, indexes = scores.sort()
+        del scores
+
+        while indexes.shape[0] &gt; 1:
+            # Take the last index (highest score) and add it to the picked
+            actual = int(indexes[-1])
+            picked.append(actual)
+
+            # We need to find the overlap of the bounding boxes with the actual picked bounding box
+
+            # Find the largest (more to the bottom-right) (x,y) coordinates for the start
+            # (top-left) of the bounding box between the actual and all of the others with lower score
+            xx1 = torch.max(x1[actual], x1[indexes[:-1]])
+            yy1 = torch.max(y1[actual], y1[indexes[:-1]])
+            # Find the smallest (more to the top-left) (x,y) coordinates for the end (bottom-right)
+            # of the bounding box
+            xx2 = torch.min(x2[actual], x2[indexes[:-1]])
+            yy2 = torch.min(y2[actual], y2[indexes[:-1]])
+
+            # Compute width and height to compute the intersection over union
+            w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
+            h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+            del xx1, yy1, xx2, yy2
+            intersection = (w * h)
+            del h, w
+            union = areas[actual] + areas[indexes[:-1]] - intersection
+            iou = intersection / union
+
+            # Delete the last index
+            indexes = indexes[:-1]
+            # Keep only the indexes that has overlap lower than the threshold
+            indexes = indexes[iou &lt; self.iou_threshold].detach()
+
+        # Return the filtered bounding boxes and classifications
+        return boxes[picked].detach(), classifications[picked].detach()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.models.retinanet.Classification"><code class="flex name class">
+<span>class <span class="ident">Classification</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.models.retinanet.SubModule" href="#torchsight.models.retinanet.SubModule">SubModule</a>, torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Classification submodule of RetinaNet.</p>
+<p>It generates, given a feature map, a tensor with the probability of each class.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Classification(SubModule):
+    &#34;&#34;&#34;Classification submodule of RetinaNet.
+
+    It generates, given a feature map, a tensor with the probability of each class.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, classes, anchors=9, features=256):
+        &#34;&#34;&#34;Initialize the network.
+
+        Args:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+        &#34;&#34;&#34;
+        super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+        self.classes = classes
+        self.activation = nn.Sigmoid()
+
+    def forward(self, feature_map):
+        &#34;&#34;&#34;Generates the probabilities for each class for each anchor for each location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The tensour with the probability of each class for each anchor and location in the
+                feature map. Shape: (batch size, height * width * anchors, classes)
+        &#34;&#34;&#34;
+        out = super(Classification, self).forward(feature_map)
+        out = self.activation(out)
+
+        # Now out has shape (batch size, classes * anchors, height, width)
+        out = out.permute(0, 2, 3, 1).contiguous()  # Move the outputs to the last dim
+        return out.view(out.shape[0], -1, self.classes)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.retinanet.Classification.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, classes, anchors=9, features=256)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the network.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of channels of the feature map.</dd>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the number of classes to predict.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The number of anchors per location in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of inner features that the conv layers must have.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, in_channels, classes, anchors=9, features=256):
+    &#34;&#34;&#34;Initialize the network.
+
+    Args:
+        in_channels (int): The number of channels of the feature map.
+        classes (int): Indicates the number of classes to predict.
+        anchors (int, optional): The number of anchors per location in the feature map.
+        features (int, optional): Indicates the number of inner features that the conv layers must have.
+    &#34;&#34;&#34;
+    super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+    self.classes = classes
+    self.activation = nn.Sigmoid()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.Classification.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, feature_map)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generates the probabilities for each class for each anchor for each location in the feature map.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>feature_map</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>A tensor with shape (batch size, in_channels, height, width).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The tensour with the probability of each class for each anchor and location in the
+feature map. Shape: (batch size, height * width * anchors, classes)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, feature_map):
+    &#34;&#34;&#34;Generates the probabilities for each class for each anchor for each location in the feature map.
+
+    Args:
+        feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, height, width).
+
+    Returns:
+        torch.Tensor: The tensour with the probability of each class for each anchor and location in the
+            feature map. Shape: (batch size, height * width * anchors, classes)
+    &#34;&#34;&#34;
+    out = super(Classification, self).forward(feature_map)
+    out = self.activation(out)
+
+    # Now out has shape (batch size, classes * anchors, height, width)
+    out = out.permute(0, 2, 3, 1).contiguous()  # Move the outputs to the last dim
+    return out.view(out.shape[0], -1, self.classes)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="torchsight.models.retinanet.FeaturePyramid"><code class="flex name class">
+<span>class <span class="ident">FeaturePyramid</span></span>
+<span>(</span><span><small>ancestors:</small> torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Feature pyramid network.</p>
+<p>It takes the natural architecture of a convolutional network to generate a pyramid
+of features with little extra effort.</p>
+<p>It merges the outputs of each one of the ResNet layers with the previous one to give
+more semantically meaning (the deepest the layer the more semantic meaning it has)
+and the strong localization features of the first layers.</p>
+<p>For more information please read the original paper:
+<a href="https://arxiv.org/pdf/1612.03144.pdf">https://arxiv.org/pdf/1612.03144.pdf</a></p>
+<p>This implementation also used the exact provided at RetinaNet paper:
+<a href="https://arxiv.org/pdf/1708.02002.pdf">https://arxiv.org/pdf/1708.02002.pdf</a></p>
+<p>Each time that a decision in the code mention "the paper" is the RetinaNet paper.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class FeaturePyramid(nn.Module):
+    &#34;&#34;&#34;Feature pyramid network.
+
+    It takes the natural architecture of a convolutional network to generate a pyramid
+    of features with little extra effort.
+
+    It merges the outputs of each one of the ResNet layers with the previous one to give
+    more semantically meaning (the deepest the layer the more semantic meaning it has)
+    and the strong localization features of the first layers.
+
+    For more information please read the original paper:
+    https://arxiv.org/pdf/1612.03144.pdf
+
+    This implementation also used the exact provided at RetinaNet paper:
+    https://arxiv.org/pdf/1708.02002.pdf
+
+    Each time that a decision in the code mention &#34;the paper&#34; is the RetinaNet paper.
+    &#34;&#34;&#34;
+
+    strides = [8, 16, 32, 64, 128]  # The stride applied to obtain each output
+
+    def __init__(self, resnet=18, features=256, pretrained=True):
+        &#34;&#34;&#34;Initialize the network.
+
+        It init a ResNet with the given depth and use &#39;features&#39; as the number of
+        channels for each feature map.
+
+        Args:
+            resnet (int): Indicates the depth of the resnet backbone.
+            features (int): Indicates the depth (number of channels) of each feature map
+                of the pyramid.
+            pretrained (bool): Indicates if the backbone must be pretrained.
+        &#34;&#34;&#34;
+        super(FeaturePyramid, self).__init__()
+
+        if resnet == 18:
+            self.backbone = resnet18(pretrained)
+        elif resnet == 34:
+            self.backbone = resnet34(pretrained)
+        elif resnet == 50:
+            self.backbone = resnet50(pretrained)
+        elif resnet == 101:
+            self.backbone = resnet101(pretrained)
+        elif resnet == 152:
+            self.backbone = resnet152(pretrained)
+        else:
+            raise ValueError(&#39;Invalid ResNet depth: {}&#39;.format(resnet))
+
+        # The paper names the output for each layer a C_x where x is the number of the layer
+        # ResNet output feature maps has this depths for each layer
+        c5_depth = self.backbone.output_channels[0]
+        c4_depth = self.backbone.output_channels[1]
+        c3_depth = self.backbone.output_channels[2]
+
+        # The paper names the feature maps as P. We start from the last output, the more rich semantically.
+
+        # Conv 1x1 to set features dimension and conv 3x3 to generate feature map
+        self.p5_conv1 = nn.Conv2d(c5_depth, features, kernel_size=1, stride=1, padding=0)
+        self.p5_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        # Upsample to sum with c_4
+        self.p5_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode=&#39;nearest&#39;)
+
+        self.p4_conv1 = nn.Conv2d(c4_depth, features, kernel_size=1, stride=1, padding=0)
+        self.p4_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.p4_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode=&#39;nearest&#39;)
+
+        # We don&#39;t need to upsample c3 because we are not using c2
+        self.p3_conv1 = nn.Conv2d(c3_depth, features, kernel_size=1, stride=1, padding=0)
+        self.p3_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+
+        # In the paper the generate also a p6 and p7 feature maps
+
+        # p6 is obtained via a 3x3 convolution with stride 2 over c5
+        self.p6_conv = nn.Conv2d(c5_depth, features, kernel_size=3, stride=2, padding=1)
+
+        # p7 is computed by applying ReLU followed with by a 3x3 convolution with stride 2 on p6
+        self.p7_relu = nn.ReLU()
+        self.p7_conv = nn.Conv2d(features, features, kernel_size=3, stride=2, padding=1)
+
+    def forward(self, images):
+        &#34;&#34;&#34;Generate the Feature Pyramid given the images as tensor.
+
+        Args:
+            images (torch.Tensor): A tensor with shape (batch size, 3, width, height).
+
+        Returns:
+            tuple: A tuple with the output for each level from 3 to 7.
+                Shapes:
+                - p3: (batch size, features, width / 8, height / 8)
+                - p4: (batch size, features, width / 16, height / 16)
+                - p5: (batch size, features, width / 32, height / 32)
+                - p6: (batch size, features, width / 64, height / 64)
+                - p7: (batch size, features, width / 128, height / 128)
+        &#34;&#34;&#34;
+        # Bottom-up pathway with resnet backbone
+        c5, c4, c3 = self.backbone(images)
+
+        # Top-down pathway and lateral connections
+        p5 = self.p5_conv1(c5)
+        p5_upsampled = self.p5_upsample(p5)
+        p5 = self.p5_conv2(p5)
+
+        p4 = self.p4_conv1(c4)
+        p4 = p4 + p5_upsampled
+        p4_upsampled = self.p4_upsample(p4)
+        p4 = self.p4_conv2(p4)
+
+        p3 = self.p3_conv1(c3)
+        p3 = p3 + p4_upsampled
+        p3 = self.p3_conv2(p3)
+
+        p6 = self.p6_conv(c5)
+
+        p7 = self.p7_relu(p6)
+        p7 = self.p7_conv(p7)
+
+        return p3, p4, p5, p6, p7</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="torchsight.models.retinanet.FeaturePyramid.strides"><code class="name">var <span class="ident">strides</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.retinanet.FeaturePyramid.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, resnet=18, features=256, pretrained=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the network.</p>
+<p>It init a ResNet with the given depth and use 'features' as the number of
+channels for each feature map.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>resnet</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the depth of the resnet backbone.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the depth (number of channels) of each feature map
+of the pyramid.</dd>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Indicates if the backbone must be pretrained.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, resnet=18, features=256, pretrained=True):
+    &#34;&#34;&#34;Initialize the network.
+
+    It init a ResNet with the given depth and use &#39;features&#39; as the number of
+    channels for each feature map.
+
+    Args:
+        resnet (int): Indicates the depth of the resnet backbone.
+        features (int): Indicates the depth (number of channels) of each feature map
+            of the pyramid.
+        pretrained (bool): Indicates if the backbone must be pretrained.
+    &#34;&#34;&#34;
+    super(FeaturePyramid, self).__init__()
+
+    if resnet == 18:
+        self.backbone = resnet18(pretrained)
+    elif resnet == 34:
+        self.backbone = resnet34(pretrained)
+    elif resnet == 50:
+        self.backbone = resnet50(pretrained)
+    elif resnet == 101:
+        self.backbone = resnet101(pretrained)
+    elif resnet == 152:
+        self.backbone = resnet152(pretrained)
+    else:
+        raise ValueError(&#39;Invalid ResNet depth: {}&#39;.format(resnet))
+
+    # The paper names the output for each layer a C_x where x is the number of the layer
+    # ResNet output feature maps has this depths for each layer
+    c5_depth = self.backbone.output_channels[0]
+    c4_depth = self.backbone.output_channels[1]
+    c3_depth = self.backbone.output_channels[2]
+
+    # The paper names the feature maps as P. We start from the last output, the more rich semantically.
+
+    # Conv 1x1 to set features dimension and conv 3x3 to generate feature map
+    self.p5_conv1 = nn.Conv2d(c5_depth, features, kernel_size=1, stride=1, padding=0)
+    self.p5_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+    # Upsample to sum with c_4
+    self.p5_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode=&#39;nearest&#39;)
+
+    self.p4_conv1 = nn.Conv2d(c4_depth, features, kernel_size=1, stride=1, padding=0)
+    self.p4_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+    self.p4_upsample = lambda input: nn.functional.interpolate(input, scale_factor=2, mode=&#39;nearest&#39;)
+
+    # We don&#39;t need to upsample c3 because we are not using c2
+    self.p3_conv1 = nn.Conv2d(c3_depth, features, kernel_size=1, stride=1, padding=0)
+    self.p3_conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+
+    # In the paper the generate also a p6 and p7 feature maps
+
+    # p6 is obtained via a 3x3 convolution with stride 2 over c5
+    self.p6_conv = nn.Conv2d(c5_depth, features, kernel_size=3, stride=2, padding=1)
+
+    # p7 is computed by applying ReLU followed with by a 3x3 convolution with stride 2 on p6
+    self.p7_relu = nn.ReLU()
+    self.p7_conv = nn.Conv2d(features, features, kernel_size=3, stride=2, padding=1)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.FeaturePyramid.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, images)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate the Feature Pyramid given the images as tensor.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>images</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>A tensor with shape (batch size, 3, width, height).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>tuple</code></strong></dt>
+<dd>A tuple with the output for each level from 3 to 7.
+Shapes:
+- p3: (batch size, features, width / 8, height / 8)
+- p4: (batch size, features, width / 16, height / 16)
+- p5: (batch size, features, width / 32, height / 32)
+- p6: (batch size, features, width / 64, height / 64)
+- p7: (batch size, features, width / 128, height / 128)</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, images):
+    &#34;&#34;&#34;Generate the Feature Pyramid given the images as tensor.
+
+    Args:
+        images (torch.Tensor): A tensor with shape (batch size, 3, width, height).
+
+    Returns:
+        tuple: A tuple with the output for each level from 3 to 7.
+            Shapes:
+            - p3: (batch size, features, width / 8, height / 8)
+            - p4: (batch size, features, width / 16, height / 16)
+            - p5: (batch size, features, width / 32, height / 32)
+            - p6: (batch size, features, width / 64, height / 64)
+            - p7: (batch size, features, width / 128, height / 128)
+    &#34;&#34;&#34;
+    # Bottom-up pathway with resnet backbone
+    c5, c4, c3 = self.backbone(images)
+
+    # Top-down pathway and lateral connections
+    p5 = self.p5_conv1(c5)
+    p5_upsampled = self.p5_upsample(p5)
+    p5 = self.p5_conv2(p5)
+
+    p4 = self.p4_conv1(c4)
+    p4 = p4 + p5_upsampled
+    p4_upsampled = self.p4_upsample(p4)
+    p4 = self.p4_conv2(p4)
+
+    p3 = self.p3_conv1(c3)
+    p3 = p3 + p4_upsampled
+    p3 = self.p3_conv2(p3)
+
+    p6 = self.p6_conv(c5)
+
+    p7 = self.p7_relu(p6)
+    p7 = self.p7_conv(p7)
+
+    return p3, p4, p5, p6, p7</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="torchsight.models.retinanet.Regression"><code class="flex name class">
+<span>class <span class="ident">Regression</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.models.retinanet.SubModule" href="#torchsight.models.retinanet.SubModule">SubModule</a>, torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Regression submodule of RetinaNet.</p>
+<p>It generates, given a feature map, a tensor with the values of regression for each
+anchor.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Regression(SubModule):
+    &#34;&#34;&#34;Regression submodule of RetinaNet.
+
+    It generates, given a feature map, a tensor with the values of regression for each
+    anchor.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, anchors=9, features=256):
+        &#34;&#34;&#34;Initialize the components of the network.
+
+        Args:
+            in_channels (int): Indicates the number of features (or channels) of the feature map.
+            anchors (int, optional): Indicates the number of anchors (i.e. bounding boxes) per location
+                in the feature map.
+            features (int, optional): Indicates the number of features that the conv layers must have.
+        &#34;&#34;&#34;
+        super(Regression, self).__init__(in_channels, outputs=4, anchors=anchors, features=features)
+
+    def forward(self, feature_map):
+        &#34;&#34;&#34;Generates the bounding box regression for each anchor and location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, height, width).
+
+        Returns:
+            torch.Tensor: The tensor with bounding boxes values for the feature map.
+                Shape:
+                    (batch size, height * width * number of anchors, 4)
+        &#34;&#34;&#34;
+        out = super(Regression, self).forward(feature_map)
+
+        # Now, out has shape (batch size, 4 * number of anchors, width, height)
+        out = out.permute(0, 2, 3, 1).contiguous()  # Set regression values as the last dimension
+        return out.view(out.shape[0], -1, 4)  # Change the shape of the tensor</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.retinanet.Regression.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, anchors=9, features=256)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the components of the network.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the number of features (or channels) of the feature map.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of anchors (i.e. bounding boxes) per location
+in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of features that the conv layers must have.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, in_channels, anchors=9, features=256):
+    &#34;&#34;&#34;Initialize the components of the network.
+
+    Args:
+        in_channels (int): Indicates the number of features (or channels) of the feature map.
+        anchors (int, optional): Indicates the number of anchors (i.e. bounding boxes) per location
+            in the feature map.
+        features (int, optional): Indicates the number of features that the conv layers must have.
+    &#34;&#34;&#34;
+    super(Regression, self).__init__(in_channels, outputs=4, anchors=anchors, features=features)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.Regression.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, feature_map)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generates the bounding box regression for each anchor and location in the feature map.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>feature_map</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>A tensor with shape (batch size, in_channels, height, width).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The tensor with bounding boxes values for the feature map.
+Shape:
+(batch size, height * width * number of anchors, 4)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, feature_map):
+    &#34;&#34;&#34;Generates the bounding box regression for each anchor and location in the feature map.
+
+    Args:
+        feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, height, width).
+
+    Returns:
+        torch.Tensor: The tensor with bounding boxes values for the feature map.
+            Shape:
+                (batch size, height * width * number of anchors, 4)
+    &#34;&#34;&#34;
+    out = super(Regression, self).forward(feature_map)
+
+    # Now, out has shape (batch size, 4 * number of anchors, width, height)
+    out = out.permute(0, 2, 3, 1).contiguous()  # Set regression values as the last dimension
+    return out.view(out.shape[0], -1, 4)  # Change the shape of the tensor</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="torchsight.models.retinanet.RetinaNet"><code class="flex name class">
+<span>class <span class="ident">RetinaNet</span></span>
+<span>(</span><span><small>ancestors:</small> torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>RetinaNet network.</p>
+<p>This Network is for object detection, so its outputs are the regressions
+for the bounding boxes for each anchor and the probabilities for each class for each anchor.</p>
+<p>In training mode returns all the predicted values (all bounding boxes and classes for all the anchors)
+and in evaluation mode applies Non-Maximum suppresion to return only the relevant detections with shape
+(N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class' label.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class RetinaNet(nn.Module):
+    &#34;&#34;&#34;RetinaNet network.
+
+    This Network is for object detection, so its outputs are the regressions
+    for the bounding boxes for each anchor and the probabilities for each class for each anchor.
+
+    In training mode returns all the predicted values (all bounding boxes and classes for all the anchors)
+    and in evaluation mode applies Non-Maximum suppresion to return only the relevant detections with shape
+    (N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class&#39; label.
+    &#34;&#34;&#34;
+
+    def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Arguments:
+            classes (int): The number of classes to detect.
+            resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+            features (dict, optional): The dict that indicates the features for each module of the network.
+            anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+                the Anchors module.
+            pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+                This pretraining is provided by the torchvision package.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        super(RetinaNet, self).__init__()
+
+        if features is None:
+            features = {&#39;pyramid&#39;: 256, &#39;regression&#39;: 256, &#39;classification&#39;: 256}
+        if anchors is None:
+            anchors = {&#39;sizes&#39;: [32, 64, 128, 256, 512],
+                       &#39;scales&#39;: [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
+                       &#39;ratios&#39;: [0.5, 1, 2]}
+
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+        # Modules
+        self.fpn = FeaturePyramid(resnet=resnet, features=features[&#39;pyramid&#39;], pretrained=pretrained)
+
+        if len(anchors[&#39;sizes&#39;]) != 5:
+            raise ValueError(&#39;anchors_size must have length 5 to work with the FPN&#39;)
+        self.anchors = Anchors(anchors[&#39;sizes&#39;], anchors[&#39;scales&#39;], anchors[&#39;ratios&#39;], self.fpn.strides)
+
+        self.regression = Regression(in_channels=features[&#39;pyramid&#39;],
+                                     anchors=self.anchors.n_anchors,
+                                     features=features[&#39;regression&#39;])
+        self.classification = self.get_classification_module(in_channels=features[&#39;pyramid&#39;],
+                                                             classes=classes,
+                                                             anchors=self.anchors.n_anchors,
+                                                             features=features[&#39;classification&#39;])
+
+        # Set the base threshold for evaluating mode
+        self.threshold = 0.6
+        self.iou_threshold = 0.5
+        self.evaluate_loss = False
+
+    def get_classification_module(self, in_channels, classes, anchors, features):
+        &#34;&#34;&#34;Get the classification module to generate the probability of each anchor
+        to be any class.
+
+        Why to do a getter? Because this allow to override this method and compute the
+        classification with another method.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+        Returns:
+            torch.nn.Module: The classification module for the net.
+        &#34;&#34;&#34;
+        return Classification(in_channels=in_channels, classes=classes, anchors=anchors, features=features)
+
+    def eval(self, threshold=None, iou_threshold=None, loss=False):
+        &#34;&#34;&#34;Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
+        over threshold.
+
+        Args:
+            threshold (float): The threshold to keep only bounding boxes with a class&#39; probability over it.
+            iou_threshold (float): If two bounding boxes has Intersection Over Union more than this
+                threshold they are detecting the same object.
+            loss (bool): If true the forward pass does not do NMS and return the same output as if it is
+                training. Why? To compute the loss over the validation dataset for example.
+        &#34;&#34;&#34;
+        if threshold is not None:
+            self.threshold = threshold
+
+        if iou_threshold is not None:
+            self.iou_threshold = iou_threshold
+
+        self.evaluate_loss = loss
+
+        return super(RetinaNet, self).eval()
+
+    def transform(self, images, anchors, regressions, classifications):
+        &#34;&#34;&#34;Transform, clip and apply NMS to the predictions.
+
+        Arguments:
+            images (torch.Tensor): The images that passed through the network. Useful for clipping
+                the predicted bounding boxes.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors generated for the images.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            classifications (torch.Tensor): The probabilities for each class for each anchor.
+                Shape:
+                    (batch size, amount of anchors, amount of classes)
+
+        Returns:
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        &#34;&#34;&#34;
+        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+        # Generate a sequence of (bounding_boxes, classifications) for each image
+        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
+
+    def forward(self, images):
+        &#34;&#34;&#34;Forward pass of the network. Returns the anchors and the probability for each class per anchor.
+
+        In training mode (calling `model.train()`) it returns all the anchors ans classes&#39; probabilities
+        but in evaluation mode (calling `model.eval()`) it applies Non-Maximum Supresion to keep only
+        the predictions that do not collide.
+
+        On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+        different images could have different amounts of predictions over the threshold so we cannot keep
+        all them in a single tensor.
+        To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+        for each image.
+
+        Args:
+            images (torch.Tensor): Tensor with the batch of images.
+                Shape:
+                    (batch size, channels, height, width)
+
+        Returns:
+            In training mode:
+
+            torch.Tensor: A tensor with the base anchors.
+                Shape:
+                    (batch size, total anchors, 4)
+            torch.Tensor: A tensor with the regression values to adjust the anchors to a bounding box.
+                Shape:
+                    (batch size, total anchors, 4)
+            torch.Tensor: A tensor with the probability of each class for each anchor.
+                Shape:
+                    (batch size, total anchors, number of classes)
+
+            In evaluation mode:
+
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        &#34;&#34;&#34;
+        feature_maps = self.fpn(images)
+        # Get regressions and classifications values with shape (batch size, total anchors, 4)
+        regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
+        classifications = torch.cat([self.classification(feature_map) for feature_map in feature_maps], dim=1)
+        del feature_maps
+        # Transform the anchors to bounding boxes
+        anchors = self.anchors(images)
+
+        if self.training:
+            return anchors, regressions, classifications
+        if self.evaluate_loss:
+            return anchors.detach(), regressions.detach(), classifications.detach()
+
+        anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
+        return self.transform(images, anchors, regressions, classifications)
+
+    def nms(self, boxes, classifications):
+        &#34;&#34;&#34;Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
+        the same object.
+
+        Args:
+            boxes (torch.Tensor): Tensor with the bounding boxes.
+                Shape:
+                    (total anchors, 4)
+            classifications (torch.Tensor): Tensor with the scores for each class for each anchor.
+                Shape:
+                    (total anchors, number of classes)
+
+        Returns:
+            torch.Tensor: The bounding boxes to keep.
+            torch.Tensor: The probabilities for each class for each bounding box keeped.
+        &#34;&#34;&#34;
+        # Get the max score of any class for each anchor
+        scores, _ = classifications.max(dim=1)  # Shape (total anchors,)
+        # Keep only the bounding boxes and classifications over the threshold
+        scores_over_threshold = scores &gt; self.threshold
+        boxes = boxes[scores_over_threshold, :]
+        classifications = classifications[scores_over_threshold, :]
+
+        if not classifications.shape[0] &gt; 0:
+            return torch.zeros((0)).to(self.device), torch.zeros((0)).to(self.device)
+
+        # Update the scores to keep only the keeped boxes
+        scores = classifications.max(dim=1)[0]
+
+        # If there aren&#39;t detections return empty
+        if boxes.shape[0] == 0:
+            return torch.zeros(0).cuda()
+
+        # Get the numpy version
+        # was_cuda = detections.is_cuda
+        # detections = detections.cpu().numpy()
+
+        # Start the picked indexes list empty
+        picked = []
+
+        # Get the coordinates
+        x1 = boxes[:, 0].detach()
+        y1 = boxes[:, 1].detach()
+        x2 = boxes[:, 2].detach()
+        y2 = boxes[:, 3].detach()
+
+        # Compute the area of the bounding boxes
+        areas = ((x2 - x1 + 1) * (y2 - y1 + 1)).detach()
+
+        # Get the indexes of the detections sorted by score (lowest score first)
+        _, indexes = scores.sort()
+        del scores
+
+        while indexes.shape[0] &gt; 1:
+            # Take the last index (highest score) and add it to the picked
+            actual = int(indexes[-1])
+            picked.append(actual)
+
+            # We need to find the overlap of the bounding boxes with the actual picked bounding box
+
+            # Find the largest (more to the bottom-right) (x,y) coordinates for the start
+            # (top-left) of the bounding box between the actual and all of the others with lower score
+            xx1 = torch.max(x1[actual], x1[indexes[:-1]])
+            yy1 = torch.max(y1[actual], y1[indexes[:-1]])
+            # Find the smallest (more to the top-left) (x,y) coordinates for the end (bottom-right)
+            # of the bounding box
+            xx2 = torch.min(x2[actual], x2[indexes[:-1]])
+            yy2 = torch.min(y2[actual], y2[indexes[:-1]])
+
+            # Compute width and height to compute the intersection over union
+            w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
+            h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+            del xx1, yy1, xx2, yy2
+            intersection = (w * h)
+            del h, w
+            union = areas[actual] + areas[indexes[:-1]] - intersection
+            iou = intersection / union
+
+            # Delete the last index
+            indexes = indexes[:-1]
+            # Keep only the indexes that has overlap lower than the threshold
+            indexes = indexes[iou &lt; self.iou_threshold].detach()
+
+        # Return the filtered bounding boxes and classifications
+        return boxes[picked].detach(), classifications[picked].detach()</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.retinanet.RetinaNet.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the network.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of classes to detect.</dd>
+<dt><strong><code>resnet</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The depth of the resnet backbone for the Feature Pyramid Network.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>The dict that indicates the features for each module of the network.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
+the Anchors module.</dd>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+This pretraining is provided by the torchvision package.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The device where the module will run.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
+    &#34;&#34;&#34;Initialize the network.
+
+    Arguments:
+        classes (int): The number of classes to detect.
+        resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+        features (dict, optional): The dict that indicates the features for each module of the network.
+        anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+            the Anchors module.
+        pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+            This pretraining is provided by the torchvision package.
+        device (str, optional): The device where the module will run.
+    &#34;&#34;&#34;
+    super(RetinaNet, self).__init__()
+
+    if features is None:
+        features = {&#39;pyramid&#39;: 256, &#39;regression&#39;: 256, &#39;classification&#39;: 256}
+    if anchors is None:
+        anchors = {&#39;sizes&#39;: [32, 64, 128, 256, 512],
+                   &#39;scales&#39;: [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
+                   &#39;ratios&#39;: [0.5, 1, 2]}
+
+    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+    # Modules
+    self.fpn = FeaturePyramid(resnet=resnet, features=features[&#39;pyramid&#39;], pretrained=pretrained)
+
+    if len(anchors[&#39;sizes&#39;]) != 5:
+        raise ValueError(&#39;anchors_size must have length 5 to work with the FPN&#39;)
+    self.anchors = Anchors(anchors[&#39;sizes&#39;], anchors[&#39;scales&#39;], anchors[&#39;ratios&#39;], self.fpn.strides)
+
+    self.regression = Regression(in_channels=features[&#39;pyramid&#39;],
+                                 anchors=self.anchors.n_anchors,
+                                 features=features[&#39;regression&#39;])
+    self.classification = self.get_classification_module(in_channels=features[&#39;pyramid&#39;],
+                                                         classes=classes,
+                                                         anchors=self.anchors.n_anchors,
+                                                         features=features[&#39;classification&#39;])
+
+    # Set the base threshold for evaluating mode
+    self.threshold = 0.6
+    self.iou_threshold = 0.5
+    self.evaluate_loss = False</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.RetinaNet.eval"><code class="name flex">
+<span>def <span class="ident">eval</span></span>(<span>self, threshold=None, iou_threshold=None, loss=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
+over threshold.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>threshold</code></strong> :&ensp;<code>float</code></dt>
+<dd>The threshold to keep only bounding boxes with a class' probability over it.</dd>
+<dt><strong><code>iou_threshold</code></strong> :&ensp;<code>float</code></dt>
+<dd>If two bounding boxes has Intersection Over Union more than this
+threshold they are detecting the same object.</dd>
+<dt><strong><code>loss</code></strong> :&ensp;<code>bool</code></dt>
+<dd>If true the forward pass does not do NMS and return the same output as if it is
+training. Why? To compute the loss over the validation dataset for example.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def eval(self, threshold=None, iou_threshold=None, loss=False):
+    &#34;&#34;&#34;Set the model in the evaluation mode. Keep only bounding boxes with predictions with score
+    over threshold.
+
+    Args:
+        threshold (float): The threshold to keep only bounding boxes with a class&#39; probability over it.
+        iou_threshold (float): If two bounding boxes has Intersection Over Union more than this
+            threshold they are detecting the same object.
+        loss (bool): If true the forward pass does not do NMS and return the same output as if it is
+            training. Why? To compute the loss over the validation dataset for example.
+    &#34;&#34;&#34;
+    if threshold is not None:
+        self.threshold = threshold
+
+    if iou_threshold is not None:
+        self.iou_threshold = iou_threshold
+
+    self.evaluate_loss = loss
+
+    return super(RetinaNet, self).eval()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.RetinaNet.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, images)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Forward pass of the network. Returns the anchors and the probability for each class per anchor.</p>
+<p>In training mode (calling <code>model.train()</code>) it returns all the anchors ans classes' probabilities
+but in evaluation mode (calling <code>model.eval()</code>) it applies Non-Maximum Supresion to keep only
+the predictions that do not collide.</p>
+<p>On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+different images could have different amounts of predictions over the threshold so we cannot keep
+all them in a single tensor.
+To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+for each image.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>images</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Tensor with the batch of images.
+Shape:
+(batch size, channels, height, width)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>In training mode:</p>
+<p>torch.Tensor: A tensor with the base anchors.
+Shape:
+(batch size, total anchors, 4)
+torch.Tensor: A tensor with the regression values to adjust the anchors to a bounding box.
+Shape:
+(batch size, total anchors, 4)
+torch.Tensor: A tensor with the probability of each class for each anchor.
+Shape:
+(batch size, total anchors, number of classes)</p>
+<p>In evaluation mode:</p>
+<dl>
+<dt><strong><code>sequence</code></strong></dt>
+<dd>A sequence of (bounding boxes, classifications) for each image.
+Bounding boxes: Tensor with shape (total predictions, 4).
+Classifications: Tensor with shape (total predictions, classes).</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, images):
+    &#34;&#34;&#34;Forward pass of the network. Returns the anchors and the probability for each class per anchor.
+
+    In training mode (calling `model.train()`) it returns all the anchors ans classes&#39; probabilities
+    but in evaluation mode (calling `model.eval()`) it applies Non-Maximum Supresion to keep only
+    the predictions that do not collide.
+
+    On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+    different images could have different amounts of predictions over the threshold so we cannot keep
+    all them in a single tensor.
+    To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+    for each image.
+
+    Args:
+        images (torch.Tensor): Tensor with the batch of images.
+            Shape:
+                (batch size, channels, height, width)
+
+    Returns:
+        In training mode:
+
+        torch.Tensor: A tensor with the base anchors.
+            Shape:
+                (batch size, total anchors, 4)
+        torch.Tensor: A tensor with the regression values to adjust the anchors to a bounding box.
+            Shape:
+                (batch size, total anchors, 4)
+        torch.Tensor: A tensor with the probability of each class for each anchor.
+            Shape:
+                (batch size, total anchors, number of classes)
+
+        In evaluation mode:
+
+        sequence: A sequence of (bounding boxes, classifications) for each image.
+            Bounding boxes: Tensor with shape (total predictions, 4).
+            Classifications: Tensor with shape (total predictions, classes).
+    &#34;&#34;&#34;
+    feature_maps = self.fpn(images)
+    # Get regressions and classifications values with shape (batch size, total anchors, 4)
+    regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
+    classifications = torch.cat([self.classification(feature_map) for feature_map in feature_maps], dim=1)
+    del feature_maps
+    # Transform the anchors to bounding boxes
+    anchors = self.anchors(images)
+
+    if self.training:
+        return anchors, regressions, classifications
+    if self.evaluate_loss:
+        return anchors.detach(), regressions.detach(), classifications.detach()
+
+    anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
+    return self.transform(images, anchors, regressions, classifications)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.RetinaNet.get_classification_module"><code class="name flex">
+<span>def <span class="ident">get_classification_module</span></span>(<span>self, in_channels, classes, anchors, features)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the classification module to generate the probability of each anchor
+to be any class.</p>
+<p>Why to do a getter? Because this allow to override this method and compute the
+classification with another method.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of channels of the feature map.</dd>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the number of classes to predict.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The number of anchors per location in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of inner features that the conv layers must have.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.nn.Module: The classification module for the net.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_classification_module(self, in_channels, classes, anchors, features):
+    &#34;&#34;&#34;Get the classification module to generate the probability of each anchor
+    to be any class.
+
+    Why to do a getter? Because this allow to override this method and compute the
+    classification with another method.
+
+    Arguments:
+        in_channels (int): The number of channels of the feature map.
+        classes (int): Indicates the number of classes to predict.
+        anchors (int, optional): The number of anchors per location in the feature map.
+        features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+    Returns:
+        torch.nn.Module: The classification module for the net.
+    &#34;&#34;&#34;
+    return Classification(in_channels=in_channels, classes=classes, anchors=anchors, features=features)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.RetinaNet.nms"><code class="name flex">
+<span>def <span class="ident">nms</span></span>(<span>self, boxes, classifications)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
+the same object.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>boxes</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Tensor with the bounding boxes.
+Shape:
+(total anchors, 4)</dd>
+<dt><strong><code>classifications</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Tensor with the scores for each class for each anchor.
+Shape:
+(total anchors, number of classes)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The bounding boxes to keep.
+torch.Tensor: The probabilities for each class for each bounding box keeped.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def nms(self, boxes, classifications):
+    &#34;&#34;&#34;Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
+    the same object.
+
+    Args:
+        boxes (torch.Tensor): Tensor with the bounding boxes.
+            Shape:
+                (total anchors, 4)
+        classifications (torch.Tensor): Tensor with the scores for each class for each anchor.
+            Shape:
+                (total anchors, number of classes)
+
+    Returns:
+        torch.Tensor: The bounding boxes to keep.
+        torch.Tensor: The probabilities for each class for each bounding box keeped.
+    &#34;&#34;&#34;
+    # Get the max score of any class for each anchor
+    scores, _ = classifications.max(dim=1)  # Shape (total anchors,)
+    # Keep only the bounding boxes and classifications over the threshold
+    scores_over_threshold = scores &gt; self.threshold
+    boxes = boxes[scores_over_threshold, :]
+    classifications = classifications[scores_over_threshold, :]
+
+    if not classifications.shape[0] &gt; 0:
+        return torch.zeros((0)).to(self.device), torch.zeros((0)).to(self.device)
+
+    # Update the scores to keep only the keeped boxes
+    scores = classifications.max(dim=1)[0]
+
+    # If there aren&#39;t detections return empty
+    if boxes.shape[0] == 0:
+        return torch.zeros(0).cuda()
+
+    # Get the numpy version
+    # was_cuda = detections.is_cuda
+    # detections = detections.cpu().numpy()
+
+    # Start the picked indexes list empty
+    picked = []
+
+    # Get the coordinates
+    x1 = boxes[:, 0].detach()
+    y1 = boxes[:, 1].detach()
+    x2 = boxes[:, 2].detach()
+    y2 = boxes[:, 3].detach()
+
+    # Compute the area of the bounding boxes
+    areas = ((x2 - x1 + 1) * (y2 - y1 + 1)).detach()
+
+    # Get the indexes of the detections sorted by score (lowest score first)
+    _, indexes = scores.sort()
+    del scores
+
+    while indexes.shape[0] &gt; 1:
+        # Take the last index (highest score) and add it to the picked
+        actual = int(indexes[-1])
+        picked.append(actual)
+
+        # We need to find the overlap of the bounding boxes with the actual picked bounding box
+
+        # Find the largest (more to the bottom-right) (x,y) coordinates for the start
+        # (top-left) of the bounding box between the actual and all of the others with lower score
+        xx1 = torch.max(x1[actual], x1[indexes[:-1]])
+        yy1 = torch.max(y1[actual], y1[indexes[:-1]])
+        # Find the smallest (more to the top-left) (x,y) coordinates for the end (bottom-right)
+        # of the bounding box
+        xx2 = torch.min(x2[actual], x2[indexes[:-1]])
+        yy2 = torch.min(y2[actual], y2[indexes[:-1]])
+
+        # Compute width and height to compute the intersection over union
+        w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
+        h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+        del xx1, yy1, xx2, yy2
+        intersection = (w * h)
+        del h, w
+        union = areas[actual] + areas[indexes[:-1]] - intersection
+        iou = intersection / union
+
+        # Delete the last index
+        indexes = indexes[:-1]
+        # Keep only the indexes that has overlap lower than the threshold
+        indexes = indexes[iou &lt; self.iou_threshold].detach()
+
+    # Return the filtered bounding boxes and classifications
+    return boxes[picked].detach(), classifications[picked].detach()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.RetinaNet.transform"><code class="name flex">
+<span>def <span class="ident">transform</span></span>(<span>self, images, anchors, regressions, classifications)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Transform, clip and apply NMS to the predictions.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>images</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The images that passed through the network. Useful for clipping
+the predicted bounding boxes.
+Shape:
+(batch size, channels, height, width)</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The base anchors generated for the images.
+Shape:
+(batch size, amount of anchors, 4)</dd>
+<dt><strong><code>regressions</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The regression values to transform and adjust the bounding boxes.
+Shape:
+(batch size, amount of anchors, 4)</dd>
+<dt><strong><code>classifications</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The probabilities for each class for each anchor.
+Shape:
+(batch size, amount of anchors, amount of classes)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>sequence</code></strong></dt>
+<dd>A sequence of (bounding boxes, classifications) for each image.
+Bounding boxes: Tensor with shape (total predictions, 4).
+Classifications: Tensor with shape (total predictions, classes).</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def transform(self, images, anchors, regressions, classifications):
+    &#34;&#34;&#34;Transform, clip and apply NMS to the predictions.
+
+    Arguments:
+        images (torch.Tensor): The images that passed through the network. Useful for clipping
+            the predicted bounding boxes.
+            Shape:
+                (batch size, channels, height, width)
+        anchors (torch.Tensor): The base anchors generated for the images.
+            Shape:
+                (batch size, amount of anchors, 4)
+        regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
+            Shape:
+                (batch size, amount of anchors, 4)
+        classifications (torch.Tensor): The probabilities for each class for each anchor.
+            Shape:
+                (batch size, amount of anchors, amount of classes)
+
+    Returns:
+        sequence: A sequence of (bounding boxes, classifications) for each image.
+            Bounding boxes: Tensor with shape (total predictions, 4).
+            Classifications: Tensor with shape (total predictions, classes).
+    &#34;&#34;&#34;
+    bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+    del regressions
+    # Clip the boxes to fit in the image
+    bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+    # Generate a sequence of (bounding_boxes, classifications) for each image
+    return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="torchsight.models.retinanet.SubModule"><code class="flex name class">
+<span>class <span class="ident">SubModule</span></span>
+<span>(</span><span><small>ancestors:</small> torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Base class for the regression and classification submodules.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class SubModule(nn.Module):
+    &#34;&#34;&#34;Base class for the regression and classification submodules.&#34;&#34;&#34;
+
+    def __init__(self, in_channels, outputs, anchors=9, features=256):
+        &#34;&#34;&#34;Initialize the components of the network.
+
+        Args:
+            in_channels (int): Indicates the number of features (or channels) of the feature map.
+            outputs (int): The number of outputs per anchor.
+            anchors (int, optional): Indicates the number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of features that the conv layers must have.
+        &#34;&#34;&#34;
+        super(SubModule, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channels, features, kernel_size=3, stride=1, padding=1)
+        self.act1 = nn.ReLU()
+
+        self.conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act2 = nn.ReLU()
+
+        self.conv3 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act3 = nn.ReLU()
+
+        self.conv4 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+        self.act4 = nn.ReLU()
+
+        self.last_conv = nn.Conv2d(features, outputs * anchors, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, feature_map):
+        &#34;&#34;&#34;Generates the outputs for each anchor and location in the feature map.
+
+        Args:
+            feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, width, height).
+
+        Returns:
+            torch.Tensor: The tensor with outputs values for each location and anchor in the feature map.
+                Shape:
+                    (batch size, outputs * anchors, width, height)
+        &#34;&#34;&#34;
+        out = self.conv1(feature_map)
+        out = self.act1(out)
+        out = self.conv2(out)
+        out = self.act2(out)
+        out = self.conv3(out)
+        out = self.act3(out)
+        out = self.conv4(out)
+        out = self.act4(out)
+        out = self.last_conv(out)
+
+        return out</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="torchsight.models.retinanet.Regression" href="#torchsight.models.retinanet.Regression">Regression</a></li>
+<li><a title="torchsight.models.retinanet.Classification" href="#torchsight.models.retinanet.Classification">Classification</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.retinanet.SubModule.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, outputs, anchors=9, features=256)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the components of the network.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the number of features (or channels) of the feature map.</dd>
+<dt><strong><code>outputs</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of outputs per anchor.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of anchors per location in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of features that the conv layers must have.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, in_channels, outputs, anchors=9, features=256):
+    &#34;&#34;&#34;Initialize the components of the network.
+
+    Args:
+        in_channels (int): Indicates the number of features (or channels) of the feature map.
+        outputs (int): The number of outputs per anchor.
+        anchors (int, optional): Indicates the number of anchors per location in the feature map.
+        features (int, optional): Indicates the number of features that the conv layers must have.
+    &#34;&#34;&#34;
+    super(SubModule, self).__init__()
+
+    self.conv1 = nn.Conv2d(in_channels, features, kernel_size=3, stride=1, padding=1)
+    self.act1 = nn.ReLU()
+
+    self.conv2 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+    self.act2 = nn.ReLU()
+
+    self.conv3 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+    self.act3 = nn.ReLU()
+
+    self.conv4 = nn.Conv2d(features, features, kernel_size=3, stride=1, padding=1)
+    self.act4 = nn.ReLU()
+
+    self.last_conv = nn.Conv2d(features, outputs * anchors, kernel_size=3, stride=1, padding=1)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.retinanet.SubModule.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, feature_map)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generates the outputs for each anchor and location in the feature map.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>feature_map</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>A tensor with shape (batch size, in_channels, width, height).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The tensor with outputs values for each location and anchor in the feature map.
+Shape:
+(batch size, outputs * anchors, width, height)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, feature_map):
+    &#34;&#34;&#34;Generates the outputs for each anchor and location in the feature map.
+
+    Args:
+        feature_map (torch.Tensor): A tensor with shape (batch size, in_channels, width, height).
+
+    Returns:
+        torch.Tensor: The tensor with outputs values for each location and anchor in the feature map.
+            Shape:
+                (batch size, outputs * anchors, width, height)
+    &#34;&#34;&#34;
+    out = self.conv1(feature_map)
+    out = self.act1(out)
+    out = self.conv2(out)
+    out = self.act2(out)
+    out = self.conv3(out)
+    out = self.act3(out)
+    out = self.conv4(out)
+    out = self.act4(out)
+    out = self.last_conv(out)
+
+    return out</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.models" href="index.html">torchsight.models</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.models.retinanet.Classification" href="#torchsight.models.retinanet.Classification">Classification</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.retinanet.Classification.__init__" href="#torchsight.models.retinanet.Classification.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.retinanet.Classification.forward" href="#torchsight.models.retinanet.Classification.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchsight.models.retinanet.FeaturePyramid" href="#torchsight.models.retinanet.FeaturePyramid">FeaturePyramid</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.retinanet.FeaturePyramid.__init__" href="#torchsight.models.retinanet.FeaturePyramid.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.retinanet.FeaturePyramid.forward" href="#torchsight.models.retinanet.FeaturePyramid.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.retinanet.FeaturePyramid.strides" href="#torchsight.models.retinanet.FeaturePyramid.strides">strides</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchsight.models.retinanet.Regression" href="#torchsight.models.retinanet.Regression">Regression</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.retinanet.Regression.__init__" href="#torchsight.models.retinanet.Regression.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.retinanet.Regression.forward" href="#torchsight.models.retinanet.Regression.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchsight.models.retinanet.RetinaNet" href="#torchsight.models.retinanet.RetinaNet">RetinaNet</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.retinanet.RetinaNet.__init__" href="#torchsight.models.retinanet.RetinaNet.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.forward" href="#torchsight.models.retinanet.RetinaNet.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.get_classification_module" href="#torchsight.models.retinanet.RetinaNet.get_classification_module">get_classification_module</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchsight.models.retinanet.SubModule" href="#torchsight.models.retinanet.SubModule">SubModule</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.retinanet.SubModule.__init__" href="#torchsight.models.retinanet.SubModule.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.retinanet.SubModule.forward" href="#torchsight.models.retinanet.SubModule.forward">forward</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.3</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
