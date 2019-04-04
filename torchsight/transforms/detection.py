@@ -109,4 +109,5 @@ class Normalize():
             torch.Tensor: The image normalized.
         """
         image, *rest = data
+        image = image.type(torch.float)
         return (normalize(image, self.mean, self.std), *rest)
