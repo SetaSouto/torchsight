@@ -29,7 +29,7 @@ class DLDENetTrainer(RetinaNetTrainer):
                 'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
                 'ratios': [0.5, 1, 2]
             },
-            'embedding_size': 512,
+            'embedding_size': 256,
             'concentration': 15,
             # Keep in mind that this thresholds must be the same as in the FocalLoss
             'assignation_thresholds': {'object': 0.5, 'background': 0.4},
@@ -52,7 +52,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         'dataloaders': {
             'batch_size': 1,
             'shuffle': True,
-            'num_workers': 1
+            'num_workers': 8
         },
         'optimizer': {
             'learning_rate': 1e-2,
