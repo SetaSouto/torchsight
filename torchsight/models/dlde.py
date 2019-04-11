@@ -129,7 +129,7 @@ class DirectionalClassification(nn.Module):
             """Original sigmoid."""
             return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
 
-        return sigmoid(inputs) / sigmoid(1)
+        return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))
 
     def encode(self, feature_map):
         """Generate the embeddings for the given feature map.
