@@ -36,14 +36,30 @@ class DirectionalClassification(nn.Module):
     _Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval._
     [Paper in Arxiv](https://arxiv.org/abs/1802.09662)
 
+    But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+    cosine similarity of the embedding with each class' mean, as the softmax always gives a winner
+    this won't allow us to identify correctly a background embedding, i.e., a non interesting object
+    for the model.
+
+    To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
+    -1 and 1 we can adjust the sigmoid to get:
+
+    sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
+    f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)
+
+    Where x is the cosine similarity between the embedding and a class' mean, k is the concentration
+    parameter and b is the shift parameter. The division is to fit the max value possible to one, and
+    as we'll use the shift more near 1 than -1 the minimum is always a number very very near 0.
+
     # How does it work
 
     Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
     with size d for images of C classes. Assuming that y is the correct label for the image x,
-    the loss tries to maximize the probability P(y | x, theta, means, k) where theta are the
-    parameters of the CNN, means are the mean vectors for each class and k is the concentration
-    of the distribution. The distribution is like a gaussian but projected to an hypersphere.
-    See equation 10 in the paper.
+    the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
+    parameters of the CNN, means are the mean vectors for each class, k is the concentration
+    of the modified sigmoid function and b is the shift.
+
+    The distribution is like a gaussian but projected to an hypersphere.
 
     It updates the mean vector of each class based on the embeddings that pass through the network.
 
@@ -57,8 +73,8 @@ class DirectionalClassification(nn.Module):
     because it will compute the mean with the average of the class' embeddings.
     """
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, assignation_thresholds,
-                 device=None):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
+                 assignation_thresholds, device=None):
         """Initialize the module.
 
         Arguments:
@@ -67,7 +83,8 @@ class DirectionalClassification(nn.Module):
             anchors (int): Number of anchors per location in the feature map.
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
-            concentration (int): The concentration parameter for the distribution.
+            concentration (int): The concentration parameter for the modified sigmoid.
+            shift (float): The shift value for the modified sigmoid.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys 'object' and 'background' with float values.
             device (str, optional): The device where the module will run.
@@ -82,6 +99,7 @@ class DirectionalClassification(nn.Module):
         self.assignation_thresholds = assignation_thresholds
         self.classes = classes
         self.concentration = concentration
+        self.shift = shift
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.embedding_size = embedding_size
 
@@ -97,6 +115,21 @@ class DirectionalClassification(nn.Module):
         # Create the encoder
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
                                  anchors=anchors, features=features).to(self.device)
+
+    def modified_sigmoid(self, inputs):
+        """Return the modified sigmoid value applied to the given values.
+
+        Arguments:
+            x (torch.Tensor): The tensor with the values to apply the modified function.
+
+        Returns:
+            torch.Tensor: The value for each x that the function returns.
+        """
+        def sigmoid(inputs):
+            """Original sigmoid."""
+            return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
+
+        return sigmoid(inputs) / sigmoid(1)
 
     def encode(self, feature_map):
         """Generate the embeddings for the given feature map.
@@ -117,7 +150,9 @@ class DirectionalClassification(nn.Module):
         # Move the embeddings to the last dimension
         embeddings = embeddings.permute(0, 2, 3, 1).contiguous()
         # Shape (batch size, number of total anchors, embedding size)
-        return embeddings.view(batch_size, -1, self.embedding_size)
+        embeddings = embeddings.view(batch_size, -1, self.embedding_size)
+        # Normalize the embeddings
+        return embeddings / embeddings.norm(dim=2, keepdim=True)
 
     def track(self, embeddings, anchors, annotations):
         """Take the embeddings, assign the annotations to each anchor get the assigned anchors
@@ -154,6 +189,7 @@ class DirectionalClassification(nn.Module):
             # embeddings in one instruction?
             with torch.no_grad():
                 # Keep only the assigned to objects embeddings
+                # TODO: Weight each embedding by its IoU while adding it to the mean of it class
                 assigned_annotations = assigned_annotations[anchors_objects_mask]
                 current_embeddings = current_embeddings.clone().detach()[anchors_objects_mask]
                 for j, embedding in enumerate(current_embeddings):
@@ -163,18 +199,21 @@ class DirectionalClassification(nn.Module):
     def classify(self, embeddings):
         """Get the probability for each embedding to below to each class.
 
+        Compute the cosine similarity between each embedding and each class' mean and return
+        the modified sigmoid applied over the similarities to get probabilities.
+
         Arguments:
             embeddings (torch.Tensor): All the embeddings generated.
                 Shape:
-                    (total embeddings, embedding size)
+                    (batch size, total embeddings per image, embedding size)
 
         Returns:
             torch.Tensor: The probabilities for each embedding.
                 Shape:
-                    (total embeddings, number of classes)
+                    (batch size, total embeddings, number of classes)
         """
-        logits = torch.exp(self.concentration * torch.matmul(embeddings, self.means.permute(1, 0)))
-        return logits / logits.sum(dim=1, keepdim=True)
+        similarity = torch.matmul(embeddings, self.means.permute(1, 0))
+        return self.modified_sigmoid(similarity)
 
     def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
         """Update means and get the probabilities for each embedding to belong to each class.
@@ -255,7 +294,7 @@ class DLDENet(RetinaNet):
     """
 
     def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
-                 assignation_thresholds=None, pretrained=True, device=None):
+                 shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
         """Initialize the network.
 
         Arguments:
@@ -275,6 +314,8 @@ class DLDENet(RetinaNet):
         """
         self.embedding_size = embedding_size
         self.concentration = concentration
+        self.shift = shift
+
         if assignation_thresholds is not None:
             self.assignation_thresholds = assignation_thresholds
         else:
@@ -298,7 +339,7 @@ class DLDENet(RetinaNet):
         """
         return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
                                          anchors=anchors, features=features, classes=classes,
-                                         concentration=self.concentration,
+                                         concentration=self.concentration, shift=self.shift,
                                          assignation_thresholds=self.assignation_thresholds)
 
     def forward(self, images, annotations=None, initializing=False):
