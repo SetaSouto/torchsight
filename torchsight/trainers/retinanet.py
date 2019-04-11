@@ -118,6 +118,8 @@ class RetinaNetTrainer(AbstractTrainer):
         print('----- Training started ------')
         print('Using device: {}'.format(self.device))
 
+        n_batches = len(self.dataloader)
+
         for epoch in range(epochs):
             epoch = epoch + 1 + self.checkpoint_epoch
             last_endtime = time.time()
@@ -156,7 +158,7 @@ class RetinaNetTrainer(AbstractTrainer):
                 self.logger.log({
                     'Training': None,
                     'Epoch': epoch,
-                    'Batch': batch_index,
+                    'Batch': '{}/{}'.format(batch_index + 1, n_batches),
                     'Time': '{:.3f}'.format(batch_time),
                     'Learning rate': ' '.join(learning_rates),
                     'Classification': '{:.7f}'.format(classification_loss),
