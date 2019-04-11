@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import torch
 
 
+def sigmoid(x, k, b):
+    return 1 / (torch.exp(-k * (x - b)) + 1)
+
+
 def main():
     """Plot the distribution using different concentration (K) values."""
     ks = [1] + list(range(5, 30, 5))
@@ -12,7 +16,8 @@ def main():
     b = 0.8
 
     for i, k in enumerate(ks):
-        y = 1 / (torch.exp(-k * (x - b)) + 1)
+        y = sigmoid(x, k, b)
+        y /= sigmoid(torch.Tensor([1]), k, b)
         n_rows = len(ks) // 2 + (1 if len(ks) % 2 != 0 else 0)
         plt.subplot(n_rows, 2, i + 1)
         plt.plot(x.numpy(), y.numpy(), '.-')
