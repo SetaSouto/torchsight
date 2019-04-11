@@ -7,9 +7,9 @@ import torch
 
 
 def main():
-    sizes = range(1, 1024)
-    n_embedings = 10000
-    n_means = 10000
+    sizes = range(1, 512)
+    n_embedings = 1000
+    n_means = 1000
     device = 'cuda'
 
     maxs = []
@@ -23,7 +23,7 @@ def main():
         embeddings /= embeddings.norm(dim=1, keepdim=True)
         means = torch.rand((size, n_means)).to(device) * 2 - 1  # Between -1 and 1
         means /= means.norm(dim=0, keepdim=True)
-        similarity = (torch.matmul(embeddings, means) + 1) / 2
+        similarity = torch.matmul(embeddings, means)
 
         maxs.append(float(similarity.max()))
         mins.append(float(similarity.min()))
