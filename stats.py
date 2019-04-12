@@ -10,7 +10,7 @@ PARSER.add_argument('logs', help='Name of the file that contains the training lo
 PARSER.add_argument('-ek', '--epoch-key', help='The key in the logs that indicates the epoch',
                     default='Epoch')
 PARSER.add_argument('-lk', '--loss-key', help='The key in the logs that indicates the loss of the batch.',
-                    default='Total')
+                    default='Loss')
 
 ARGUMENTS = PARSER.parse_args()
 

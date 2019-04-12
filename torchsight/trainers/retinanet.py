@@ -162,12 +162,12 @@ class RetinaNetTrainer(AbstractTrainer):
                     'Training': None,
                     'Epoch': epoch,
                     'Batch': '{}/{}'.format(batch_index + 1, n_batches),
-                    'Time': '{:.3f} s'.format(batch_time),
-                    'Total': '{:.3f} s'.format(total_time),
                     'LR': ' '.join(learning_rates),
-                    'Clas.': '{:.7f}'.format(classification_loss),
+                    'Class.': '{:.7f}'.format(classification_loss),
                     'Regr.': '{:.7f}'.format(regression_loss),
-                    'Loss': '{:.7f}'.format(loss)
+                    'Loss': '{:.7f}'.format(loss),
+                    'Time': '{:.3f} s'.format(batch_time),
+                    'Total': '{:.3f} s'.format(total_time)
                 })
 
                 # Save the weights for this epoch every some batches
@@ -229,11 +229,11 @@ class RetinaNetTrainer(AbstractTrainer):
                 'Validating': None,
                 'Epoch': epoch,
                 'Batch': '{}/{}'.format(batch + 1, n_batches),
-                'Classification': '{:.7f}'.format(classification_loss),
-                'Regression': '{:.7f}'.format(regression_loss),
-                'Total': '{:.7f}'.format(losses[-1]),
+                'Class.': '{:.7f}'.format(classification_loss),
+                'Regr.': '{:.7f}'.format(regression_loss),
+                'Loss': '{:.7f}'.format(losses[-1]),
                 'Time': '{:.3f}'.format(batch_time),
-                'Total time': '{:.3f}'.format(total_time)
+                'Total': '{:.3f}'.format(total_time)
             })
 
         return torch.Tensor(losses).mean()
