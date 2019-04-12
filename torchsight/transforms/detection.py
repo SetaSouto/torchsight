@@ -46,9 +46,9 @@ class Resize():
         new_height = round(height * scale)
 
         padding_width = self.stride - (new_width % self.stride)
-        padding_width = 0 if padding_width == 32 else padding_width
+        padding_width = 0 if padding_width == self.stride else padding_width
         padding_height = self.stride - (new_height % self.stride)
-        padding_height = 0 if padding_height == 32 else padding_height
+        padding_height = 0 if padding_height == self.stride else padding_height
 
         image = resize(image, (new_height, new_width), mode='constant', anti_aliasing=True)
         height, width, channels = image.shape

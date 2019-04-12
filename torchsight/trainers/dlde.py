@@ -18,7 +18,7 @@ class DLDENetTrainer(RetinaNetTrainer):
     hyperparameters = {
         'DLDENet': {
             'classes': 80,
-            'resnet': 50,
+            'resnet': 18,
             'features': {
                 'pyramid': 256,
                 'regression': 256,
@@ -31,6 +31,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             },
             'embedding_size': 256,
             'concentration': 15,
+            'shift': 0.8,
             # Keep in mind that this thresholds must be the same as in the FocalLoss
             'assignation_thresholds': {'object': 0.5, 'background': 0.4},
             'pretrained': True,
@@ -41,7 +42,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'gamma': 2.0,
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
             # Weight of each loss. See train method.
-            'weights': {'classification': 1e5, 'regression': 1}
+            'weights': {'classification': 1e3, 'regression': 1}
         },
         'datasets': {
             'root': './datasets/coco',
@@ -66,8 +67,8 @@ class DLDENetTrainer(RetinaNetTrainer):
         },
         'transforms': {
             'resize': {
-                'min_side': 640,
-                'max_side': 1024,
+                'min_side': 384,
+                'max_side': 512,
                 'stride': 128
             },
             'normalize': {
