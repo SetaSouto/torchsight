@@ -8,33 +8,47 @@ import argparse
 
 from torchsight.trainers import DLDENetTrainer, RetinaNetTrainer
 
-PARSER = argparse.ArgumentParser(description='Train a model using COCO dataset.')
-PARSER.add_argument('model', help='The model to train. Supported "RetinaNet" and "DLDENet".')
-PARSER.add_argument('root', help='Root directory of the COCO dataset (cocoapi).')
-PARSER.add_argument('-b', '--batch-size', help='Batch size', default=8)
-PARSER.add_argument('--resnet', help='ResNet backbone to use.', default=18)
-PARSER.add_argument('-l', '--logs-dir', help='Directory where to save the logs and checkpoints.',
-                    default='./logs')
-PARSER.add_argument('-lr', '--learning-rate', help='Set the initial learning rate for the model.', default=0.01)
-PARSER.add_argument('-c', '--checkpoint', help='Absolute path to the checkpoint to continue an old training')
 
-ARGUMENTS = PARSER.parse_args()
+def train():
+    """Parse the arguments from the command line and start the training of the model."""
+    parser = argparse.ArgumentParser(description='Train a model using COCO dataset.')
+    parser.add_argument('model', help='The model to train. Supported "RetinaNet" and "DLDENet".')
+    parser.add_argument('root', help='Root directory of the COCO dataset (cocoapi).')
+    parser.add_argument('-b', '--batch-size', help='Batch size', default=8)
+    parser.add_argument('--resnet', help='ResNet backbone to use.', default=18)
+    parser.add_argument('-l', '--logs-dir', help='Directory where to save the logs and checkpoints.',
+                        default='./logs')
+    parser.add_argument('-lr', '--learning-rate', help='Set the initial learning rate for the model.', default=0.01)
+    parser.add_argument('-c', '--checkpoint', help='Absolute path to the checkpoint to continue an old training')
+    parser.add_argument('--device', help='The device to use in the training.')
 
-BASE_HYPERPARAMETERS = {'datasets': {'root': ARGUMENTS.root},
-                        'dataloaders': {'batch_size': int(ARGUMENTS.batch_size)},
-                        'optimizer': {'learning_rate': float(ARGUMENTS.learning_rate)}}
+    args = parser.parse_args()
 
-if ARGUMENTS.model.lower() == 'retinanet':
-    RetinaNetTrainer(
-        hyperparameters={'RetinaNet': {'resnet': int(ARGUMENTS.resnet)}, **BASE_HYPERPARAMETERS},
-        logs_dir=ARGUMENTS.logs_dir,
-        checkpoint=ARGUMENTS.checkpoint
-    ).train()
-if ARGUMENTS.model.lower() == 'dldenet':
-    DLDENetTrainer(
-        hyperparameters={'DLDENet': {'resnet': int(ARGUMENTS.resnet)}, **BASE_HYPERPARAMETERS},
-        logs_dir=ARGUMENTS.logs_dir,
-        checkpoint=ARGUMENTS.checkpoint
-    ).train()
-else:
-    raise ValueError('The model "{}" is not supported.'.format(ARGUMENTS.model))
+    classes = ()
+    n_classes = len(classes) if len(classes) > 0 else 80  # With an empty sequence it loads all the classes
+
+    common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes},
+                              'dataloaders': {'batch_size': int(args.batch_size)},
+                              'optimizer': {'learning_rate': float(args.learning_rate)}}
+
+    if args.model.lower() == 'retinanet':
+        RetinaNetTrainer(
+            hyperparameters={'RetinaNet': {'resnet': int(args.resnet)}, **common_hyperparameters},
+            logs_dir=args.logs_dir,
+            checkpoint=args.checkpoint,
+            device=args.device
+        ).train()
+    if args.model.lower() == 'dldenet':
+        DLDENetTrainer(
+            hyperparameters={'DLDENet': {'resnet': int(
+                args.resnet), 'classes': len(classes)}, **common_hyperparameters},
+            logs_dir=args.logs_dir,
+            checkpoint=args.checkpoint,
+            device=args.device
+        ).train()
+    else:
+        raise ValueError('The model "{}" is not supported.'.format(args.model))
+
+
+if __name__ == '__main__':
+    train()
