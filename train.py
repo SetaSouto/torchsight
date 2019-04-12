@@ -25,7 +25,7 @@ def train():
     args = parser.parse_args()
 
     classes = ()
-    n_classes = len(classes) if len(classes) > 0 else 80  # With an empty sequence it loads all the classes
+    n_classes = len(classes) if classes else 80  # With an empty sequence it loads all the classes
 
     common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes},
                               'dataloaders': {'batch_size': int(args.batch_size)},
@@ -33,15 +33,26 @@ def train():
 
     if args.model.lower() == 'retinanet':
         RetinaNetTrainer(
-            hyperparameters={'RetinaNet': {'resnet': int(args.resnet)}, **common_hyperparameters},
+            hyperparameters={
+                'RetinaNet': {
+                    'resnet': int(args.resnet),
+                    'classes': n_classes
+                },
+                **common_hyperparameters
+            },
             logs_dir=args.logs_dir,
             checkpoint=args.checkpoint,
             device=args.device
         ).train()
     if args.model.lower() == 'dldenet':
         DLDENetTrainer(
-            hyperparameters={'DLDENet': {'resnet': int(
-                args.resnet), 'classes': len(classes)}, **common_hyperparameters},
+            hyperparameters={
+                'DLDENet': {
+                    'resnet': int(args.resnet),
+                    'classes': n_classes
+                },
+                **common_hyperparameters
+            },
             logs_dir=args.logs_dir,
             checkpoint=args.checkpoint,
             device=args.device
