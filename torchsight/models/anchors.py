@@ -364,13 +364,15 @@ class Anchors(nn.Module):
             torch.Tensor: The assigned annotations. The annotation at index i is the annotation associated to the
                 anchor at index i. So for example, if we have the anchors tensor and we want to get the annotation to
                 the i-th anchor we could simply take this value returned and the get i-th element too. Example:
-                >>> assigned_annotations, _* = Anchors.assign(anchors, annotations)
+                >>> assigned_annotations, *_ = Anchors.assign(anchors, annotations)
                 >>> assigned_annotations[10]  # The annotation assigned to the 10th anchor.
-                    Shape:
-                        (number of anchors, 4+)
+                Shape:
+                    (number of anchors, 4+)
             torch.Tensor: A mask that indicates which anchors are selected to be objects.
             torch.Tensor: A mask that indicates which anchors are selected to be background.
                 Keep in mind that if the thresholds are not the same some anchors could not be objects nor background.
+            torch.Tensor: The IoU of the selected anchors as objects. Obviously all of them are over the 'object'
+                threshold.
         """
         default_thresholds = {'object': 0.5, 'background': 0.4}
 
@@ -386,7 +388,8 @@ class Anchors(nn.Module):
         # Each anchor is associated to a bounding box. Which one? The one that has bigger iou with the anchor
         assigned_annotations = annotations[iou_argmax, :]  # (number of anchors, 4+)
         # Only train bounding boxes where its base anchor has an iou with an annotation over iou_object threshold
-        selected_anchors_objects = iou_max > thresholds['object']
-        selected_anchors_backgrounds = iou_max < thresholds['background']
+        objects_mask = iou_max > thresholds['object']
+        iou_objects = iou_max[objects_mask]
+        background_mask = iou_max < thresholds['background']
 
-        return assigned_annotations, selected_anchors_objects, selected_anchors_backgrounds
+        return assigned_annotations, objects_mask, background_mask, iou_objects

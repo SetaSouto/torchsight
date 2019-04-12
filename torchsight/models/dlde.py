@@ -166,11 +166,18 @@ class DirectionalClassification(nn.Module):
         return embeddings / embeddings.norm(dim=2, keepdim=True)
 
     def track(self, embeddings, anchors, annotations):
-        """Take the embeddings, assign the annotations to each anchor get the assigned anchors
-        to objects and with those embeddings sum to the means_sum.
+        """Track the embeddings to accumulate the embeddings assigned to the same class.
 
-        Why? Because this way we can track all the embeddings per class and then call update_means()
+        Take the embeddings, assign the annotations to each anchor get the assigned anchors
+        to objects and with those embeddings sum to the embeddings_sums according with their
+        assignations to annotations.
+
+        This way we can track all the embeddings per class and then call update_means()
         to set the new means of the model.
+
+        Also, to avoid conflicts with different amount of annotations per image, this method
+        assumes that there could be *fake annotations* labeled with -1. So if the last value
+        of an annotation is -1 this method does not take that annotation.
 
         Arguments:
             embeddings (torch.Tensor): All the embeddings generated for each image in the batch.
@@ -184,28 +191,26 @@ class DirectionalClassification(nn.Module):
                 Shape:
                     (batch size, number of annotations, 5)
         """
-        # As each image could have different amount of annotations we must iterate and remove false annotations
-        # What is a false annotation? An annotation with label -1
-        for index, current_annotations in enumerate(annotations):
-            current_anchors = anchors[index]
-            current_embeddings = embeddings[index]
-            # Remove false annotations that have -1 label
-            real_annotations_mask = current_annotations[:, -1] != -1
-            current_annotations = current_annotations[real_annotations_mask]
-            # Get the assigned annotation for each anchor and which anchors are assigned as objects
-            assignations = Anchors.assign(current_anchors, current_annotations, thresholds=self.assignation_thresholds)
-            assigned_annotations, anchors_objects_mask, _ = assignations
-            # We cannot sum more than one embedding to a given class sum in parallel, we must iterate.
-            # Why? What happens if we have 5 embeddings assigned to the class 0? How we can sum all of those
-            # embeddings in one instruction?
-            with torch.no_grad():
-                # Keep only the assigned to objects embeddings
-                # TODO: Weight each embedding by its IoU while adding it to the mean of it class
-                assigned_annotations = assigned_annotations[anchors_objects_mask]
-                current_embeddings = current_embeddings.clone().detach()[anchors_objects_mask]
-                for j, embedding in enumerate(current_embeddings):
-                    assigned_label = assigned_annotations[j, -1].type(torch.long)
-                    self.embeddings_sums[assigned_label] += embedding
+        with torch.no_grad():
+            # As each image could have different amount of annotations we must iterate and remove false annotations
+            for index, current_annotations in enumerate(annotations):
+                current_anchors = anchors[index]
+                current_embeddings = embeddings[index]
+                # Remove false annotations that have -1 label
+                mask = current_annotations[:, -1] != -1
+                current_annotations = current_annotations[mask]
+                # Get the assigned annotation for each anchor and which anchors are assigned as objects
+                assignations = Anchors.assign(current_anchors, current_annotations,
+                                              thresholds=self.assignation_thresholds)
+                assigned_annotations, objects_mask, *_ = assignations
+                # Track only the assigned to objects embeddings
+                objects_embeddings = current_embeddings[objects_mask]
+                objects_annotations = assigned_annotations[objects_mask]
+                # Iterate over the labels of the annotations, accumulate the embeddings with the same label assigned
+                # and sum them to the embeddings_sum
+                for label in assigned_annotations[:, -1].unique():
+                    mask = objects_annotations[:, -1] == label
+                    self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)
 
     def classify(self, embeddings):
         """Get the probability for each embedding to below to each class.

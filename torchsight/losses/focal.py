@@ -5,7 +5,7 @@ https://arxiv.org/pdf/1708.02002.pdf
 """
 import torch
 from torch import nn
-from ..metrics import iou as compute_iou
+
 from ..models import Anchors
 
 
@@ -108,7 +108,7 @@ class FocalLoss(nn.Module):
             assignations = Anchors.assign(anchors,
                                           annotations,
                                           thresholds={'object': self.iou_object, 'background': self.iou_background})
-            assigned_annotations, selected_anchors_objects, selected_anchors_backgrounds = assignations
+            assigned_annotations, selected_anchors_objects, selected_anchors_backgrounds, *_ = assignations
 
             # Compute classification loss
 
