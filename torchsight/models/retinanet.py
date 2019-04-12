@@ -309,7 +309,8 @@ class RetinaNet(nn.Module):
 
         if len(anchors['sizes']) != 5:
             raise ValueError('anchors_size must have length 5 to work with the FPN')
-        self.anchors = Anchors(anchors['sizes'], anchors['scales'], anchors['ratios'], self.fpn.strides)
+        self.anchors = Anchors(anchors['sizes'], anchors['scales'], anchors['ratios'],
+                               self.fpn.strides, device=self.device)
 
         self.regression = Regression(in_channels=features['pyramid'],
                                      anchors=self.anchors.n_anchors,
@@ -323,6 +324,17 @@ class RetinaNet(nn.Module):
         self.threshold = 0.6
         self.iou_threshold = 0.5
         self.evaluate_loss = False
+
+    def to(self, device):
+        """Move the network to the given device and update the Anchors module that also needs to change
+        its device to anchors generation.
+
+        Arguments:
+            device (str): The device to where to move the network. Example: 'cpu' or 'cuda:0'.
+        """
+        self.device = device
+        self.anchors.to(device)
+        return super(RetinaNet, self).to(device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         """Get the classification module to generate the probability of each anchor

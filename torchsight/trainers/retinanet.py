@@ -111,6 +111,7 @@ class RetinaNetTrainer(AbstractTrainer):
             epoch_callback (function, optional): An optional function to call after each epoch.
         """
         self.model.to(self.device)
+        self.criterion.to(self.device)
 
         # Weights for each loss, to increase or decrease their values
         weights = self.hyperparameters['FocalLoss']['weights']
@@ -326,7 +327,8 @@ class RetinaNetTrainer(AbstractTrainer):
         return FocalLoss(
             alpha=hyperparameters['alpha'],
             gamma=hyperparameters['gamma'],
-            iou_thresholds=hyperparameters['iou_thresholds']
+            iou_thresholds=hyperparameters['iou_thresholds'],
+            device=self.device
         )
 
     def get_transform(self):

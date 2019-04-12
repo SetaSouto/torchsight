@@ -28,7 +28,7 @@ class AbstractTrainer():
 
     hyperparameters = {}  # Base hyperparameters
 
-    def __init__(self, hyperparameters, logs_dir='./logs', checkpoint=None):
+    def __init__(self, hyperparameters, logs_dir='./logs', checkpoint=None, device=None):
         """Initialize the trainer. Sets the hyperparameters for the training.
 
         Args:
@@ -43,7 +43,7 @@ class AbstractTrainer():
         self.dataset, self.valid_dataset = self.get_datasets()
 
         # Set the model, data loaders, criterion and optimizer for the training
-        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.model = self.get_model()
         self.dataloader, self.valid_dataloader = self.get_dataloaders()
         self.criterion = self.get_criterion()

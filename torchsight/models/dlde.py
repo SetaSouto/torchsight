@@ -116,6 +116,17 @@ class DirectionalClassification(nn.Module):
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
                                  anchors=anchors, features=features).to(self.device)
 
+    def to(self, device):
+        """Move the module and the means to the given device.
+
+        Arguments:
+            device (str): The device where to move the module and its attributes.
+        """
+        self.device = device
+        self.means = self.means.to(device)
+        self.embeddings_sums = self.embeddings_sums.to(device)
+        return super(DirectionalClassification, self).to(device)
+
     def modified_sigmoid(self, inputs):
         """Return the modified sigmoid value applied to the given values.
 
@@ -323,6 +334,17 @@ class DLDENet(RetinaNet):
 
         super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)
 
+    def to(self, device):
+        """Move the module to the given device and also notify the classification module to move its
+        parameters and attributes to the given device.
+
+        Arguments:
+            device (str): The device where to move the module.
+        """
+        self.device = device
+        self.classification.to(device)
+        return super(DLDENet, self).to(device)
+
     def get_classification_module(self, in_channels, classes, anchors, features):
         """Get the directional classification module.
 
@@ -340,7 +362,8 @@ class DLDENet(RetinaNet):
         return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
                                          anchors=anchors, features=features, classes=classes,
                                          concentration=self.concentration, shift=self.shift,
-                                         assignation_thresholds=self.assignation_thresholds)
+                                         assignation_thresholds=self.assignation_thresholds,
+                                         device=self.device)
 
     def forward(self, images, annotations=None, initializing=False):
         """Forward pass through the network.

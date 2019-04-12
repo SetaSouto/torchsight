@@ -89,6 +89,16 @@ class Anchors(nn.Module):
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.base_anchors = self.generate_anchors(sizes, scales, ratios)
 
+    def to(self, device):
+        """Move the module to the given device.
+
+        Arguments:
+            device (str): The device where to move the module.
+        """
+        self.device = device
+        self.base_anchors = self.base_anchors.to(device)
+        return super(Anchors, self).to(device)
+
     def forward(self, images):
         """Generate anchors for the given image.
 

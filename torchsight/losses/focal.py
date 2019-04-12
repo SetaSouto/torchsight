@@ -12,7 +12,7 @@ from ..models import Anchors
 class FocalLoss(nn.Module):
     """Loss to penalize the detection of objects."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, device=None):
         """Initialize the loss.
 
         Train as background (minimize all the probabilities of the classes) if the IoU is below the 'background'
@@ -35,7 +35,16 @@ class FocalLoss(nn.Module):
             iou_thresholds = {'background': 0.4, 'object': 0.5}
         self.iou_background = iou_thresholds['background']
         self.iou_object = iou_thresholds['object']
-        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+    def to(self, device):
+        """Move the module and its attributes to the given device.
+
+        Arguments:
+            device (str): The device where to move the loss.
+        """
+        self.device = device
+        return super(FocalLoss, self).to(device)
 
     def forward(self, anchors, regressions, classifications, annotations):
         """Forward pass to get the loss.
