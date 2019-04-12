@@ -114,14 +114,14 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.model.train()
         n_batches = len(self.dataloader)
 
-        # if self.checkpoint_epoch == 0:
-        #     # Initialize the means of the classes
-        #     with torch.no_grad():
-        #         for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-        #             print('[Initializing] [Batch {}/{}]'.format(batch_index + 1, n_batches))
-        #             self.model(images.to(self.device), annotations.to(self.device), initializing=True)
-        #         self.model.update_means()
-        #         print('[Initializing] Means updated.')
+        if self.checkpoint_epoch == 0:
+            # Initialize the means of the classes
+            with torch.no_grad():
+                for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
+                    print('[Initializing] [Batch {}/{}]'.format(batch_index + 1, n_batches))
+                    self.model(images.to(self.device), annotations.to(self.device), initializing=True)
+                self.model.update_means()
+                print('[Initializing] Means updated.')
 
         def callback(epoch):
             print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
