@@ -163,11 +163,11 @@ class RetinaNetTrainer(AbstractTrainer):
                     'Epoch': epoch,
                     'Batch': '{}/{}'.format(batch_index + 1, n_batches),
                     'Time': '{:.3f} s'.format(batch_time),
-                    'Total time': '{:.3f} s'.format(total_time),
-                    'Learning rate': ' '.join(learning_rates),
-                    'Classification': '{:.7f}'.format(classification_loss),
-                    'Regression': '{:.7f}'.format(regression_loss),
-                    'Total': '{:.7f}'.format(loss)
+                    'Total': '{:.3f} s'.format(total_time),
+                    'LR': ' '.join(learning_rates),
+                    'Clas.': '{:.7f}'.format(classification_loss),
+                    'Regr.': '{:.7f}'.format(regression_loss),
+                    'Loss': '{:.7f}'.format(loss)
                 })
 
                 # Save the weights for this epoch every some batches
