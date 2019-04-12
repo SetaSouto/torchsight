@@ -1,4 +1,6 @@
 """DLDENet trainer"""
+import time
+
 import torch
 
 from ..models import DLDENet
@@ -117,9 +119,12 @@ class DLDENetTrainer(RetinaNetTrainer):
         if self.checkpoint_epoch == 0:
             # Initialize the means of the classes
             with torch.no_grad():
+                start = time.time()
                 for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-                    print('[Initializing] [Batch {}/{}]'.format(batch_index + 1, n_batches))
+                    batch_start = time.time()
                     self.model(images.to(self.device), annotations.to(self.device), initializing=True)
+                    print('[Initializing] [Batch {}/{}] [Batch {:.3f} s] [Total {:.3f} s]'.format(
+                        batch_index + 1, n_batches, time.time() - batch_start, time.time() - start))
                 self.model.update_means()
                 print('[Initializing] Means updated.')
 
