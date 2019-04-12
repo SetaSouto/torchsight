@@ -9,10 +9,10 @@ import argparse
 from torchsight.trainers import DLDENetTrainer, RetinaNetTrainer
 
 PARSER = argparse.ArgumentParser(description='Train a model using COCO dataset.')
-PARSER.add_argument('model', help='The model to train. Supported "RetinaNet" and "DLDENet".', default='RetinaNet')
+PARSER.add_argument('model', help='The model to train. Supported "RetinaNet" and "DLDENet".')
 PARSER.add_argument('root', help='Root directory of the COCO dataset (cocoapi).')
-PARSER.add_argument('-b', '--batch-size', help='Batch size', default=1)
-PARSER.add_argument('--resnet', help='ResNet backbone to use.', default=50)
+PARSER.add_argument('-b', '--batch-size', help='Batch size', default=8)
+PARSER.add_argument('--resnet', help='ResNet backbone to use.', default=18)
 PARSER.add_argument('-l', '--logs-dir', help='Directory where to save the logs and checkpoints.',
                     default='./logs')
 PARSER.add_argument('-lr', '--learning-rate', help='Set the initial learning rate for the model.', default=0.01)
