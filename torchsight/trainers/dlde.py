@@ -127,6 +127,8 @@ class DLDENetTrainer(RetinaNetTrainer):
                         batch_index + 1, n_batches, time.time() - batch_start, time.time() - start))
                 self.model.update_means()
                 print('[Initializing] Means updated.')
+            # Save the means as checkpoint in the epoch 0
+            self.save_checkpoint(0)
 
         def callback(epoch):
             print("[Training] [Epoch {}] Updating the model's means.".format(epoch))

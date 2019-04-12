@@ -163,7 +163,7 @@ class RetinaNetTrainer(AbstractTrainer):
                     'Epoch': epoch,
                     'Batch': '{}/{}'.format(batch_index + 1, n_batches),
                     'Time': '{:.3f} s'.format(batch_time),
-                    'Total': '{:.3f} s'.format(total_time),
+                    'Total time': '{:.3f} s'.format(total_time),
                     'Learning rate': ' '.join(learning_rates),
                     'Classification': '{:.7f}'.format(classification_loss),
                     'Regression': '{:.7f}'.format(regression_loss),
@@ -201,6 +201,7 @@ class RetinaNetTrainer(AbstractTrainer):
 
         start_time = time.time()
         last_endtime = time.time()
+        n_batches = len(self.valid_dataloader)
 
         for batch, (images, annotations) in enumerate(self.valid_dataloader):
             images, annotations = images.to(self.device), annotations.to(self.device)
@@ -227,7 +228,7 @@ class RetinaNetTrainer(AbstractTrainer):
             self.logger.log({
                 'Validating': None,
                 'Epoch': epoch,
-                'Batch': batch,
+                'Batch': '{}/{}'.format(batch + 1, n_batches),
                 'Classification': '{:.7f}'.format(classification_loss),
                 'Regression': '{:.7f}'.format(regression_loss),
                 'Total': '{:.7f}'.format(losses[-1]),
