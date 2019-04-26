@@ -41,11 +41,16 @@ elif ARGUMENTS.model.lower() == 'dldenet':
 else:
     raise ValueError('There is no model with name {}'.format(ARGUMENTS.model))
 
-MODEL.load_state_dict(torch.load(ARGUMENTS.checkpoint)['model'])
 
+# Set the device where to run
+DEVICE = 'cpu'
 CUDA = torch.cuda.is_available()
 if CUDA:
-    MODEL.to('cuda')
+    DEVICE = 'cuda:0'
+
+# Load the checkpoint
+MODEL.load_state_dict(torch.load(ARGUMENTS.checkpoint, map_location=DEVICE)['model'])
+MODEL.to(DEVICE)
 
 if not ARGUMENTS.no_random:
     random.shuffle(INDEXES)
@@ -58,7 +63,7 @@ for index in INDEXES:
     # print('Ground truth:\n', ground)
     image = image.unsqueeze(0).type(torch.float)  # To simulate a batch
     if CUDA:
-        image = image.to('cuda')
+        image = image.to(DEVICE)
     boxes, classifications = MODEL(image)[0]  # Get the first result of the fake batch
     boxes, classifications = boxes[:100], classifications[:100]
     # print('Classifications:\n', classifications)
