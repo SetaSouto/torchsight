@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.trainers.abstract API documentation</title>
+<meta name="description" content="Base trainer module." />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.trainers.abstract</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Base trainer module.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Base trainer module.&#34;&#34;&#34;
+import json
+import os
+
+import torch
+
+from ..loggers import PrintLogger
+
+
+class AbstractTrainer():
+    &#34;&#34;&#34;Abstract trainer to train a pytorch model.
+
+    To create a trainer please override the getters methods and the train method.
+
+    Attributes:
+        hyperparameters (dict): The hyperparameters for the training.
+            Here you can add the &#39;learning_rate&#39; hyperparameter.
+        dataset (torch.utils.data.Dataset): The dataset for training.
+        valid_dataset (torch.utils.data.Dataset): The validation dataset.
+        device (str): The device where is running the training.
+        model (torch.nn.Module): The model that is training.
+        dataloader (torch.utils.data.Dataloader): The dataloader for the training dataset.
+        valid_dataloader (torch.utils.data.Dataloader): The dataloader for the validation dataset.
+        criterion (torch.nn.Module): The criterion -or loss- function for the training.
+        optimizer (torch.optim.Optimizer): The optimizer for the training.
+        scheduler (torch.optim.lr_scheduler.*): The scheduler for the optimizer, to adjust the learning rate.
+    &#34;&#34;&#34;
+
+    hyperparameters = {}  # Base hyperparameters
+
+    def __init__(self, hyperparameters, logs_dir=&#39;./logs&#39;, checkpoint=None, device=None):
+        &#34;&#34;&#34;Initialize the trainer. Sets the hyperparameters for the training.
+
+        Args:
+            hyperparameters (dict): The hyperparameters for the training.
+            logs_dir (str): Path to the directory where to save the logs.
+            checkpoint (str): Path to a checkpoint dict.
+        &#34;&#34;&#34;
+        print(&#39;\n--------- TRAINER ----------&#39;)
+        self.hyperparameters = self.merge_hyperparameters(self.hyperparameters, hyperparameters)
+
+        # Set the datasets
+        self.dataset, self.valid_dataset = self.get_datasets()
+
+        # Set the model, data loaders, criterion and optimizer for the training
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.model = self.get_model()
+        self.dataloader, self.valid_dataloader = self.get_dataloaders()
+        self.criterion = self.get_criterion()
+        self.optimizer = self.get_optimizer()
+        self.scheduler = self.get_scheduler()
+
+        # Load the checkpoint if there is any
+        if checkpoint is not None:
+            self.checkpoint_epoch = self.resume(checkpoint)
+        else:
+            self.checkpoint_epoch = 0
+
+        # Configure the logs
+        self.logger = None
+        if logs_dir:
+            # Description of this instance are the hyperparameters of the training
+            description = [&#39;Hyperparameters:\n&#39;, json.dumps(self.hyperparameters, indent=2)]
+            if checkpoint is not None:
+                description.append(&#39;\nCheckpoint: {}&#39;.format(checkpoint))
+
+            self.logger = PrintLogger(description=&#39;\n&#39;.join(description), directory=logs_dir)
+
+    def merge_hyperparameters(self, base, new, path=None):
+        &#34;&#34;&#34;Merge the base hyperparameters (if there&#39;s any) with the given hyperparameters.
+
+        Arguments:
+            hyperparameters (dict): The modified hyperparameters.
+
+        Returns:
+            dict: The deeply merged hyperparameters.
+        &#34;&#34;&#34;
+        if path is None:
+            path = []
+
+        for key in new:
+            if key in base:
+                if isinstance(base[key], dict) and isinstance(new[key], dict):
+                    self.merge_hyperparameters(base[key], new[key], path + [str(key)])
+                elif base[key] == new[key]:
+                    pass  # same leaf value
+                else:
+                    print(&#39;INFO: Replacing base hyperparameter &#34;{}&#34; with value &lt; {} &gt; for &lt; {} &gt;.&#39;.format(key,
+                                                                                                          base[key],
+                                                                                                          new[key]))
+                    base[key] = new[key]
+            else:
+                print(&#39;Warn: Hyperparameter &#34;{key}&#34; not present in base hyperparameters.&#39;.format(key=key))
+        return base
+
+    def train(self):
+        &#34;&#34;&#34;Train the model. You must implement this method according to your model.&#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def save_checkpoint(self, epoch):
+        &#34;&#34;&#34;Save the training&#39;s parameters.
+
+        It saves the model and the optimizer.
+
+        Arguments:
+            epoch (int): The epoch when this checkpoint was generated.
+        &#34;&#34;&#34;
+        path = os.path.join(self.logger.directory, &#39;checkpoint_epoch_{}.pth.tar&#39;.format(epoch))
+        print(&#34;[Epoch {}] Saving model&#39;s, optimizer&#39;s  and scheduler&#39;s state dict to: {}&#34;.format(epoch, path))
+        checkpoint = {
+            &#39;epoch&#39;: epoch,
+            &#39;model&#39;: self.model.state_dict(),
+            &#39;optimizer&#39;: self.optimizer.state_dict(),
+            &#39;scheduler&#39;: self.scheduler.state_dict()
+        }
+        torch.save(checkpoint, path)
+
+    def resume(self, checkpoint):
+        &#34;&#34;&#34;Load the state dicts of the model and optimizer.
+
+        Arguments:
+            checkpoint (str): The absolute path to the checkpoint file.
+
+        Returns:
+            int: The epoch when the checkpoint was saved.
+        &#34;&#34;&#34;
+        print(&#39;Loading checkpoint from {}&#39;.format(checkpoint))
+        checkpoint = torch.load(checkpoint)
+        self.model.load_state_dict(checkpoint[&#39;model&#39;])
+        self.optimizer.load_state_dict(checkpoint[&#39;optimizer&#39;])
+        for state in self.optimizer.state.values():
+            for k, val in state.items():
+                if torch.is_tensor(val):
+                    state[k] = val.to(self.device)
+
+        if &#39;scheduler&#39; in checkpoint:
+            self.scheduler.load_state_dict(checkpoint[&#39;scheduler&#39;])
+
+        return checkpoint[&#39;epoch&#39;]
+
+    def validate(self):
+        &#34;&#34;&#34;Validation method.
+
+        It&#39;s called after each epoch. Use it like you want.
+        &#34;&#34;&#34;
+        pass
+
+    # -----------------------------------
+    #              GETTERS
+    # -----------------------------------
+
+    def get_model(self):
+        &#34;&#34;&#34;Initialize and return the model to train.
+
+        Returns:
+            (torch.nn.Module): The encoder that will generate the embeddings.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_criterion(self):
+        &#34;&#34;&#34;Returns the criterion (or loss) for the training.
+
+        Returns:
+            (nn.Module): The loss for the training.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_transform(self):
+        &#34;&#34;&#34;Get the transform to apply over the dataset.
+
+        Returns:
+            (torchvision.transforms.Compose): The transform to apply over the dataset.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_datasets(self):
+        &#34;&#34;&#34;Get the training and validation datasets.
+
+        Returns:
+            (torch.utils.data.Dataset): The dataset for training.
+            (torch.utils.data.Dataset): The dataset for validation.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_dataloaders(self):
+        &#34;&#34;&#34;Returns the train and validation dataloaders.
+
+        Returns:
+            (torch.utils.data.DataLoader): The dataloader that will sample the elements from the training dataset.
+            (torch.utils.data.DataLoader): The dataloader that will sample the elements from the validation dataset.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_optimizer(self):
+        &#34;&#34;&#34;Get the optimizer of the training.
+
+        Returns:
+            optimizer (torch.optim.Optimizer): The optimizer of the training.
+                For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_scheduler(self):
+        &#34;&#34;&#34;Get the learning rate scheduler for the optimizer.
+
+        Returns:
+            torch.optim.lr_scheduler.*: The learning rate scheduler.
+            For schedulers see:
+                https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+        &#34;&#34;&#34;
+        raise NotImplementedError()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.trainers.abstract.AbstractTrainer"><code class="flex name class">
+<span>class <span class="ident">AbstractTrainer</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>Abstract trainer to train a pytorch model.</p>
+<p>To create a trainer please override the getters methods and the train method.</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>hyperparameters</code></strong> :&ensp;<code>dict</code></dt>
+<dd>The hyperparameters for the training.
+Here you can add the 'learning_rate' hyperparameter.</dd>
+<dt><strong><code>dataset</code></strong> :&ensp;<code>torch.utils.data.Dataset</code></dt>
+<dd>The dataset for training.</dd>
+<dt><strong><code>valid_dataset</code></strong> :&ensp;<code>torch.utils.data.Dataset</code></dt>
+<dd>The validation dataset.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
+<dd>The device where is running the training.</dd>
+<dt><strong><code>model</code></strong> :&ensp;<code>torch.nn.Module</code></dt>
+<dd>The model that is training.</dd>
+<dt><strong><code>dataloader</code></strong> :&ensp;<code>torch.utils.data.Dataloader</code></dt>
+<dd>The dataloader for the training dataset.</dd>
+<dt><strong><code>valid_dataloader</code></strong> :&ensp;<code>torch.utils.data.Dataloader</code></dt>
+<dd>The dataloader for the validation dataset.</dd>
+<dt><strong><code>criterion</code></strong> :&ensp;<code>torch.nn.Module</code></dt>
+<dd>The criterion -or loss- function for the training.</dd>
+<dt><strong><code>optimizer</code></strong> :&ensp;<code>torch.optim.Optimizer</code></dt>
+<dd>The optimizer for the training.</dd>
+</dl>
+<p>scheduler (torch.optim.lr_scheduler.*): The scheduler for the optimizer, to adjust the learning rate.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class AbstractTrainer():
+    &#34;&#34;&#34;Abstract trainer to train a pytorch model.
+
+    To create a trainer please override the getters methods and the train method.
+
+    Attributes:
+        hyperparameters (dict): The hyperparameters for the training.
+            Here you can add the &#39;learning_rate&#39; hyperparameter.
+        dataset (torch.utils.data.Dataset): The dataset for training.
+        valid_dataset (torch.utils.data.Dataset): The validation dataset.
+        device (str): The device where is running the training.
+        model (torch.nn.Module): The model that is training.
+        dataloader (torch.utils.data.Dataloader): The dataloader for the training dataset.
+        valid_dataloader (torch.utils.data.Dataloader): The dataloader for the validation dataset.
+        criterion (torch.nn.Module): The criterion -or loss- function for the training.
+        optimizer (torch.optim.Optimizer): The optimizer for the training.
+        scheduler (torch.optim.lr_scheduler.*): The scheduler for the optimizer, to adjust the learning rate.
+    &#34;&#34;&#34;
+
+    hyperparameters = {}  # Base hyperparameters
+
+    def __init__(self, hyperparameters, logs_dir=&#39;./logs&#39;, checkpoint=None, device=None):
+        &#34;&#34;&#34;Initialize the trainer. Sets the hyperparameters for the training.
+
+        Args:
+            hyperparameters (dict): The hyperparameters for the training.
+            logs_dir (str): Path to the directory where to save the logs.
+            checkpoint (str): Path to a checkpoint dict.
+        &#34;&#34;&#34;
+        print(&#39;\n--------- TRAINER ----------&#39;)
+        self.hyperparameters = self.merge_hyperparameters(self.hyperparameters, hyperparameters)
+
+        # Set the datasets
+        self.dataset, self.valid_dataset = self.get_datasets()
+
+        # Set the model, data loaders, criterion and optimizer for the training
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.model = self.get_model()
+        self.dataloader, self.valid_dataloader = self.get_dataloaders()
+        self.criterion = self.get_criterion()
+        self.optimizer = self.get_optimizer()
+        self.scheduler = self.get_scheduler()
+
+        # Load the checkpoint if there is any
+        if checkpoint is not None:
+            self.checkpoint_epoch = self.resume(checkpoint)
+        else:
+            self.checkpoint_epoch = 0
+
+        # Configure the logs
+        self.logger = None
+        if logs_dir:
+            # Description of this instance are the hyperparameters of the training
+            description = [&#39;Hyperparameters:\n&#39;, json.dumps(self.hyperparameters, indent=2)]
+            if checkpoint is not None:
+                description.append(&#39;\nCheckpoint: {}&#39;.format(checkpoint))
+
+            self.logger = PrintLogger(description=&#39;\n&#39;.join(description), directory=logs_dir)
+
+    def merge_hyperparameters(self, base, new, path=None):
+        &#34;&#34;&#34;Merge the base hyperparameters (if there&#39;s any) with the given hyperparameters.
+
+        Arguments:
+            hyperparameters (dict): The modified hyperparameters.
+
+        Returns:
+            dict: The deeply merged hyperparameters.
+        &#34;&#34;&#34;
+        if path is None:
+            path = []
+
+        for key in new:
+            if key in base:
+                if isinstance(base[key], dict) and isinstance(new[key], dict):
+                    self.merge_hyperparameters(base[key], new[key], path + [str(key)])
+                elif base[key] == new[key]:
+                    pass  # same leaf value
+                else:
+                    print(&#39;INFO: Replacing base hyperparameter &#34;{}&#34; with value &lt; {} &gt; for &lt; {} &gt;.&#39;.format(key,
+                                                                                                          base[key],
+                                                                                                          new[key]))
+                    base[key] = new[key]
+            else:
+                print(&#39;Warn: Hyperparameter &#34;{key}&#34; not present in base hyperparameters.&#39;.format(key=key))
+        return base
+
+    def train(self):
+        &#34;&#34;&#34;Train the model. You must implement this method according to your model.&#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def save_checkpoint(self, epoch):
+        &#34;&#34;&#34;Save the training&#39;s parameters.
+
+        It saves the model and the optimizer.
+
+        Arguments:
+            epoch (int): The epoch when this checkpoint was generated.
+        &#34;&#34;&#34;
+        path = os.path.join(self.logger.directory, &#39;checkpoint_epoch_{}.pth.tar&#39;.format(epoch))
+        print(&#34;[Epoch {}] Saving model&#39;s, optimizer&#39;s  and scheduler&#39;s state dict to: {}&#34;.format(epoch, path))
+        checkpoint = {
+            &#39;epoch&#39;: epoch,
+            &#39;model&#39;: self.model.state_dict(),
+            &#39;optimizer&#39;: self.optimizer.state_dict(),
+            &#39;scheduler&#39;: self.scheduler.state_dict()
+        }
+        torch.save(checkpoint, path)
+
+    def resume(self, checkpoint):
+        &#34;&#34;&#34;Load the state dicts of the model and optimizer.
+
+        Arguments:
+            checkpoint (str): The absolute path to the checkpoint file.
+
+        Returns:
+            int: The epoch when the checkpoint was saved.
+        &#34;&#34;&#34;
+        print(&#39;Loading checkpoint from {}&#39;.format(checkpoint))
+        checkpoint = torch.load(checkpoint)
+        self.model.load_state_dict(checkpoint[&#39;model&#39;])
+        self.optimizer.load_state_dict(checkpoint[&#39;optimizer&#39;])
+        for state in self.optimizer.state.values():
+            for k, val in state.items():
+                if torch.is_tensor(val):
+                    state[k] = val.to(self.device)
+
+        if &#39;scheduler&#39; in checkpoint:
+            self.scheduler.load_state_dict(checkpoint[&#39;scheduler&#39;])
+
+        return checkpoint[&#39;epoch&#39;]
+
+    def validate(self):
+        &#34;&#34;&#34;Validation method.
+
+        It&#39;s called after each epoch. Use it like you want.
+        &#34;&#34;&#34;
+        pass
+
+    # -----------------------------------
+    #              GETTERS
+    # -----------------------------------
+
+    def get_model(self):
+        &#34;&#34;&#34;Initialize and return the model to train.
+
+        Returns:
+            (torch.nn.Module): The encoder that will generate the embeddings.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_criterion(self):
+        &#34;&#34;&#34;Returns the criterion (or loss) for the training.
+
+        Returns:
+            (nn.Module): The loss for the training.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_transform(self):
+        &#34;&#34;&#34;Get the transform to apply over the dataset.
+
+        Returns:
+            (torchvision.transforms.Compose): The transform to apply over the dataset.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_datasets(self):
+        &#34;&#34;&#34;Get the training and validation datasets.
+
+        Returns:
+            (torch.utils.data.Dataset): The dataset for training.
+            (torch.utils.data.Dataset): The dataset for validation.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_dataloaders(self):
+        &#34;&#34;&#34;Returns the train and validation dataloaders.
+
+        Returns:
+            (torch.utils.data.DataLoader): The dataloader that will sample the elements from the training dataset.
+            (torch.utils.data.DataLoader): The dataloader that will sample the elements from the validation dataset.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_optimizer(self):
+        &#34;&#34;&#34;Get the optimizer of the training.
+
+        Returns:
+            optimizer (torch.optim.Optimizer): The optimizer of the training.
+                For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def get_scheduler(self):
+        &#34;&#34;&#34;Get the learning rate scheduler for the optimizer.
+
+        Returns:
+            torch.optim.lr_scheduler.*: The learning rate scheduler.
+            For schedulers see:
+                https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+        &#34;&#34;&#34;
+        raise NotImplementedError()</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="torchsight.trainers.retinanet.RetinaNetTrainer" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer">RetinaNetTrainer</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.hyperparameters"><code class="name">var <span class="ident">hyperparameters</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, hyperparameters, logs_dir=&#39;./logs&#39;, checkpoint=None, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the trainer. Sets the hyperparameters for the training.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>hyperparameters</code></strong> :&ensp;<code>dict</code></dt>
+<dd>The hyperparameters for the training.</dd>
+<dt><strong><code>logs_dir</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to the directory where to save the logs.</dd>
+<dt><strong><code>checkpoint</code></strong> :&ensp;<code>str</code></dt>
+<dd>Path to a checkpoint dict.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, hyperparameters, logs_dir=&#39;./logs&#39;, checkpoint=None, device=None):
+    &#34;&#34;&#34;Initialize the trainer. Sets the hyperparameters for the training.
+
+    Args:
+        hyperparameters (dict): The hyperparameters for the training.
+        logs_dir (str): Path to the directory where to save the logs.
+        checkpoint (str): Path to a checkpoint dict.
+    &#34;&#34;&#34;
+    print(&#39;\n--------- TRAINER ----------&#39;)
+    self.hyperparameters = self.merge_hyperparameters(self.hyperparameters, hyperparameters)
+
+    # Set the datasets
+    self.dataset, self.valid_dataset = self.get_datasets()
+
+    # Set the model, data loaders, criterion and optimizer for the training
+    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+    self.model = self.get_model()
+    self.dataloader, self.valid_dataloader = self.get_dataloaders()
+    self.criterion = self.get_criterion()
+    self.optimizer = self.get_optimizer()
+    self.scheduler = self.get_scheduler()
+
+    # Load the checkpoint if there is any
+    if checkpoint is not None:
+        self.checkpoint_epoch = self.resume(checkpoint)
+    else:
+        self.checkpoint_epoch = 0
+
+    # Configure the logs
+    self.logger = None
+    if logs_dir:
+        # Description of this instance are the hyperparameters of the training
+        description = [&#39;Hyperparameters:\n&#39;, json.dumps(self.hyperparameters, indent=2)]
+        if checkpoint is not None:
+            description.append(&#39;\nCheckpoint: {}&#39;.format(checkpoint))
+
+        self.logger = PrintLogger(description=&#39;\n&#39;.join(description), directory=logs_dir)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.get_criterion"><code class="name flex">
+<span>def <span class="ident">get_criterion</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns the criterion (or loss) for the training.</p>
+<h2 id="returns">Returns</h2>
+<p>(nn.Module): The loss for the training.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_criterion(self):
+    &#34;&#34;&#34;Returns the criterion (or loss) for the training.
+
+    Returns:
+        (nn.Module): The loss for the training.
+    &#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.get_dataloaders"><code class="name flex">
+<span>def <span class="ident">get_dataloaders</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns the train and validation dataloaders.</p>
+<h2 id="returns">Returns</h2>
+<p>(torch.utils.data.DataLoader): The dataloader that will sample the elements from the training dataset.
+(torch.utils.data.DataLoader): The dataloader that will sample the elements from the validation dataset.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_dataloaders(self):
+    &#34;&#34;&#34;Returns the train and validation dataloaders.
+
+    Returns:
+        (torch.utils.data.DataLoader): The dataloader that will sample the elements from the training dataset.
+        (torch.utils.data.DataLoader): The dataloader that will sample the elements from the validation dataset.
+    &#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.get_datasets"><code class="name flex">
+<span>def <span class="ident">get_datasets</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the training and validation datasets.</p>
+<h2 id="returns">Returns</h2>
+<p>(torch.utils.data.Dataset): The dataset for training.
+(torch.utils.data.Dataset): The dataset for validation.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_datasets(self):
+    &#34;&#34;&#34;Get the training and validation datasets.
+
+    Returns:
+        (torch.utils.data.Dataset): The dataset for training.
+        (torch.utils.data.Dataset): The dataset for validation.
+    &#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.get_model"><code class="name flex">
+<span>def <span class="ident">get_model</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize and return the model to train.</p>
+<h2 id="returns">Returns</h2>
+<p>(torch.nn.Module): The encoder that will generate the embeddings.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_model(self):
+    &#34;&#34;&#34;Initialize and return the model to train.
+
+    Returns:
+        (torch.nn.Module): The encoder that will generate the embeddings.
+    &#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.get_optimizer"><code class="name flex">
+<span>def <span class="ident">get_optimizer</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the optimizer of the training.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>optimizer</code></strong> :&ensp;<code>torch.optim.Optimizer</code></dt>
+<dd>The optimizer of the training.
+For the optimizer package see: <a href="https://pytorch.org/docs/stable/optim.html">https://pytorch.org/docs/stable/optim.html</a></dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_optimizer(self):
+    &#34;&#34;&#34;Get the optimizer of the training.
+
+    Returns:
+        optimizer (torch.optim.Optimizer): The optimizer of the training.
+            For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+    &#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.get_scheduler"><code class="name flex">
+<span>def <span class="ident">get_scheduler</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the learning rate scheduler for the optimizer.</p>
+<h2 id="returns">Returns</h2>
+<p>torch.optim.lr_scheduler.*: The learning rate scheduler.
+For schedulers see:
+<a href="https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate">https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate</a></p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_scheduler(self):
+    &#34;&#34;&#34;Get the learning rate scheduler for the optimizer.
+
+    Returns:
+        torch.optim.lr_scheduler.*: The learning rate scheduler.
+        For schedulers see:
+            https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+    &#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.get_transform"><code class="name flex">
+<span>def <span class="ident">get_transform</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the transform to apply over the dataset.</p>
+<h2 id="returns">Returns</h2>
+<p>(torchvision.transforms.Compose): The transform to apply over the dataset.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_transform(self):
+    &#34;&#34;&#34;Get the transform to apply over the dataset.
+
+    Returns:
+        (torchvision.transforms.Compose): The transform to apply over the dataset.
+    &#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.merge_hyperparameters"><code class="name flex">
+<span>def <span class="ident">merge_hyperparameters</span></span>(<span>self, base, new, path=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Merge the base hyperparameters (if there's any) with the given hyperparameters.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>hyperparameters</code></strong> :&ensp;<code>dict</code></dt>
+<dd>The modified hyperparameters.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>The deeply merged hyperparameters.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def merge_hyperparameters(self, base, new, path=None):
+    &#34;&#34;&#34;Merge the base hyperparameters (if there&#39;s any) with the given hyperparameters.
+
+    Arguments:
+        hyperparameters (dict): The modified hyperparameters.
+
+    Returns:
+        dict: The deeply merged hyperparameters.
+    &#34;&#34;&#34;
+    if path is None:
+        path = []
+
+    for key in new:
+        if key in base:
+            if isinstance(base[key], dict) and isinstance(new[key], dict):
+                self.merge_hyperparameters(base[key], new[key], path + [str(key)])
+            elif base[key] == new[key]:
+                pass  # same leaf value
+            else:
+                print(&#39;INFO: Replacing base hyperparameter &#34;{}&#34; with value &lt; {} &gt; for &lt; {} &gt;.&#39;.format(key,
+                                                                                                      base[key],
+                                                                                                      new[key]))
+                base[key] = new[key]
+        else:
+            print(&#39;Warn: Hyperparameter &#34;{key}&#34; not present in base hyperparameters.&#39;.format(key=key))
+    return base</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.resume"><code class="name flex">
+<span>def <span class="ident">resume</span></span>(<span>self, checkpoint)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Load the state dicts of the model and optimizer.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>checkpoint</code></strong> :&ensp;<code>str</code></dt>
+<dd>The absolute path to the checkpoint file.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>int</code></strong></dt>
+<dd>The epoch when the checkpoint was saved.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resume(self, checkpoint):
+    &#34;&#34;&#34;Load the state dicts of the model and optimizer.
+
+    Arguments:
+        checkpoint (str): The absolute path to the checkpoint file.
+
+    Returns:
+        int: The epoch when the checkpoint was saved.
+    &#34;&#34;&#34;
+    print(&#39;Loading checkpoint from {}&#39;.format(checkpoint))
+    checkpoint = torch.load(checkpoint)
+    self.model.load_state_dict(checkpoint[&#39;model&#39;])
+    self.optimizer.load_state_dict(checkpoint[&#39;optimizer&#39;])
+    for state in self.optimizer.state.values():
+        for k, val in state.items():
+            if torch.is_tensor(val):
+                state[k] = val.to(self.device)
+
+    if &#39;scheduler&#39; in checkpoint:
+        self.scheduler.load_state_dict(checkpoint[&#39;scheduler&#39;])
+
+    return checkpoint[&#39;epoch&#39;]</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.save_checkpoint"><code class="name flex">
+<span>def <span class="ident">save_checkpoint</span></span>(<span>self, epoch)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Save the training's parameters.</p>
+<p>It saves the model and the optimizer.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>epoch</code></strong> :&ensp;<code>int</code></dt>
+<dd>The epoch when this checkpoint was generated.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def save_checkpoint(self, epoch):
+    &#34;&#34;&#34;Save the training&#39;s parameters.
+
+    It saves the model and the optimizer.
+
+    Arguments:
+        epoch (int): The epoch when this checkpoint was generated.
+    &#34;&#34;&#34;
+    path = os.path.join(self.logger.directory, &#39;checkpoint_epoch_{}.pth.tar&#39;.format(epoch))
+    print(&#34;[Epoch {}] Saving model&#39;s, optimizer&#39;s  and scheduler&#39;s state dict to: {}&#34;.format(epoch, path))
+    checkpoint = {
+        &#39;epoch&#39;: epoch,
+        &#39;model&#39;: self.model.state_dict(),
+        &#39;optimizer&#39;: self.optimizer.state_dict(),
+        &#39;scheduler&#39;: self.scheduler.state_dict()
+    }
+    torch.save(checkpoint, path)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.train"><code class="name flex">
+<span>def <span class="ident">train</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Train the model. You must implement this method according to your model.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def train(self):
+    &#34;&#34;&#34;Train the model. You must implement this method according to your model.&#34;&#34;&#34;
+    raise NotImplementedError()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.abstract.AbstractTrainer.validate"><code class="name flex">
+<span>def <span class="ident">validate</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Validation method.</p>
+<p>It's called after each epoch. Use it like you want.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def validate(self):
+    &#34;&#34;&#34;Validation method.
+
+    It&#39;s called after each epoch. Use it like you want.
+    &#34;&#34;&#34;
+    pass</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.trainers" href="index.html">torchsight.trainers</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.trainers.abstract.AbstractTrainer" href="#torchsight.trainers.abstract.AbstractTrainer">AbstractTrainer</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.__init__" href="#torchsight.trainers.abstract.AbstractTrainer.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.get_criterion" href="#torchsight.trainers.abstract.AbstractTrainer.get_criterion">get_criterion</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.get_dataloaders" href="#torchsight.trainers.abstract.AbstractTrainer.get_dataloaders">get_dataloaders</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.get_datasets" href="#torchsight.trainers.abstract.AbstractTrainer.get_datasets">get_datasets</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.get_model" href="#torchsight.trainers.abstract.AbstractTrainer.get_model">get_model</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.get_optimizer" href="#torchsight.trainers.abstract.AbstractTrainer.get_optimizer">get_optimizer</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.get_scheduler" href="#torchsight.trainers.abstract.AbstractTrainer.get_scheduler">get_scheduler</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.get_transform" href="#torchsight.trainers.abstract.AbstractTrainer.get_transform">get_transform</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.hyperparameters" href="#torchsight.trainers.abstract.AbstractTrainer.hyperparameters">hyperparameters</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.merge_hyperparameters" href="#torchsight.trainers.abstract.AbstractTrainer.merge_hyperparameters">merge_hyperparameters</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.resume" href="#torchsight.trainers.abstract.AbstractTrainer.resume">resume</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.save_checkpoint" href="#torchsight.trainers.abstract.AbstractTrainer.save_checkpoint">save_checkpoint</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.train" href="#torchsight.trainers.abstract.AbstractTrainer.train">train</a></code></li>
+<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.validate" href="#torchsight.trainers.abstract.AbstractTrainer.validate">validate</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

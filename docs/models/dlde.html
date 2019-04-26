@@ -1,0 +1,1814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.models.dlde API documentation</title>
+<meta name="description" content="Deep Local Directional Embedding (DLDE) module …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.models.dlde</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Deep Local Directional Embedding (DLDE) module.</p>
+<p>This net is based on the RetinaNet architecture but provides a different submodule
+for classification and additional methods.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Deep Local Directional Embedding (DLDE) module.
+
+This net is based on the RetinaNet architecture but provides a different submodule
+for classification and additional methods.
+&#34;&#34;&#34;
+import torch
+from torch import nn
+
+from .retinanet import RetinaNet, SubModule
+from .anchors import Anchors
+
+
+class DirectionalClassification(nn.Module):
+    &#34;&#34;&#34;Directional classification module.
+
+    This module takes the features generated by the Feature Pyramid Network and generates
+    &#34;embeddings&#34; (normalized vectors for each base anchor) that must point in the same direction
+    that its correct label and so it can calculate the probability of being for a given class.
+
+    So, in simple words, we take a picture and project each section of the image to a sphere with
+    unit radius. Each section has an embedding, a vector that points in some direction that it is
+    in this sphere.
+
+    What we are going to do? We are going to try that embeddings of similar objects (i.e. same class)
+    point to the same direction. It would be an error that the embeddings point to the exact same
+    direction, we must have a threshold, so we can model this with a Von Mises-Fisher distribution.
+
+    At this point we need a picture, check this and create your mental image:
+    ![](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDBP4M7VABT1wGuXccdg707MzyQPTpb5O6D3TUCZFapDBG_jiX)
+
+    So, we want that semantically similar objects points to similar directions, so the direction of the
+    embedding contains the semantic of the object without losing much visual detail.
+
+    I was inspired by the following paper:
+
+    _Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval._
+    [Paper in Arxiv](https://arxiv.org/abs/1802.09662)
+
+    But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+    cosine similarity of the embedding with each class&#39; mean, as the softmax always gives a winner
+    this won&#39;t allow us to identify correctly a background embedding, i.e., a non interesting object
+    for the model.
+
+    To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
+    -1 and 1 we can adjust the sigmoid to get:
+
+    sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
+    f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)
+
+    Where x is the cosine similarity between the embedding and a class&#39; mean, k is the concentration
+    parameter and b is the shift parameter. The division is to fit the max value possible to one, and
+    as we&#39;ll use the shift more near 1 than -1 the minimum is always a number very very near 0.
+
+    # How does it work
+
+    Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
+    with size d for images of C classes. Assuming that y is the correct label for the image x,
+    the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
+    parameters of the CNN, means are the mean vectors for each class, k is the concentration
+    of the modified sigmoid function and b is the shift.
+
+    The distribution is like a gaussian but projected to an hypersphere.
+
+    It updates the mean vector of each class based on the embeddings that pass through the network.
+
+    How can it update the means?
+    Because every time that the embeddings pass through the network we must provide the real annotations
+    to update the classes&#39; means with those embeddings. Not a fully update of course, we sum this embeddings
+    to the previously seen embeddings and then you can call model.update_means() to normalize those sums
+    and set them as the new means for each class.
+
+    Obviously, a correct way to set a more precise mean is to call update_means() after each epoch,
+    because it will compute the mean with the average of the class&#39; embeddings.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
+                 assignation_thresholds, device=None):
+        &#34;&#34;&#34;Initialize the module.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            embedding_size (int): Length of the embedding vector to generate.
+            anchors (int): Number of anchors per location in the feature map.
+            features (int): Number of features in the conv layers that generates the embedding.
+            classes (int): The number of classes to detect.
+            concentration (int): The concentration parameter for the modified sigmoid.
+            shift (float): The shift value for the modified sigmoid.
+            assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
+                or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        super(DirectionalClassification, self).__init__()
+
+        if &#39;object&#39; not in assignation_thresholds:
+            raise ValueError(&#39;There is no &#34;object&#34; threshold in the assignation threshold dict&#39;)
+        if &#39;background&#39; not in assignation_thresholds:
+            raise ValueError(&#39;There is no &#34;background&#34; threshold in the assignation threshold dict&#39;)
+
+        self.assignation_thresholds = assignation_thresholds
+        self.classes = classes
+        self.concentration = concentration
+        self.shift = shift
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.embedding_size = embedding_size
+
+        # Start the means for the distributions as zero vectors
+        # We can get the mean for the i-th class with self.means[i]
+        self.means = torch.zeros(classes, embedding_size).type(torch.float).to(self.device)
+
+        # We need to keep track of embeddings for each class to update the means. How? The mean could be
+        # calculated by the average of the embeddings of the same class normalized. So it&#39;s the sum of
+        # embeddings that passes through the network and that result normalized to have unit norm.
+        self.embeddings_sums = torch.zeros_like(self.means)
+
+        # Create the encoder
+        self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
+                                 anchors=anchors, features=features).to(self.device)
+
+    def to(self, device):
+        &#34;&#34;&#34;Move the module and the means to the given device.
+
+        Arguments:
+            device (str): The device where to move the module and its attributes.
+        &#34;&#34;&#34;
+        self.device = device
+        self.means = self.means.to(device)
+        self.embeddings_sums = self.embeddings_sums.to(device)
+        return super(DirectionalClassification, self).to(device)
+
+    def modified_sigmoid(self, inputs):
+        &#34;&#34;&#34;Return the modified sigmoid value applied to the given values.
+
+        Arguments:
+            x (torch.Tensor): The tensor with the values to apply the modified function.
+
+        Returns:
+            torch.Tensor: The value for each x that the function returns.
+        &#34;&#34;&#34;
+        def sigmoid(inputs):
+            &#34;&#34;&#34;Original sigmoid.&#34;&#34;&#34;
+            return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
+
+        return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))
+
+    def encode(self, feature_map):
+        &#34;&#34;&#34;Generate the embeddings for the given feature map.
+
+        Arguments:
+            feature_map (torch.Tensor): The feature map to use to generate the embeddings.
+                Shape:
+                    (batch size, number of features, feature map&#39;s height, width)
+
+        Returns:
+            torch.Tensor: The embedding for each anchor for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, embedding size)
+        &#34;&#34;&#34;
+        batch_size = feature_map.shape[0]
+        # Shape (batch size, number of anchors per location * embedding size, height, width)
+        embeddings = self.encoder(feature_map)
+        # Move the embeddings to the last dimension
+        embeddings = embeddings.permute(0, 2, 3, 1).contiguous()
+        # Shape (batch size, number of total anchors, embedding size)
+        embeddings = embeddings.view(batch_size, -1, self.embedding_size)
+        # Normalize the embeddings
+        return embeddings / embeddings.norm(dim=2, keepdim=True)
+
+    def track(self, embeddings, anchors, annotations):
+        &#34;&#34;&#34;Track the embeddings to accumulate the embeddings assigned to the same class.
+
+        Take the embeddings, assign the annotations to each anchor get the assigned anchors
+        to objects and with those embeddings sum to the embeddings_sums according with their
+        assignations to annotations.
+
+        This way we can track all the embeddings per class and then call update_means()
+        to set the new means of the model.
+
+        Also, to avoid conflicts with different amount of annotations per image, this method
+        assumes that there could be *fake annotations* labeled with -1. So if the last value
+        of an annotation is -1 this method does not take that annotation.
+
+        Arguments:
+            embeddings (torch.Tensor): All the embeddings generated for each image in the batch.
+                Shape:
+                    (batch size, number of total anchors, embedding size)
+            anchors (torch.Tensor): The base anchors for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, 4)
+            annotations (torch.Tensor): The ground truth annotations for the images.
+                It assumes that each annotation contains the label in the last value.
+                Shape:
+                    (batch size, number of annotations, 5)
+        &#34;&#34;&#34;
+        with torch.no_grad():
+            # As each image could have different amount of annotations we must iterate and remove false annotations
+            for index, current_annotations in enumerate(annotations):
+                current_anchors = anchors[index]
+                current_embeddings = embeddings[index]
+                # Remove false annotations that have -1 label
+                mask = current_annotations[:, -1] != -1
+                current_annotations = current_annotations[mask]
+                # Get the assigned annotation for each anchor and which anchors are assigned as objects
+                assignations = Anchors.assign(current_anchors, current_annotations,
+                                              thresholds=self.assignation_thresholds)
+                assigned_annotations, objects_mask, *_ = assignations
+                # Track only the assigned to objects embeddings
+                objects_embeddings = current_embeddings[objects_mask]
+                objects_annotations = assigned_annotations[objects_mask]
+                # Iterate over the labels of the annotations, accumulate the embeddings with the same label assigned
+                # and sum them to the embeddings_sum
+                for label in assigned_annotations[:, -1].unique():
+                    mask = objects_annotations[:, -1] == label
+                    self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)
+
+    def classify(self, embeddings):
+        &#34;&#34;&#34;Get the probability for each embedding to below to each class.
+
+        Compute the cosine similarity between each embedding and each class&#39; mean and return
+        the modified sigmoid applied over the similarities to get probabilities.
+
+        Arguments:
+            embeddings (torch.Tensor): All the embeddings generated.
+                Shape:
+                    (batch size, total embeddings per image, embedding size)
+
+        Returns:
+            torch.Tensor: The probabilities for each embedding.
+                Shape:
+                    (batch size, total embeddings, number of classes)
+        &#34;&#34;&#34;
+        similarity = torch.matmul(embeddings, self.means.permute(1, 0))
+        return self.modified_sigmoid(similarity)
+
+    def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
+        &#34;&#34;&#34;Update means and get the probabilities for each embedding to belong to each class.
+
+        It needs the annotations and the anchors to keep track of the mean for each class.
+        If you only want to get the probabilities for each class it does not need the annotations nor anchors.
+
+        Arguments:
+            feature_maps (torch.Tensor): Feature maps generated by the FPN module.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, 4)
+            annotations (torch.Tensor, optional): The annotations of the image. Useful to keep track
+                of the mean for each class. It assumes that each annotation contains the label in the
+                last value.
+                Shape:
+                    (batch size, number of annotations, 5)
+            classify (bool, optional): Indicates if it must return the classification probs.
+
+        Returns:
+            torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+                Shape:
+                    (batch size, feature map&#39;s height * width * number of anchors, classes)
+        &#34;&#34;&#34;
+        embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+
+        if self.training:
+            if anchors is None:
+                raise ValueError(&#39;Training mode: Directional classification cannot train without the base anchors&#39;)
+            if annotations is None:
+                raise ValueError(&#39;Training mode: Directional classification cannot train without the annotations&#39;)
+
+            self.track(embeddings, anchors, annotations)
+
+        # Compute the probabilities
+        if classify:
+            return self.classify(embeddings)
+
+    def update_means(self):
+        &#34;&#34;&#34;Normalize the embeddings_sums and set them as the new means for the module.&#34;&#34;&#34;
+        with torch.no_grad():
+            self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
+
+    def state_dict(self, *args, **kwargs):
+        &#34;&#34;&#34;Get the state dict of the model.
+
+        Why to override this method? Because we must also save the means.
+
+        Returns:
+            dict: The dict with the whole state of the model.
+        &#34;&#34;&#34;
+        return {
+            &#39;means&#39;: self.means,
+            &#39;parameters&#39;: super(DirectionalClassification, self).state_dict(*args, **kwargs)
+        }
+
+    def load_state_dict(self, state_dict):
+        &#34;&#34;&#34;Load a given state dict of this model.
+
+        Arguments:
+            state_dict (dict): A state dict generated by this model.
+        &#34;&#34;&#34;
+        if &#39;means&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;means&#34; key.&#39;)
+        if &#39;parameters&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+
+        self.means = state_dict[&#39;means&#39;]
+        super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])
+
+
+class DLDENet(RetinaNet):
+    &#34;&#34;&#34;Deep Local Directional Embeddings Net.
+
+    Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
+    &#34;&#34;&#34;
+
+    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
+                 shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Arguments:
+            classes (int): The number of classes to detect.
+            resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+            features (dict, optional): The dict that indicates the features for each module of the network.
+                For the default dict please see RetinaNet module.
+            anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+                the Anchors module. For default values please see RetinaNet module.
+            embedding_size (int, optional): The length of the embedding to generate per anchor.
+            concentration (int): The concentration parameter for the distribution in the classification module.
+            assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
+                or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+            pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+                This pretraining is provided by the torchvision package.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        self.embedding_size = embedding_size
+        self.concentration = concentration
+        self.shift = shift
+
+        if assignation_thresholds is not None:
+            self.assignation_thresholds = assignation_thresholds
+        else:
+            self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
+
+        super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)
+
+    def to(self, device):
+        &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
+        parameters and attributes to the given device.
+
+        Arguments:
+            device (str): The device where to move the module.
+        &#34;&#34;&#34;
+        self.device = device
+        self.classification.to(device)
+        return super(DLDENet, self).to(device)
+
+    def get_classification_module(self, in_channels, classes, anchors, features):
+        &#34;&#34;&#34;Get the directional classification module.
+
+        See __init__ method in RetinaNet class for more information.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+        Returns:
+            DirectionalClassification: The module for classification.
+        &#34;&#34;&#34;
+        return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
+                                         anchors=anchors, features=features, classes=classes,
+                                         concentration=self.concentration, shift=self.shift,
+                                         assignation_thresholds=self.assignation_thresholds,
+                                         device=self.device)
+
+    def forward(self, images, annotations=None, initializing=False):
+        &#34;&#34;&#34;Forward pass through the network.
+
+        ----- Training -----
+
+        In training mode (model.train()) returns the base anchors, the regressions for those anchors
+        and the classification probabilities for each anchor.
+
+        While training is mandatory to provide the annotations to keep track of the means for each class&#39;
+        direction. As each image could have different amounts of annotations to fit them in only one tensor
+        you can fill the &#39;false&#39; annotations with -1 and so those annotations will be ignored.
+
+        Example: You have 2 images, the first one with only 1 annotation and the second one with 3.
+        How could you fit them in only one tensor for the batch? You know that the maximum amount
+        of annotations is 3 so you could generate a tensor with shape (2, 3, 5): 2 images, 3 &#39;maximum
+        amount of annotations&#39; and 5 values for each annotation. But what are the values for the
+        tensors at [0, 1, :] and [0, 2, :]? There are no annotations to provide, so you can fill them
+        with -1 to indicate that those are &#39;false&#39; annotations.
+
+        ----- Evaluation -----
+
+        In evaluation mode (calling `model.eval()`) it applies Non-Maximum Supresion to keep only
+        the predictions that do not collide.
+
+        On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+        different images could have different amounts of predictions over the threshold so we cannot keep
+        all them in a single tensor.
+        To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+        for each image.
+
+        Arguments:
+            images (torch.Tensor): The batch of images to pass through the network.
+                Shape:
+                    (batch size, channels, height, width)
+            annotations (torch.Tensor, optional): The annotations for the batch. Each annotation
+                must have x1, y1 (top left corner), x2, y2 (bottom right corner) and label for the class.
+                Shape:
+                    (batch size, maximum annotations length, 5)
+            initializing (bool, optional): Indicates that the forward pass is to initialize the means of the
+                classification submodule.
+        &#34;&#34;&#34;
+        # Get the feature maps for the images
+        feature_maps = self.fpn(images)
+        # Get the base anchors
+        anchors = self.anchors(images)
+
+        if initializing:
+            return self.classification(feature_maps, anchors, annotations, classify=False)
+
+        # Get the probabilities for each class
+        classifications = self.classification(feature_maps, anchors, annotations)
+        # Get the regression values for the images
+        regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
+
+        if self.training:
+            return anchors, regressions, classifications
+        if self.evaluate_loss:
+            return anchors.detach(), regressions.detach(), classifications.detach()
+
+        return self.transform(images, anchors, regressions, classifications)
+
+    def update_means(self):
+        &#34;&#34;&#34;Update the means of the classification submodule.&#34;&#34;&#34;
+        return self.classification.update_means()
+
+    def state_dict(self, *args, **kwargs):
+        &#34;&#34;&#34;Get the state dict of the model.
+
+        Why to override this method? Because we must also save the means of the classifier.
+
+        Returns:
+            dict: The dict with the whole state of the model.
+        &#34;&#34;&#34;
+        return {
+            &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
+            &#39;parameters&#39;: super(DLDENet, self).state_dict(*args, **kwargs)
+        }
+
+    def load_state_dict(self, state_dict):
+        &#34;&#34;&#34;Load a given state dict of this model.
+
+        Arguments:
+            state_dict (dict): A state dict generated by this model.
+        &#34;&#34;&#34;
+        if &#39;classification&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;classification&#34; key.&#39;)
+        if &#39;parameters&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+
+        super(DLDENet, self).load_state_dict(state_dict[&#39;parameters&#39;])
+        self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.models.dlde.DLDENet"><code class="flex name class">
+<span>class <span class="ident">DLDENet</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.models.retinanet.RetinaNet" href="retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a>, torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Deep Local Directional Embeddings Net.</p>
+<p>Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class DLDENet(RetinaNet):
+    &#34;&#34;&#34;Deep Local Directional Embeddings Net.
+
+    Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
+    &#34;&#34;&#34;
+
+    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
+                 shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Arguments:
+            classes (int): The number of classes to detect.
+            resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+            features (dict, optional): The dict that indicates the features for each module of the network.
+                For the default dict please see RetinaNet module.
+            anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+                the Anchors module. For default values please see RetinaNet module.
+            embedding_size (int, optional): The length of the embedding to generate per anchor.
+            concentration (int): The concentration parameter for the distribution in the classification module.
+            assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
+                or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+            pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+                This pretraining is provided by the torchvision package.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        self.embedding_size = embedding_size
+        self.concentration = concentration
+        self.shift = shift
+
+        if assignation_thresholds is not None:
+            self.assignation_thresholds = assignation_thresholds
+        else:
+            self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
+
+        super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)
+
+    def to(self, device):
+        &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
+        parameters and attributes to the given device.
+
+        Arguments:
+            device (str): The device where to move the module.
+        &#34;&#34;&#34;
+        self.device = device
+        self.classification.to(device)
+        return super(DLDENet, self).to(device)
+
+    def get_classification_module(self, in_channels, classes, anchors, features):
+        &#34;&#34;&#34;Get the directional classification module.
+
+        See __init__ method in RetinaNet class for more information.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+        Returns:
+            DirectionalClassification: The module for classification.
+        &#34;&#34;&#34;
+        return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
+                                         anchors=anchors, features=features, classes=classes,
+                                         concentration=self.concentration, shift=self.shift,
+                                         assignation_thresholds=self.assignation_thresholds,
+                                         device=self.device)
+
+    def forward(self, images, annotations=None, initializing=False):
+        &#34;&#34;&#34;Forward pass through the network.
+
+        ----- Training -----
+
+        In training mode (model.train()) returns the base anchors, the regressions for those anchors
+        and the classification probabilities for each anchor.
+
+        While training is mandatory to provide the annotations to keep track of the means for each class&#39;
+        direction. As each image could have different amounts of annotations to fit them in only one tensor
+        you can fill the &#39;false&#39; annotations with -1 and so those annotations will be ignored.
+
+        Example: You have 2 images, the first one with only 1 annotation and the second one with 3.
+        How could you fit them in only one tensor for the batch? You know that the maximum amount
+        of annotations is 3 so you could generate a tensor with shape (2, 3, 5): 2 images, 3 &#39;maximum
+        amount of annotations&#39; and 5 values for each annotation. But what are the values for the
+        tensors at [0, 1, :] and [0, 2, :]? There are no annotations to provide, so you can fill them
+        with -1 to indicate that those are &#39;false&#39; annotations.
+
+        ----- Evaluation -----
+
+        In evaluation mode (calling `model.eval()`) it applies Non-Maximum Supresion to keep only
+        the predictions that do not collide.
+
+        On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+        different images could have different amounts of predictions over the threshold so we cannot keep
+        all them in a single tensor.
+        To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+        for each image.
+
+        Arguments:
+            images (torch.Tensor): The batch of images to pass through the network.
+                Shape:
+                    (batch size, channels, height, width)
+            annotations (torch.Tensor, optional): The annotations for the batch. Each annotation
+                must have x1, y1 (top left corner), x2, y2 (bottom right corner) and label for the class.
+                Shape:
+                    (batch size, maximum annotations length, 5)
+            initializing (bool, optional): Indicates that the forward pass is to initialize the means of the
+                classification submodule.
+        &#34;&#34;&#34;
+        # Get the feature maps for the images
+        feature_maps = self.fpn(images)
+        # Get the base anchors
+        anchors = self.anchors(images)
+
+        if initializing:
+            return self.classification(feature_maps, anchors, annotations, classify=False)
+
+        # Get the probabilities for each class
+        classifications = self.classification(feature_maps, anchors, annotations)
+        # Get the regression values for the images
+        regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
+
+        if self.training:
+            return anchors, regressions, classifications
+        if self.evaluate_loss:
+            return anchors.detach(), regressions.detach(), classifications.detach()
+
+        return self.transform(images, anchors, regressions, classifications)
+
+    def update_means(self):
+        &#34;&#34;&#34;Update the means of the classification submodule.&#34;&#34;&#34;
+        return self.classification.update_means()
+
+    def state_dict(self, *args, **kwargs):
+        &#34;&#34;&#34;Get the state dict of the model.
+
+        Why to override this method? Because we must also save the means of the classifier.
+
+        Returns:
+            dict: The dict with the whole state of the model.
+        &#34;&#34;&#34;
+        return {
+            &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
+            &#39;parameters&#39;: super(DLDENet, self).state_dict(*args, **kwargs)
+        }
+
+    def load_state_dict(self, state_dict):
+        &#34;&#34;&#34;Load a given state dict of this model.
+
+        Arguments:
+            state_dict (dict): A state dict generated by this model.
+        &#34;&#34;&#34;
+        if &#39;classification&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;classification&#34; key.&#39;)
+        if &#39;parameters&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+
+        super(DLDENet, self).load_state_dict(state_dict[&#39;parameters&#39;])
+        self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.dlde.DLDENet.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15, shift=0.8, assignation_thresholds=None, pretrained=True, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the network.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of classes to detect.</dd>
+<dt><strong><code>resnet</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The depth of the resnet backbone for the Feature Pyramid Network.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>The dict that indicates the features for each module of the network.
+For the default dict please see RetinaNet module.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
+the Anchors module. For default values please see RetinaNet module.</dd>
+<dt><strong><code>embedding_size</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The length of the embedding to generate per anchor.</dd>
+<dt><strong><code>concentration</code></strong> :&ensp;<code>int</code></dt>
+<dd>The concentration parameter for the distribution in the classification module.</dd>
+<dt><strong><code>assignation_thresholds</code></strong> :&ensp;<code>dict</code></dt>
+<dd>A dict with the thresholds to assign an anchor to an object
+or to background. It must have the keys 'object' and 'background' with float values.</dd>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+This pretraining is provided by the torchvision package.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The device where the module will run.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
+             shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
+    &#34;&#34;&#34;Initialize the network.
+
+    Arguments:
+        classes (int): The number of classes to detect.
+        resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+        features (dict, optional): The dict that indicates the features for each module of the network.
+            For the default dict please see RetinaNet module.
+        anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+            the Anchors module. For default values please see RetinaNet module.
+        embedding_size (int, optional): The length of the embedding to generate per anchor.
+        concentration (int): The concentration parameter for the distribution in the classification module.
+        assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
+            or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+        pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+            This pretraining is provided by the torchvision package.
+        device (str, optional): The device where the module will run.
+    &#34;&#34;&#34;
+    self.embedding_size = embedding_size
+    self.concentration = concentration
+    self.shift = shift
+
+    if assignation_thresholds is not None:
+        self.assignation_thresholds = assignation_thresholds
+    else:
+        self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
+
+    super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DLDENet.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, images, annotations=None, initializing=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Forward pass through the network.</p>
+<p>----- Training -----</p>
+<p>In training mode (model.train()) returns the base anchors, the regressions for those anchors
+and the classification probabilities for each anchor.</p>
+<p>While training is mandatory to provide the annotations to keep track of the means for each class'
+direction. As each image could have different amounts of annotations to fit them in only one tensor
+you can fill the 'false' annotations with -1 and so those annotations will be ignored.</p>
+<p>Example: You have 2 images, the first one with only 1 annotation and the second one with 3.
+How could you fit them in only one tensor for the batch? You know that the maximum amount
+of annotations is 3 so you could generate a tensor with shape (2, 3, 5): 2 images, 3 'maximum
+amount of annotations' and 5 values for each annotation. But what are the values for the
+tensors at [0, 1, :] and [0, 2, :]? There are no annotations to provide, so you can fill them
+with -1 to indicate that those are 'false' annotations.</p>
+<p>----- Evaluation -----</p>
+<p>In evaluation mode (calling <code>model.eval()</code>) it applies Non-Maximum Supresion to keep only
+the predictions that do not collide.</p>
+<p>On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+different images could have different amounts of predictions over the threshold so we cannot keep
+all them in a single tensor.
+To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+for each image.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>images</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The batch of images to pass through the network.
+Shape:
+(batch size, channels, height, width)</dd>
+<dt><strong><code>annotations</code></strong> :&ensp;<code>torch.Tensor</code>, optional</dt>
+<dd>The annotations for the batch. Each annotation
+must have x1, y1 (top left corner), x2, y2 (bottom right corner) and label for the class.
+Shape:
+(batch size, maximum annotations length, 5)</dd>
+<dt><strong><code>initializing</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Indicates that the forward pass is to initialize the means of the
+classification submodule.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, images, annotations=None, initializing=False):
+    &#34;&#34;&#34;Forward pass through the network.
+
+    ----- Training -----
+
+    In training mode (model.train()) returns the base anchors, the regressions for those anchors
+    and the classification probabilities for each anchor.
+
+    While training is mandatory to provide the annotations to keep track of the means for each class&#39;
+    direction. As each image could have different amounts of annotations to fit them in only one tensor
+    you can fill the &#39;false&#39; annotations with -1 and so those annotations will be ignored.
+
+    Example: You have 2 images, the first one with only 1 annotation and the second one with 3.
+    How could you fit them in only one tensor for the batch? You know that the maximum amount
+    of annotations is 3 so you could generate a tensor with shape (2, 3, 5): 2 images, 3 &#39;maximum
+    amount of annotations&#39; and 5 values for each annotation. But what are the values for the
+    tensors at [0, 1, :] and [0, 2, :]? There are no annotations to provide, so you can fill them
+    with -1 to indicate that those are &#39;false&#39; annotations.
+
+    ----- Evaluation -----
+
+    In evaluation mode (calling `model.eval()`) it applies Non-Maximum Supresion to keep only
+    the predictions that do not collide.
+
+    On evaluation mode we cannot return only two tensors (bounding boxes and classifications) because
+    different images could have different amounts of predictions over the threshold so we cannot keep
+    all them in a single tensor.
+    To avoid this problem in evaluation mode it returns a sequence of (bounding_boxes, classifications)
+    for each image.
+
+    Arguments:
+        images (torch.Tensor): The batch of images to pass through the network.
+            Shape:
+                (batch size, channels, height, width)
+        annotations (torch.Tensor, optional): The annotations for the batch. Each annotation
+            must have x1, y1 (top left corner), x2, y2 (bottom right corner) and label for the class.
+            Shape:
+                (batch size, maximum annotations length, 5)
+        initializing (bool, optional): Indicates that the forward pass is to initialize the means of the
+            classification submodule.
+    &#34;&#34;&#34;
+    # Get the feature maps for the images
+    feature_maps = self.fpn(images)
+    # Get the base anchors
+    anchors = self.anchors(images)
+
+    if initializing:
+        return self.classification(feature_maps, anchors, annotations, classify=False)
+
+    # Get the probabilities for each class
+    classifications = self.classification(feature_maps, anchors, annotations)
+    # Get the regression values for the images
+    regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
+
+    if self.training:
+        return anchors, regressions, classifications
+    if self.evaluate_loss:
+        return anchors.detach(), regressions.detach(), classifications.detach()
+
+    return self.transform(images, anchors, regressions, classifications)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DLDENet.get_classification_module"><code class="name flex">
+<span>def <span class="ident">get_classification_module</span></span>(<span>self, in_channels, classes, anchors, features)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the directional classification module.</p>
+<p>See <strong>init</strong> method in RetinaNet class for more information.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of channels of the feature map.</dd>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the number of classes to predict.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The number of anchors per location in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of inner features that the conv layers must have.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><a title="torchsight.models.dlde.DirectionalClassification" href="#torchsight.models.dlde.DirectionalClassification"><code>DirectionalClassification</code></a></strong></dt>
+<dd>The module for classification.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_classification_module(self, in_channels, classes, anchors, features):
+    &#34;&#34;&#34;Get the directional classification module.
+
+    See __init__ method in RetinaNet class for more information.
+
+    Arguments:
+        in_channels (int): The number of channels of the feature map.
+        classes (int): Indicates the number of classes to predict.
+        anchors (int, optional): The number of anchors per location in the feature map.
+        features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+    Returns:
+        DirectionalClassification: The module for classification.
+    &#34;&#34;&#34;
+    return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
+                                     anchors=anchors, features=features, classes=classes,
+                                     concentration=self.concentration, shift=self.shift,
+                                     assignation_thresholds=self.assignation_thresholds,
+                                     device=self.device)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DLDENet.load_state_dict"><code class="name flex">
+<span>def <span class="ident">load_state_dict</span></span>(<span>self, state_dict)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Load a given state dict of this model.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>state_dict</code></strong> :&ensp;<code>dict</code></dt>
+<dd>A state dict generated by this model.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_state_dict(self, state_dict):
+    &#34;&#34;&#34;Load a given state dict of this model.
+
+    Arguments:
+        state_dict (dict): A state dict generated by this model.
+    &#34;&#34;&#34;
+    if &#39;classification&#39; not in state_dict:
+        raise ValueError(&#39;The given state dict does not contains &#34;classification&#34; key.&#39;)
+    if &#39;parameters&#39; not in state_dict:
+        raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+
+    super(DLDENet, self).load_state_dict(state_dict[&#39;parameters&#39;])
+    self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DLDENet.state_dict"><code class="name flex">
+<span>def <span class="ident">state_dict</span></span>(<span>self, *args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the state dict of the model.</p>
+<p>Why to override this method? Because we must also save the means of the classifier.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>The dict with the whole state of the model.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def state_dict(self, *args, **kwargs):
+    &#34;&#34;&#34;Get the state dict of the model.
+
+    Why to override this method? Because we must also save the means of the classifier.
+
+    Returns:
+        dict: The dict with the whole state of the model.
+    &#34;&#34;&#34;
+    return {
+        &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
+        &#39;parameters&#39;: super(DLDENet, self).state_dict(*args, **kwargs)
+    }</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DLDENet.to"><code class="name flex">
+<span>def <span class="ident">to</span></span>(<span>self, device)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Move the module to the given device and also notify the classification module to move its
+parameters and attributes to the given device.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
+<dd>The device where to move the module.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def to(self, device):
+    &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
+    parameters and attributes to the given device.
+
+    Arguments:
+        device (str): The device where to move the module.
+    &#34;&#34;&#34;
+    self.device = device
+    self.classification.to(device)
+    return super(DLDENet, self).to(device)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DLDENet.update_means"><code class="name flex">
+<span>def <span class="ident">update_means</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Update the means of the classification submodule.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def update_means(self):
+    &#34;&#34;&#34;Update the means of the classification submodule.&#34;&#34;&#34;
+    return self.classification.update_means()</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.models.retinanet.RetinaNet" href="retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="retinanet.html#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="retinanet.html#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="retinanet.html#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification"><code class="flex name class">
+<span>class <span class="ident">DirectionalClassification</span></span>
+<span>(</span><span><small>ancestors:</small> torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Directional classification module.</p>
+<p>This module takes the features generated by the Feature Pyramid Network and generates
+"embeddings" (normalized vectors for each base anchor) that must point in the same direction
+that its correct label and so it can calculate the probability of being for a given class.</p>
+<p>So, in simple words, we take a picture and project each section of the image to a sphere with
+unit radius. Each section has an embedding, a vector that points in some direction that it is
+in this sphere.</p>
+<p>What we are going to do? We are going to try that embeddings of similar objects (i.e. same class)
+point to the same direction. It would be an error that the embeddings point to the exact same
+direction, we must have a threshold, so we can model this with a Von Mises-Fisher distribution.</p>
+<p>At this point we need a picture, check this and create your mental image:
+<img alt="" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDBP4M7VABT1wGuXccdg707MzyQPTpb5O6D3TUCZFapDBG_jiX"></p>
+<p>So, we want that semantically similar objects points to similar directions, so the direction of the
+embedding contains the semantic of the object without losing much visual detail.</p>
+<p>I was inspired by the following paper:</p>
+<p><em>Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval.</em>
+<a href="https://arxiv.org/abs/1802.09662">Paper in Arxiv</a></p>
+<p>But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+cosine similarity of the embedding with each class' mean, as the softmax always gives a winner
+this won't allow us to identify correctly a background embedding, i.e., a non interesting object
+for the model.</p>
+<p>To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
+-1 and 1 we can adjust the sigmoid to get:</p>
+<p>sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
+f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)</p>
+<p>Where x is the cosine similarity between the embedding and a class' mean, k is the concentration
+parameter and b is the shift parameter. The division is to fit the max value possible to one, and
+as we'll use the shift more near 1 than -1 the minimum is always a number very very near 0.</p>
+<h1 id="how-does-it-work">How does it work</h1>
+<p>Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
+with size d for images of C classes. Assuming that y is the correct label for the image x,
+the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
+parameters of the CNN, means are the mean vectors for each class, k is the concentration
+of the modified sigmoid function and b is the shift.</p>
+<p>The distribution is like a gaussian but projected to an hypersphere.</p>
+<p>It updates the mean vector of each class based on the embeddings that pass through the network.</p>
+<p>How can it update the means?
+Because every time that the embeddings pass through the network we must provide the real annotations
+to update the classes' means with those embeddings. Not a fully update of course, we sum this embeddings
+to the previously seen embeddings and then you can call model.update_means() to normalize those sums
+and set them as the new means for each class.</p>
+<p>Obviously, a correct way to set a more precise mean is to call update_means() after each epoch,
+because it will compute the mean with the average of the class' embeddings.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class DirectionalClassification(nn.Module):
+    &#34;&#34;&#34;Directional classification module.
+
+    This module takes the features generated by the Feature Pyramid Network and generates
+    &#34;embeddings&#34; (normalized vectors for each base anchor) that must point in the same direction
+    that its correct label and so it can calculate the probability of being for a given class.
+
+    So, in simple words, we take a picture and project each section of the image to a sphere with
+    unit radius. Each section has an embedding, a vector that points in some direction that it is
+    in this sphere.
+
+    What we are going to do? We are going to try that embeddings of similar objects (i.e. same class)
+    point to the same direction. It would be an error that the embeddings point to the exact same
+    direction, we must have a threshold, so we can model this with a Von Mises-Fisher distribution.
+
+    At this point we need a picture, check this and create your mental image:
+    ![](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTDBP4M7VABT1wGuXccdg707MzyQPTpb5O6D3TUCZFapDBG_jiX)
+
+    So, we want that semantically similar objects points to similar directions, so the direction of the
+    embedding contains the semantic of the object without losing much visual detail.
+
+    I was inspired by the following paper:
+
+    _Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval._
+    [Paper in Arxiv](https://arxiv.org/abs/1802.09662)
+
+    But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+    cosine similarity of the embedding with each class&#39; mean, as the softmax always gives a winner
+    this won&#39;t allow us to identify correctly a background embedding, i.e., a non interesting object
+    for the model.
+
+    To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
+    -1 and 1 we can adjust the sigmoid to get:
+
+    sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
+    f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)
+
+    Where x is the cosine similarity between the embedding and a class&#39; mean, k is the concentration
+    parameter and b is the shift parameter. The division is to fit the max value possible to one, and
+    as we&#39;ll use the shift more near 1 than -1 the minimum is always a number very very near 0.
+
+    # How does it work
+
+    Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
+    with size d for images of C classes. Assuming that y is the correct label for the image x,
+    the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
+    parameters of the CNN, means are the mean vectors for each class, k is the concentration
+    of the modified sigmoid function and b is the shift.
+
+    The distribution is like a gaussian but projected to an hypersphere.
+
+    It updates the mean vector of each class based on the embeddings that pass through the network.
+
+    How can it update the means?
+    Because every time that the embeddings pass through the network we must provide the real annotations
+    to update the classes&#39; means with those embeddings. Not a fully update of course, we sum this embeddings
+    to the previously seen embeddings and then you can call model.update_means() to normalize those sums
+    and set them as the new means for each class.
+
+    Obviously, a correct way to set a more precise mean is to call update_means() after each epoch,
+    because it will compute the mean with the average of the class&#39; embeddings.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
+                 assignation_thresholds, device=None):
+        &#34;&#34;&#34;Initialize the module.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            embedding_size (int): Length of the embedding vector to generate.
+            anchors (int): Number of anchors per location in the feature map.
+            features (int): Number of features in the conv layers that generates the embedding.
+            classes (int): The number of classes to detect.
+            concentration (int): The concentration parameter for the modified sigmoid.
+            shift (float): The shift value for the modified sigmoid.
+            assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
+                or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        super(DirectionalClassification, self).__init__()
+
+        if &#39;object&#39; not in assignation_thresholds:
+            raise ValueError(&#39;There is no &#34;object&#34; threshold in the assignation threshold dict&#39;)
+        if &#39;background&#39; not in assignation_thresholds:
+            raise ValueError(&#39;There is no &#34;background&#34; threshold in the assignation threshold dict&#39;)
+
+        self.assignation_thresholds = assignation_thresholds
+        self.classes = classes
+        self.concentration = concentration
+        self.shift = shift
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.embedding_size = embedding_size
+
+        # Start the means for the distributions as zero vectors
+        # We can get the mean for the i-th class with self.means[i]
+        self.means = torch.zeros(classes, embedding_size).type(torch.float).to(self.device)
+
+        # We need to keep track of embeddings for each class to update the means. How? The mean could be
+        # calculated by the average of the embeddings of the same class normalized. So it&#39;s the sum of
+        # embeddings that passes through the network and that result normalized to have unit norm.
+        self.embeddings_sums = torch.zeros_like(self.means)
+
+        # Create the encoder
+        self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
+                                 anchors=anchors, features=features).to(self.device)
+
+    def to(self, device):
+        &#34;&#34;&#34;Move the module and the means to the given device.
+
+        Arguments:
+            device (str): The device where to move the module and its attributes.
+        &#34;&#34;&#34;
+        self.device = device
+        self.means = self.means.to(device)
+        self.embeddings_sums = self.embeddings_sums.to(device)
+        return super(DirectionalClassification, self).to(device)
+
+    def modified_sigmoid(self, inputs):
+        &#34;&#34;&#34;Return the modified sigmoid value applied to the given values.
+
+        Arguments:
+            x (torch.Tensor): The tensor with the values to apply the modified function.
+
+        Returns:
+            torch.Tensor: The value for each x that the function returns.
+        &#34;&#34;&#34;
+        def sigmoid(inputs):
+            &#34;&#34;&#34;Original sigmoid.&#34;&#34;&#34;
+            return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
+
+        return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))
+
+    def encode(self, feature_map):
+        &#34;&#34;&#34;Generate the embeddings for the given feature map.
+
+        Arguments:
+            feature_map (torch.Tensor): The feature map to use to generate the embeddings.
+                Shape:
+                    (batch size, number of features, feature map&#39;s height, width)
+
+        Returns:
+            torch.Tensor: The embedding for each anchor for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, embedding size)
+        &#34;&#34;&#34;
+        batch_size = feature_map.shape[0]
+        # Shape (batch size, number of anchors per location * embedding size, height, width)
+        embeddings = self.encoder(feature_map)
+        # Move the embeddings to the last dimension
+        embeddings = embeddings.permute(0, 2, 3, 1).contiguous()
+        # Shape (batch size, number of total anchors, embedding size)
+        embeddings = embeddings.view(batch_size, -1, self.embedding_size)
+        # Normalize the embeddings
+        return embeddings / embeddings.norm(dim=2, keepdim=True)
+
+    def track(self, embeddings, anchors, annotations):
+        &#34;&#34;&#34;Track the embeddings to accumulate the embeddings assigned to the same class.
+
+        Take the embeddings, assign the annotations to each anchor get the assigned anchors
+        to objects and with those embeddings sum to the embeddings_sums according with their
+        assignations to annotations.
+
+        This way we can track all the embeddings per class and then call update_means()
+        to set the new means of the model.
+
+        Also, to avoid conflicts with different amount of annotations per image, this method
+        assumes that there could be *fake annotations* labeled with -1. So if the last value
+        of an annotation is -1 this method does not take that annotation.
+
+        Arguments:
+            embeddings (torch.Tensor): All the embeddings generated for each image in the batch.
+                Shape:
+                    (batch size, number of total anchors, embedding size)
+            anchors (torch.Tensor): The base anchors for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, 4)
+            annotations (torch.Tensor): The ground truth annotations for the images.
+                It assumes that each annotation contains the label in the last value.
+                Shape:
+                    (batch size, number of annotations, 5)
+        &#34;&#34;&#34;
+        with torch.no_grad():
+            # As each image could have different amount of annotations we must iterate and remove false annotations
+            for index, current_annotations in enumerate(annotations):
+                current_anchors = anchors[index]
+                current_embeddings = embeddings[index]
+                # Remove false annotations that have -1 label
+                mask = current_annotations[:, -1] != -1
+                current_annotations = current_annotations[mask]
+                # Get the assigned annotation for each anchor and which anchors are assigned as objects
+                assignations = Anchors.assign(current_anchors, current_annotations,
+                                              thresholds=self.assignation_thresholds)
+                assigned_annotations, objects_mask, *_ = assignations
+                # Track only the assigned to objects embeddings
+                objects_embeddings = current_embeddings[objects_mask]
+                objects_annotations = assigned_annotations[objects_mask]
+                # Iterate over the labels of the annotations, accumulate the embeddings with the same label assigned
+                # and sum them to the embeddings_sum
+                for label in assigned_annotations[:, -1].unique():
+                    mask = objects_annotations[:, -1] == label
+                    self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)
+
+    def classify(self, embeddings):
+        &#34;&#34;&#34;Get the probability for each embedding to below to each class.
+
+        Compute the cosine similarity between each embedding and each class&#39; mean and return
+        the modified sigmoid applied over the similarities to get probabilities.
+
+        Arguments:
+            embeddings (torch.Tensor): All the embeddings generated.
+                Shape:
+                    (batch size, total embeddings per image, embedding size)
+
+        Returns:
+            torch.Tensor: The probabilities for each embedding.
+                Shape:
+                    (batch size, total embeddings, number of classes)
+        &#34;&#34;&#34;
+        similarity = torch.matmul(embeddings, self.means.permute(1, 0))
+        return self.modified_sigmoid(similarity)
+
+    def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
+        &#34;&#34;&#34;Update means and get the probabilities for each embedding to belong to each class.
+
+        It needs the annotations and the anchors to keep track of the mean for each class.
+        If you only want to get the probabilities for each class it does not need the annotations nor anchors.
+
+        Arguments:
+            feature_maps (torch.Tensor): Feature maps generated by the FPN module.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, 4)
+            annotations (torch.Tensor, optional): The annotations of the image. Useful to keep track
+                of the mean for each class. It assumes that each annotation contains the label in the
+                last value.
+                Shape:
+                    (batch size, number of annotations, 5)
+            classify (bool, optional): Indicates if it must return the classification probs.
+
+        Returns:
+            torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+                Shape:
+                    (batch size, feature map&#39;s height * width * number of anchors, classes)
+        &#34;&#34;&#34;
+        embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+
+        if self.training:
+            if anchors is None:
+                raise ValueError(&#39;Training mode: Directional classification cannot train without the base anchors&#39;)
+            if annotations is None:
+                raise ValueError(&#39;Training mode: Directional classification cannot train without the annotations&#39;)
+
+            self.track(embeddings, anchors, annotations)
+
+        # Compute the probabilities
+        if classify:
+            return self.classify(embeddings)
+
+    def update_means(self):
+        &#34;&#34;&#34;Normalize the embeddings_sums and set them as the new means for the module.&#34;&#34;&#34;
+        with torch.no_grad():
+            self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
+
+    def state_dict(self, *args, **kwargs):
+        &#34;&#34;&#34;Get the state dict of the model.
+
+        Why to override this method? Because we must also save the means.
+
+        Returns:
+            dict: The dict with the whole state of the model.
+        &#34;&#34;&#34;
+        return {
+            &#39;means&#39;: self.means,
+            &#39;parameters&#39;: super(DirectionalClassification, self).state_dict(*args, **kwargs)
+        }
+
+    def load_state_dict(self, state_dict):
+        &#34;&#34;&#34;Load a given state dict of this model.
+
+        Arguments:
+            state_dict (dict): A state dict generated by this model.
+        &#34;&#34;&#34;
+        if &#39;means&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;means&#34; key.&#39;)
+        if &#39;parameters&#39; not in state_dict:
+            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+
+        self.means = state_dict[&#39;means&#39;]
+        super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.dlde.DirectionalClassification.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, embedding_size, anchors, features, classes, concentration, shift, assignation_thresholds, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the module.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of channels of the feature map.</dd>
+<dt><strong><code>embedding_size</code></strong> :&ensp;<code>int</code></dt>
+<dd>Length of the embedding vector to generate.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of anchors per location in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of features in the conv layers that generates the embedding.</dd>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of classes to detect.</dd>
+<dt><strong><code>concentration</code></strong> :&ensp;<code>int</code></dt>
+<dd>The concentration parameter for the modified sigmoid.</dd>
+<dt><strong><code>shift</code></strong> :&ensp;<code>float</code></dt>
+<dd>The shift value for the modified sigmoid.</dd>
+<dt><strong><code>assignation_thresholds</code></strong> :&ensp;<code>dict</code></dt>
+<dd>A dict with the thresholds to assign an anchor to an object
+or to background. It must have the keys 'object' and 'background' with float values.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The device where the module will run.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
+             assignation_thresholds, device=None):
+    &#34;&#34;&#34;Initialize the module.
+
+    Arguments:
+        in_channels (int): The number of channels of the feature map.
+        embedding_size (int): Length of the embedding vector to generate.
+        anchors (int): Number of anchors per location in the feature map.
+        features (int): Number of features in the conv layers that generates the embedding.
+        classes (int): The number of classes to detect.
+        concentration (int): The concentration parameter for the modified sigmoid.
+        shift (float): The shift value for the modified sigmoid.
+        assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
+            or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+        device (str, optional): The device where the module will run.
+    &#34;&#34;&#34;
+    super(DirectionalClassification, self).__init__()
+
+    if &#39;object&#39; not in assignation_thresholds:
+        raise ValueError(&#39;There is no &#34;object&#34; threshold in the assignation threshold dict&#39;)
+    if &#39;background&#39; not in assignation_thresholds:
+        raise ValueError(&#39;There is no &#34;background&#34; threshold in the assignation threshold dict&#39;)
+
+    self.assignation_thresholds = assignation_thresholds
+    self.classes = classes
+    self.concentration = concentration
+    self.shift = shift
+    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+    self.embedding_size = embedding_size
+
+    # Start the means for the distributions as zero vectors
+    # We can get the mean for the i-th class with self.means[i]
+    self.means = torch.zeros(classes, embedding_size).type(torch.float).to(self.device)
+
+    # We need to keep track of embeddings for each class to update the means. How? The mean could be
+    # calculated by the average of the embeddings of the same class normalized. So it&#39;s the sum of
+    # embeddings that passes through the network and that result normalized to have unit norm.
+    self.embeddings_sums = torch.zeros_like(self.means)
+
+    # Create the encoder
+    self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
+                             anchors=anchors, features=features).to(self.device)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.classify"><code class="name flex">
+<span>def <span class="ident">classify</span></span>(<span>self, embeddings)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the probability for each embedding to below to each class.</p>
+<p>Compute the cosine similarity between each embedding and each class' mean and return
+the modified sigmoid applied over the similarities to get probabilities.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>embeddings</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>All the embeddings generated.
+Shape:
+(batch size, total embeddings per image, embedding size)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The probabilities for each embedding.
+Shape:
+(batch size, total embeddings, number of classes)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def classify(self, embeddings):
+    &#34;&#34;&#34;Get the probability for each embedding to below to each class.
+
+    Compute the cosine similarity between each embedding and each class&#39; mean and return
+    the modified sigmoid applied over the similarities to get probabilities.
+
+    Arguments:
+        embeddings (torch.Tensor): All the embeddings generated.
+            Shape:
+                (batch size, total embeddings per image, embedding size)
+
+    Returns:
+        torch.Tensor: The probabilities for each embedding.
+            Shape:
+                (batch size, total embeddings, number of classes)
+    &#34;&#34;&#34;
+    similarity = torch.matmul(embeddings, self.means.permute(1, 0))
+    return self.modified_sigmoid(similarity)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.encode"><code class="name flex">
+<span>def <span class="ident">encode</span></span>(<span>self, feature_map)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate the embeddings for the given feature map.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>feature_map</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The feature map to use to generate the embeddings.
+Shape:
+(batch size, number of features, feature map's height, width)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The embedding for each anchor for each location in the feature map.
+Shape:
+(batch size, number of total anchors, embedding size)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def encode(self, feature_map):
+    &#34;&#34;&#34;Generate the embeddings for the given feature map.
+
+    Arguments:
+        feature_map (torch.Tensor): The feature map to use to generate the embeddings.
+            Shape:
+                (batch size, number of features, feature map&#39;s height, width)
+
+    Returns:
+        torch.Tensor: The embedding for each anchor for each location in the feature map.
+            Shape:
+                (batch size, number of total anchors, embedding size)
+    &#34;&#34;&#34;
+    batch_size = feature_map.shape[0]
+    # Shape (batch size, number of anchors per location * embedding size, height, width)
+    embeddings = self.encoder(feature_map)
+    # Move the embeddings to the last dimension
+    embeddings = embeddings.permute(0, 2, 3, 1).contiguous()
+    # Shape (batch size, number of total anchors, embedding size)
+    embeddings = embeddings.view(batch_size, -1, self.embedding_size)
+    # Normalize the embeddings
+    return embeddings / embeddings.norm(dim=2, keepdim=True)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, feature_maps, anchors=None, annotations=None, classify=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Update means and get the probabilities for each embedding to belong to each class.</p>
+<p>It needs the annotations and the anchors to keep track of the mean for each class.
+If you only want to get the probabilities for each class it does not need the annotations nor anchors.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>feature_maps</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Feature maps generated by the FPN module.
+Shape:
+(batch size, channels, height, width)</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The base anchors for each location in the feature map.
+Shape:
+(batch size, number of total anchors, 4)</dd>
+<dt><strong><code>annotations</code></strong> :&ensp;<code>torch.Tensor</code>, optional</dt>
+<dd>The annotations of the image. Useful to keep track
+of the mean for each class. It assumes that each annotation contains the label in the
+last value.
+Shape:
+(batch size, number of annotations, 5)</dd>
+<dt><strong><code>classify</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Indicates if it must return the classification probs.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+Shape:
+(batch size, feature map's height * width * number of anchors, classes)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
+    &#34;&#34;&#34;Update means and get the probabilities for each embedding to belong to each class.
+
+    It needs the annotations and the anchors to keep track of the mean for each class.
+    If you only want to get the probabilities for each class it does not need the annotations nor anchors.
+
+    Arguments:
+        feature_maps (torch.Tensor): Feature maps generated by the FPN module.
+            Shape:
+                (batch size, channels, height, width)
+        anchors (torch.Tensor): The base anchors for each location in the feature map.
+            Shape:
+                (batch size, number of total anchors, 4)
+        annotations (torch.Tensor, optional): The annotations of the image. Useful to keep track
+            of the mean for each class. It assumes that each annotation contains the label in the
+            last value.
+            Shape:
+                (batch size, number of annotations, 5)
+        classify (bool, optional): Indicates if it must return the classification probs.
+
+    Returns:
+        torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+            Shape:
+                (batch size, feature map&#39;s height * width * number of anchors, classes)
+    &#34;&#34;&#34;
+    embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+
+    if self.training:
+        if anchors is None:
+            raise ValueError(&#39;Training mode: Directional classification cannot train without the base anchors&#39;)
+        if annotations is None:
+            raise ValueError(&#39;Training mode: Directional classification cannot train without the annotations&#39;)
+
+        self.track(embeddings, anchors, annotations)
+
+    # Compute the probabilities
+    if classify:
+        return self.classify(embeddings)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.load_state_dict"><code class="name flex">
+<span>def <span class="ident">load_state_dict</span></span>(<span>self, state_dict)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Load a given state dict of this model.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>state_dict</code></strong> :&ensp;<code>dict</code></dt>
+<dd>A state dict generated by this model.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_state_dict(self, state_dict):
+    &#34;&#34;&#34;Load a given state dict of this model.
+
+    Arguments:
+        state_dict (dict): A state dict generated by this model.
+    &#34;&#34;&#34;
+    if &#39;means&#39; not in state_dict:
+        raise ValueError(&#39;The given state dict does not contains &#34;means&#34; key.&#39;)
+    if &#39;parameters&#39; not in state_dict:
+        raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+
+    self.means = state_dict[&#39;means&#39;]
+    super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.modified_sigmoid"><code class="name flex">
+<span>def <span class="ident">modified_sigmoid</span></span>(<span>self, inputs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Return the modified sigmoid value applied to the given values.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>x</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The tensor with the values to apply the modified function.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The value for each x that the function returns.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def modified_sigmoid(self, inputs):
+    &#34;&#34;&#34;Return the modified sigmoid value applied to the given values.
+
+    Arguments:
+        x (torch.Tensor): The tensor with the values to apply the modified function.
+
+    Returns:
+        torch.Tensor: The value for each x that the function returns.
+    &#34;&#34;&#34;
+    def sigmoid(inputs):
+        &#34;&#34;&#34;Original sigmoid.&#34;&#34;&#34;
+        return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
+
+    return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.state_dict"><code class="name flex">
+<span>def <span class="ident">state_dict</span></span>(<span>self, *args, **kwargs)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the state dict of the model.</p>
+<p>Why to override this method? Because we must also save the means.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>The dict with the whole state of the model.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def state_dict(self, *args, **kwargs):
+    &#34;&#34;&#34;Get the state dict of the model.
+
+    Why to override this method? Because we must also save the means.
+
+    Returns:
+        dict: The dict with the whole state of the model.
+    &#34;&#34;&#34;
+    return {
+        &#39;means&#39;: self.means,
+        &#39;parameters&#39;: super(DirectionalClassification, self).state_dict(*args, **kwargs)
+    }</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.to"><code class="name flex">
+<span>def <span class="ident">to</span></span>(<span>self, device)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Move the module and the means to the given device.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
+<dd>The device where to move the module and its attributes.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def to(self, device):
+    &#34;&#34;&#34;Move the module and the means to the given device.
+
+    Arguments:
+        device (str): The device where to move the module and its attributes.
+    &#34;&#34;&#34;
+    self.device = device
+    self.means = self.means.to(device)
+    self.embeddings_sums = self.embeddings_sums.to(device)
+    return super(DirectionalClassification, self).to(device)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.track"><code class="name flex">
+<span>def <span class="ident">track</span></span>(<span>self, embeddings, anchors, annotations)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Track the embeddings to accumulate the embeddings assigned to the same class.</p>
+<p>Take the embeddings, assign the annotations to each anchor get the assigned anchors
+to objects and with those embeddings sum to the embeddings_sums according with their
+assignations to annotations.</p>
+<p>This way we can track all the embeddings per class and then call update_means()
+to set the new means of the model.</p>
+<p>Also, to avoid conflicts with different amount of annotations per image, this method
+assumes that there could be <em>fake annotations</em> labeled with -1. So if the last value
+of an annotation is -1 this method does not take that annotation.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>embeddings</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>All the embeddings generated for each image in the batch.
+Shape:
+(batch size, number of total anchors, embedding size)</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The base anchors for each location in the feature map.
+Shape:
+(batch size, number of total anchors, 4)</dd>
+<dt><strong><code>annotations</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The ground truth annotations for the images.
+It assumes that each annotation contains the label in the last value.
+Shape:
+(batch size, number of annotations, 5)</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def track(self, embeddings, anchors, annotations):
+    &#34;&#34;&#34;Track the embeddings to accumulate the embeddings assigned to the same class.
+
+    Take the embeddings, assign the annotations to each anchor get the assigned anchors
+    to objects and with those embeddings sum to the embeddings_sums according with their
+    assignations to annotations.
+
+    This way we can track all the embeddings per class and then call update_means()
+    to set the new means of the model.
+
+    Also, to avoid conflicts with different amount of annotations per image, this method
+    assumes that there could be *fake annotations* labeled with -1. So if the last value
+    of an annotation is -1 this method does not take that annotation.
+
+    Arguments:
+        embeddings (torch.Tensor): All the embeddings generated for each image in the batch.
+            Shape:
+                (batch size, number of total anchors, embedding size)
+        anchors (torch.Tensor): The base anchors for each location in the feature map.
+            Shape:
+                (batch size, number of total anchors, 4)
+        annotations (torch.Tensor): The ground truth annotations for the images.
+            It assumes that each annotation contains the label in the last value.
+            Shape:
+                (batch size, number of annotations, 5)
+    &#34;&#34;&#34;
+    with torch.no_grad():
+        # As each image could have different amount of annotations we must iterate and remove false annotations
+        for index, current_annotations in enumerate(annotations):
+            current_anchors = anchors[index]
+            current_embeddings = embeddings[index]
+            # Remove false annotations that have -1 label
+            mask = current_annotations[:, -1] != -1
+            current_annotations = current_annotations[mask]
+            # Get the assigned annotation for each anchor and which anchors are assigned as objects
+            assignations = Anchors.assign(current_anchors, current_annotations,
+                                          thresholds=self.assignation_thresholds)
+            assigned_annotations, objects_mask, *_ = assignations
+            # Track only the assigned to objects embeddings
+            objects_embeddings = current_embeddings[objects_mask]
+            objects_annotations = assigned_annotations[objects_mask]
+            # Iterate over the labels of the annotations, accumulate the embeddings with the same label assigned
+            # and sum them to the embeddings_sum
+            for label in assigned_annotations[:, -1].unique():
+                mask = objects_annotations[:, -1] == label
+                self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.DirectionalClassification.update_means"><code class="name flex">
+<span>def <span class="ident">update_means</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Normalize the embeddings_sums and set them as the new means for the module.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def update_means(self):
+    &#34;&#34;&#34;Normalize the embeddings_sums and set them as the new means for the module.&#34;&#34;&#34;
+    with torch.no_grad():
+        self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.models" href="index.html">torchsight.models</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.models.dlde.DLDENet" href="#torchsight.models.dlde.DLDENet">DLDENet</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.dlde.DLDENet.__init__" href="#torchsight.models.dlde.DLDENet.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.dlde.DLDENet.forward" href="#torchsight.models.dlde.DLDENet.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.dlde.DLDENet.get_classification_module" href="#torchsight.models.dlde.DLDENet.get_classification_module">get_classification_module</a></code></li>
+<li><code><a title="torchsight.models.dlde.DLDENet.load_state_dict" href="#torchsight.models.dlde.DLDENet.load_state_dict">load_state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.DLDENet.state_dict" href="#torchsight.models.dlde.DLDENet.state_dict">state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.DLDENet.to" href="#torchsight.models.dlde.DLDENet.to">to</a></code></li>
+<li><code><a title="torchsight.models.dlde.DLDENet.update_means" href="#torchsight.models.dlde.DLDENet.update_means">update_means</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchsight.models.dlde.DirectionalClassification" href="#torchsight.models.dlde.DirectionalClassification">DirectionalClassification</a></code></h4>
+<ul class="two-column">
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.__init__" href="#torchsight.models.dlde.DirectionalClassification.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.classify" href="#torchsight.models.dlde.DirectionalClassification.classify">classify</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.encode" href="#torchsight.models.dlde.DirectionalClassification.encode">encode</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.forward" href="#torchsight.models.dlde.DirectionalClassification.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.load_state_dict" href="#torchsight.models.dlde.DirectionalClassification.load_state_dict">load_state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.modified_sigmoid" href="#torchsight.models.dlde.DirectionalClassification.modified_sigmoid">modified_sigmoid</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.state_dict" href="#torchsight.models.dlde.DirectionalClassification.state_dict">state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.to" href="#torchsight.models.dlde.DirectionalClassification.to">to</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.track" href="#torchsight.models.dlde.DirectionalClassification.track">track</a></code></li>
+<li><code><a title="torchsight.models.dlde.DirectionalClassification.update_means" href="#torchsight.models.dlde.DirectionalClassification.update_means">update_means</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
