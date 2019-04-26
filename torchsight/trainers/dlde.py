@@ -4,6 +4,7 @@ import time
 import torch
 
 from ..models import DLDENet
+from ..optimizers import AdaBound
 from .retinanet import RetinaNetTrainer
 
 
@@ -58,9 +59,16 @@ class DLDENetTrainer(RetinaNetTrainer):
             'num_workers': 8
         },
         'optimizer': {
-            'learning_rate': 1e-2,
-            'momentum': 0.9,
-            'weight_decay': 1e-4
+            'use': 'adabound',  # Which optimizer the trainer must use
+            'adabound': {
+                'lr': 1e-3,  # Learning rate
+                'final_lr': 0.1  # When the optimizer must change from Adam to SGD
+            },
+            'sgd': {
+                'lr': 1e-2,
+                'momentum': 0.9,
+                'weight_decay': 1e-4
+            }
         },
         'scheduler': {
             'factor': 0.1,
@@ -97,6 +105,36 @@ class DLDENetTrainer(RetinaNetTrainer):
             pretrained=hyperparameters['pretrained'],
             device=self.device
         )
+
+    def get_optimizer(self):
+        """Returns the optimizer for the training.
+
+        The extended RetinaNetTrainer only has SGD as an optimizer, this trainer also
+        includes the [AdaBound optimizer](https://github.com/Luolc/AdaBound) that it's
+        supposed to be as fast as Adam and as good as SGD.
+
+        You can provide the optimizer that you want to use in the 'optimizer' hyperparameter
+        changing the 'use' parameter and providing the name of the one that
+        you want to use.
+
+        Returns:
+            AdaBound: The adabound optimizer for the training.
+        """
+        params = self.hyperparameters['optimizer']
+        optimizer = params['use'].lower()
+
+        if optimizer == 'adabound':
+            params = params['adabound']
+            return AdaBound(self.model.parameters(), lr=params['lr'], final_lr=params['final_lr'])
+
+        if optimizer == 'sgd':
+            params = params['sgd']
+            return torch.optim.SGD(self.model.parameters(),
+                                   lr=params['lr'],
+                                   momentum=params['momentum'],
+                                   weight_decay=params['weight_decay'])
+
+        raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
 
     def forward(self, images, annotations):
         """Forward pass through the network during training."""

@@ -16,11 +16,12 @@ def train():
     parser.add_argument('root', help='Root directory of the COCO dataset (cocoapi).')
     parser.add_argument('-b', '--batch-size', help='Batch size', default=8)
     parser.add_argument('--resnet', help='ResNet backbone to use.', default=18)
-    parser.add_argument('-l', '--logs-dir', help='Directory where to save the logs and checkpoints.',
+    parser.add_argument('--logs-dir', help='Directory where to save the logs and checkpoints.',
                         default='./logs')
-    parser.add_argument('-lr', '--learning-rate', help='Set the initial learning rate for the model.', default=0.01)
     parser.add_argument('-c', '--checkpoint', help='Absolute path to the checkpoint to continue an old training')
     parser.add_argument('--device', help='The device to use in the training.')
+    parser.add_argument('--optimizer', default='adabound',
+                        help='Indicate the optimizer for the DLDENet. Could be adabound or sgd. Default: adabound')
 
     args = parser.parse_args()
 
@@ -28,8 +29,7 @@ def train():
     n_classes = len(classes) if classes else 80  # With an empty sequence it loads all the classes
 
     common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes},
-                              'dataloaders': {'batch_size': int(args.batch_size)},
-                              'optimizer': {'learning_rate': float(args.learning_rate)}}
+                              'dataloaders': {'batch_size': int(args.batch_size)}}
 
     if args.model.lower() == 'retinanet':
         RetinaNetTrainer(
@@ -51,6 +51,7 @@ def train():
                     'resnet': int(args.resnet),
                     'classes': n_classes
                 },
+                'optimizer': {'use': args.optimizer},
                 **common_hyperparameters
             },
             logs_dir=args.logs_dir,
