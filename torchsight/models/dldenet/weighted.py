@@ -54,6 +54,9 @@ class ClassificationModule(nn.Module):
 
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size, anchors=anchors, features=features)
 
+        # Keep track of the generated embeddings, they are populated with the forward method
+        self.embeddings = None
+
         self.sigmoid = nn.Sigmoid()
         self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
         self.reset_weights()
@@ -83,7 +86,10 @@ class ClassificationModule(nn.Module):
         # Shape (batch size, number of total anchors, embedding size)
         embeddings = embeddings.view(batch_size, -1, self.embedding_size)
 
-        return embeddings if not self.normalize else embeddings / embeddings.norm(dim=2, keepdim=True)
+        if self.normalize:
+            embeddings /= embeddings.norm(dim=2, keepdim=True)
+
+        return embeddings
 
     def classify(self, embeddings):
         """Get the probability for each embedding to below to each class.
@@ -117,8 +123,8 @@ class ClassificationModule(nn.Module):
                 Shape:
                     (batch size, feature map's height * width * number of anchors, classes)
         """
-        embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
-        return self.classify(embeddings)
+        self.embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+        return self.classify(self.embeddings)
 
 
 class DLDENet(RetinaNet):
