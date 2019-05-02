@@ -1,4 +1,6 @@
-"""Deep Local Directional Embedding (DLDE) module.
+"""First version of the DLDENet with tracked means.
+
+Deep Local Directional Embedding (DLDE) module.
 
 This net is based on the RetinaNet architecture but provides a different submodule
 for classification and additional methods.
@@ -6,8 +8,8 @@ for classification and additional methods.
 import torch
 from torch import nn
 
-from .retinanet import RetinaNet, SubModule
-from .anchors import Anchors
+from ..retinanet import RetinaNet, SubModule
+from ..anchors import Anchors
 
 
 class DirectionalClassification(nn.Module):
@@ -303,7 +305,7 @@ class DirectionalClassification(nn.Module):
         super(DirectionalClassification, self).load_state_dict(state_dict['parameters'])
 
 
-class DLDENet(RetinaNet):
+class DLDENetWithTrackedMeans(RetinaNet):
     """Deep Local Directional Embeddings Net.
 
     Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
