@@ -65,6 +65,36 @@ class TestFocalLoss(unittest.TestCase):
         self.assertGreater(1, float(loss))
         self.assertLess(0, float(loss))
 
+    def test_correct_assignation(self):
+        """Test that the loss assigns the correct annotation and set the correct weight to the correct embedding."""
+        annotations = torch.Tensor([[0., 0., 100., 100., 3.],
+                                    [150., 150., 350., 350., 2.],
+                                    [400., 400., 450., 450., 1.]])
+        anchors = annotations[:, :-1].clone()  # Same as annotations to have one anchor per annotation
+        embedding_size = 256
+        n_anchors = anchors.shape[0]
+        n_classes = 4
+        embeddings = torch.rand((n_anchors, embedding_size))
+        weights = torch.rand((embedding_size, n_classes))
+        # Assign the same embedding to the corresponding weight by its label in the annotation
+        weights[:, 1] = embeddings[2, :]
+        weights[:, 2] = embeddings[1, :]
+        weights[:, 3] = embeddings[0, :]
+
+        loss = self.loss(anchors.unsqueeze(dim=0), embeddings.unsqueeze(dim=0), weights, annotations.unsqueeze(dim=0))
+
+        self.assertAlmostEqual(0., float(loss), places=5)
+
+        # And now change the weights to another class and we must have a bigger loss
+        weights[:, 1] = embeddings[0, :]
+        weights[:, 2] = embeddings[2, :]
+        weights[:, 3] = embeddings[1, :]
+
+        bigger_loss = self.loss(anchors.unsqueeze(dim=0), embeddings.unsqueeze(dim=0),
+                                weights, annotations.unsqueeze(dim=0))
+
+        self.assertGreater(bigger_loss, loss)
+
 
 if __name__ == '__main__':
     unittest.main()
