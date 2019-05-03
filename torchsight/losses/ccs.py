@@ -20,11 +20,11 @@ class CCSLoss(nn.Module):
     It will apply this loss term only to those embeddings that are assigned to an object.
     """
 
-    def __init__(self, iou_thresholds, device=None):
+    def __init__(self, iou_thresholds=None, device=None):
         """Initialize the loss.
 
         Arguments:
-            iou_thresholds (dict): Indicates the thresholds to assign an anchor as background or object.
+            iou_thresholds (dict, optional): Indicates the thresholds to assign an anchor as background or object.
             device (str, optional): Indicates the device where to run the loss.
         """
         super().__init__()
@@ -92,10 +92,25 @@ class CCSLoss(nn.Module):
             # We must compute the cosine similarity between each embedding and its corresponding weight vector of its
             # assigned annotation. So we can do this by a single matrix multiplication between all the selected anchors
             # as objects embeddings and their corresponding vectors.
-            embeddings = embeddings[selected_anchors_objects]  # Shape (selected embeddings, embedding size)
-            weights = weights[:, assigned_annotations[selected_anchors_objects, -1].long()]  # Shape (embedding size,)
+            # Shape (selected embeddings, embedding size)
+            embeddings = embeddings[selected_anchors_objects]
+            # Shape (embedding size, number of selected embeddings)
+            weights = weights[:, assigned_annotations[selected_anchors_objects, -1].long()]
 
-            loss = torch.matmul(embeddings, weights)  # Shape (selected embeddings,)
+            # We need to do a batch matrix multiplication with shape:
+            # (number of selected anchors, 1, embedding size) * (number of selected anchors, embedding size, 1)
+
+            # Reshape the embeddings to have shape (number of selected embeddings, 1, embedding size)
+            embeddings = embeddings.unsqueeze(dim=1)
+            # Reshape the weights to have shape (number of selected embeddings, embedding size, 1)
+            weights = weights.t().unsqueeze(dim=2)
+
+            loss = -1 * torch.matmul(embeddings, weights).view(-1)  # Shape (selected embeddings,)
+            loss /= embeddings.squeeze(dim=1).norm(dim=1)  # Normalize by the embeddings' norms
+            loss /= weights.squeeze(dim=2).norm(dim=1)  # Normalize by the weights' norms
+            # Add one to have a minimum loss of zero (because cosine similarity ranges from -1 to 1) and normalize
+            # the value between 0 and 1 to have a more meaningfull loss
+            loss = (loss + 1) / 2
             losses.append(loss.mean())
 
         return torch.stack(losses).mean()
