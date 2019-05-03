@@ -6,7 +6,8 @@ visit the original class definition.
 """
 import argparse
 
-from torchsight.trainers import DLDENetTrainer, RetinaNetTrainer
+from torchsight.trainers import (DLDENetWithTrackedMeansTrainer,
+                                 RetinaNetTrainer)
 
 
 def train():
@@ -25,36 +26,27 @@ def train():
 
     args = parser.parse_args()
 
-    classes = ()
+    classes = ('toaster',)
     n_classes = len(classes) if classes else 80  # With an empty sequence it loads all the classes
 
-    common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes},
-                              'dataloaders': {'batch_size': int(args.batch_size)}}
+    common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes, 'train': 'val2017'},
+                              'dataloaders': {'batch_size': int(args.batch_size)},
+                              'model': {'resnet': int(args.resnet), 'classes': n_classes},
+                              'logger': {'dir': args.logs_dir},
+                              'checkpoint': {'dir': args.logs_dir}}
 
     if args.model.lower() == 'retinanet':
         RetinaNetTrainer(
-            hyperparameters={
-                'RetinaNet': {
-                    'resnet': int(args.resnet),
-                    'classes': n_classes
-                },
-                **common_hyperparameters
-            },
-            logs_dir=args.logs_dir,
+            hyperparameters=common_hyperparameters,
             checkpoint=args.checkpoint,
             device=args.device
         ).train()
-    if args.model.lower() == 'dldenet':
-        DLDENetTrainer(
+    if args.model.lower() == 'dldenetwithtrackedmeans':
+        DLDENetWithTrackedMeansTrainer(
             hyperparameters={
-                'DLDENet': {
-                    'resnet': int(args.resnet),
-                    'classes': n_classes
-                },
                 'optimizer': {'use': args.optimizer},
                 **common_hyperparameters
             },
-            logs_dir=args.logs_dir,
             checkpoint=args.checkpoint,
             device=args.device
         ).train()

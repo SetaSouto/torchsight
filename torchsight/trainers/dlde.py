@@ -3,23 +3,21 @@ import time
 
 import torch
 
-from ..models import DLDENet
+from ..models import DLDENetWithTrackedMeans
 from ..optimizers import AdaBound
 from .retinanet import RetinaNetTrainer
 
 
-class DLDENetTrainer(RetinaNetTrainer):
-    """Deep Local Directional Embedding trainer.
+class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
+    """Deep Local Directional Embedding with tracked means trainer.
 
     As the architecture is very similar with RetinaNet we use the same trainer and only
     override some attributes and methods. For more information please read the RetinaNet
     trainer documentation.
     """
-
-    # Base hyperparameters, can be replaced in the initialization of the trainer:
-    # >>> RetinaNetTrainer(hyperparameters={'RetinaNet': {'classes': 1}})
+    # Base hyperparameters, can be replaced in the initialization of the trainer
     hyperparameters = {
-        'DLDENet': {
+        'model': {
             'classes': 80,
             'resnet': 18,
             'features': {
@@ -40,7 +38,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'pretrained': True,
             'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5}
         },
-        'FocalLoss': {
+        'criterion': {
             'alpha': 0.25,
             'gamma': 2.0,
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
@@ -88,13 +86,10 @@ class DLDENetTrainer(RetinaNetTrainer):
         }
     }
 
-    def get_model_hyperparameters(self):
-        return self.hyperparameters['DLDENet']
-
     def get_model(self):
         """Initialize and get a DLDENet model instance."""
-        hyperparameters = self.get_model_hyperparameters()
-        return DLDENet(
+        hyperparameters = self.hyperparameters['model']
+        return DLDENetWithTrackedMeans(
             classes=hyperparameters['classes'],
             resnet=hyperparameters['resnet'],
             features=hyperparameters['features'],
@@ -136,9 +131,32 @@ class DLDENetTrainer(RetinaNetTrainer):
 
         raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
 
-    def forward(self, images, annotations):
-        """Forward pass through the network during training."""
-        return self.model(images, annotations)
+    def forward(self, *args):
+        """Forward pass through the network and loss computation.
+
+        Returns:
+            torch.Tensor: The loss of the batch.
+        """
+        images, annotations, *_ = args
+        images, annotations = images.to(self.device), annotations.to(self.device)
+
+        anchors, regressions, classifications = self.model(images, annotations)
+        del images
+
+        classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+        del anchors, regressions, classifications, annotations
+
+        weights = self.hyperparameters['criterion']['weights']
+        classification_loss *= weights['classification']
+        regression_loss *= weights['regression']
+
+        loss = classification_loss + regression_loss
+
+        # Log the classification and regression loss too:
+        self.current_log['Class.'] = float(classification_loss)
+        self.current_log['Regr.'] = float(regression_loss)
+
+        return loss
 
     def train(self, epochs=100, validate=True):
         """Train the model for the given epochs.
@@ -154,7 +172,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.model.train()
         n_batches = len(self.dataloader)
 
-        if self.checkpoint_epoch == 0:
+        if self.checkpoint is None:
             # Initialize the means of the classes
             with torch.no_grad():
                 start = time.time()
@@ -166,10 +184,15 @@ class DLDENetTrainer(RetinaNetTrainer):
                 self.model.update_means()
                 print('[Initializing] Means updated.')
             # Save the means as checkpoint in the epoch 0
-            self.save_checkpoint(0)
+            self.save(0)
 
-        def callback(epoch):
-            print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
-            self.model.update_means()
+        super().train(epochs, validate)
 
-        super(DLDENetTrainer, self).train(epochs, validate, callback)
+    def epoch_callback(self, epoch):
+        """Update the means after each epoch.
+
+        Arguments:
+            epoch (int): The number of the epoch.
+        """
+        print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
+        self.model.update_means()

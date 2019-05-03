@@ -339,7 +339,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         else:
             self.assignation_thresholds = {'object': 0.5, 'background': 0.4}
 
-        super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)
+        super().__init__(classes, resnet, features, anchors, pretrained, device)
 
     def to(self, device):
         """Move the module to the given device and also notify the classification module to move its
@@ -350,7 +350,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         """
         self.device = device
         self.classification.to(device)
-        return super(DLDENet, self).to(device)
+        return super().to(device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         """Get the directional classification module.
@@ -447,7 +447,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         """
         return {
             'classification': self.classification.state_dict(*args, **kwargs),
-            'parameters': super(DLDENet, self).state_dict(*args, **kwargs)
+            'parameters': super().state_dict(*args, **kwargs)
         }
 
     def load_state_dict(self, state_dict):
@@ -461,5 +461,5 @@ class DLDENetWithTrackedMeans(RetinaNet):
         if 'parameters' not in state_dict:
             raise ValueError('The given state dict does not contains "parameters" key.')
 
-        super(DLDENet, self).load_state_dict(state_dict['parameters'])
+        super().load_state_dict(state_dict['parameters'])
         self.classification.load_state_dict(state_dict['classification'])
