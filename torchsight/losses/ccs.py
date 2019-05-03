@@ -62,7 +62,7 @@ class CCSLoss(nn.Module):
             torch.Tensor: The mean CSS loss.
         """
         # We want to use the weights but not backprop over they, we want to backprop over the embeddings
-        weights = weights.detach()
+        original_weights = weights.detach()
 
         batch_anchors = anchors
         batch_embeddings = embeddings
@@ -73,6 +73,7 @@ class CCSLoss(nn.Module):
         for i, anchors in enumerate(batch_anchors):
             embeddings = batch_embeddings[i]
             annotations = batch_annotations[i]
+            weights = original_weights.clone()
 
             # Keep only the real labels
             annotations = annotations[annotations[:, -1] != -1]
@@ -88,6 +89,11 @@ class CCSLoss(nn.Module):
             # Get the masks to select the anchors assigned to an object (IoU bigger than iou_object threshold)
             assignations = Anchors.assign(anchors, annotations, thresholds=self.iou_thresholds)
             assigned_annotations, selected_anchors_objects, *_ = assignations
+
+            # Continue with the next image if there are no selected objects
+            if selected_anchors_objects.sum() == 0:
+                losses.append(torch.zeros(1).mean().to(self.device))
+                continue
 
             # We must compute the cosine similarity between each embedding and its corresponding weight vector of its
             # assigned annotation. So we can do this by a single matrix multiplication between all the selected anchors
@@ -105,6 +111,7 @@ class CCSLoss(nn.Module):
             # Reshape the weights to have shape (number of selected embeddings, embedding size, 1)
             weights = weights.t().unsqueeze(dim=2)
 
+            # Compute the loss
             loss = -1 * torch.matmul(embeddings, weights).view(-1)  # Shape (selected embeddings,)
             loss /= embeddings.squeeze(dim=1).norm(dim=1)  # Normalize by the embeddings' norms
             loss /= weights.squeeze(dim=2).norm(dim=1)  # Normalize by the weights' norms

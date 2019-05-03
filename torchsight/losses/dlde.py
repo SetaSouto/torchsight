@@ -65,6 +65,6 @@ class DLDENetLoss(nn.Module):
             tuple: A tuple with the tensors with the classification, regression and cosine similarity losses.
         """
         classification, regression = self.focal(anchors, regressions, classifications, annotations)
-        similarity = self.ccs(anchors, model.embeddings, model.weights, annotations)
+        similarity = self.ccs(anchors, model.classification.embeddings, model.classification.weights, annotations)
 
         return classification, regression, similarity

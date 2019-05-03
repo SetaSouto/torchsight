@@ -6,7 +6,8 @@ visit the original class definition.
 """
 import argparse
 
-from torchsight.trainers import (DLDENetWithTrackedMeansTrainer,
+from torchsight.trainers import (DLDENetTrainer,
+                                 DLDENetWithTrackedMeansTrainer,
                                  RetinaNetTrainer)
 
 
@@ -26,10 +27,10 @@ def train():
 
     args = parser.parse_args()
 
-    classes = ('toaster',)
+    classes = ()
     n_classes = len(classes) if classes else 80  # With an empty sequence it loads all the classes
 
-    common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes, 'train': 'val2017'},
+    common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes},
                               'dataloaders': {'batch_size': int(args.batch_size)},
                               'model': {'resnet': int(args.resnet), 'classes': n_classes},
                               'logger': {'dir': args.logs_dir},
@@ -41,12 +42,17 @@ def train():
             checkpoint=args.checkpoint,
             device=args.device
         ).train()
-    if args.model.lower() == 'dldenetwithtrackedmeans':
+    elif args.model.lower() == 'dldenetwithtrackedmeans':
         DLDENetWithTrackedMeansTrainer(
-            hyperparameters={
-                'optimizer': {'use': args.optimizer},
-                **common_hyperparameters
-            },
+            hyperparameters={'optimizer': {'use': args.optimizer},
+                             **common_hyperparameters},
+            checkpoint=args.checkpoint,
+            device=args.device
+        ).train()
+    elif args.model.lower() == 'dldenet':
+        DLDENetTrainer(
+            hyperparameters={'optimizer': {'use': args.optimizer},
+                             **common_hyperparameters},
             checkpoint=args.checkpoint,
             device=args.device
         ).train()

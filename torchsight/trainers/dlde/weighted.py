@@ -1,14 +1,15 @@
-"""DLDENet trainer"""
+"""DLDENet trainer for the weighted version."""
 import time
 
 import torch
 
-from ..models import DLDENetWithTrackedMeans
-from ..optimizers import AdaBound
-from .retinanet import RetinaNetTrainer
+from torchsight.models import DLDENet
+from torchsight.optimizers import AdaBound
+from torchsight.losses import DLDENetLoss
+from ..retinanet import RetinaNetTrainer
 
 
-class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
+class DLDENetTrainer(RetinaNetTrainer):
     """Deep Local Directional Embedding with tracked means trainer.
 
     As the architecture is very similar with RetinaNet we use the same trainer and only
@@ -31,19 +32,16 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
                 'ratios': [0.5, 1, 2]
             },
             'embedding_size': 256,
-            'concentration': 15,
-            'shift': 0.8,
-            # Keep in mind that this thresholds must be the same as in the FocalLoss
-            'assignation_thresholds': {'object': 0.5, 'background': 0.4},
             'pretrained': True,
             'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5}
         },
         'criterion': {
             'alpha': 0.25,
             'gamma': 2.0,
+            'sigma': 3.0,
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
             # Weight of each loss. See train method.
-            'weights': {'classification': 1e3, 'regression': 1}
+            'weights': {'classification': 1e3, 'regression': 1, 'similarity': 10}
         },
         'datasets': {
             'root': './datasets/coco',
@@ -86,17 +84,19 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         }
     }
 
+    ####################################
+    ###           GETTERS            ###
+    ####################################
+
     def get_model(self):
         """Initialize and get a DLDENet model instance."""
         hyperparameters = self.hyperparameters['model']
-        return DLDENetWithTrackedMeans(
+        return DLDENet(
             classes=hyperparameters['classes'],
             resnet=hyperparameters['resnet'],
             features=hyperparameters['features'],
             anchors=hyperparameters['anchors'],
             embedding_size=hyperparameters['embedding_size'],
-            concentration=hyperparameters['concentration'],
-            assignation_thresholds=hyperparameters['assignation_thresholds'],
             pretrained=hyperparameters['pretrained'],
             device=self.device
         )
@@ -131,6 +131,26 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
 
         raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
 
+    def get_criterion(self):
+        """Get the criterion to use to train the model.
+
+        Returns:
+            DLDENetLoss: The unified loss between FocalLoss and Cosine similarity Loss.
+        """
+        params = self.hyperparameters['criterion']
+
+        return DLDENetLoss(
+            alpha=params['alpha'],
+            gamma=params['gamma'],
+            sigma=params['sigma'],
+            iou_thresholds=params['iou_thresholds'],
+            device=self.device
+        )
+
+    ####################################
+    ###           METHODS            ###
+    ####################################
+
     def forward(self, *args):
         """Forward pass through the network and loss computation.
 
@@ -140,59 +160,25 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         images, annotations, *_ = args
         images, annotations = images.to(self.device), annotations.to(self.device)
 
-        anchors, regressions, classifications = self.model(images, annotations)
+        anchors, regressions, classifications = self.model(images)
         del images
 
-        classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+        losses = self.criterion(anchors, regressions, classifications, annotations, self.model)
         del anchors, regressions, classifications, annotations
 
-        weights = self.hyperparameters['criterion']['weights']
-        classification_loss *= weights['classification']
-        regression_loss *= weights['regression']
+        classification, regression, similarity = losses
 
-        loss = classification_loss + regression_loss
+        # Amplify the losses according to the criterion weights
+        weights = self.hyperparameters['criterion']['weights']
+        classification *= weights['classification']
+        regression *= weights['regression']
+        similarity *= weights['similarity']
+
+        loss = classification + regression + similarity
 
         # Log the classification and regression loss too:
-        self.current_log['Class.'] = float(classification_loss)
-        self.current_log['Regr.'] = float(regression_loss)
+        self.current_log['Class.'] = '{:.4f}'.format(float(classification))
+        self.current_log['Regr.'] = '{:.4f}'.format(float(regression))
+        self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
 
         return loss
-
-    def train(self, epochs=100, validate=True):
-        """Train the model for the given epochs.
-
-        If there is no checkpoint (i.e. checkpoint_epoch == 0) before training we make a loop over the training
-        dataset to initialize the means with the random generated embeddings.
-
-        Arguments:
-            epochs (int): The number of epochs to train.
-            validate (bool): If true it validates the model after each epoch using the validate method.
-        """
-        self.model.to(self.device)
-        self.model.train()
-        n_batches = len(self.dataloader)
-
-        if self.checkpoint is None:
-            # Initialize the means of the classes
-            with torch.no_grad():
-                start = time.time()
-                for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-                    batch_start = time.time()
-                    self.model(images.to(self.device), annotations.to(self.device), initializing=True)
-                    print('[Initializing] [Batch {}/{}] [Batch {:.3f} s] [Total {:.3f} s]'.format(
-                        batch_index + 1, n_batches, time.time() - batch_start, time.time() - start))
-                self.model.update_means()
-                print('[Initializing] Means updated.')
-            # Save the means as checkpoint in the epoch 0
-            self.save(0)
-
-        super().train(epochs, validate)
-
-    def epoch_callback(self, epoch):
-        """Update the means after each epoch.
-
-        Arguments:
-            epoch (int): The number of the epoch.
-        """
-        print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
-        self.model.update_means()
