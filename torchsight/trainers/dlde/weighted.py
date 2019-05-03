@@ -131,6 +131,19 @@ class DLDENetTrainer(RetinaNetTrainer):
 
         raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
 
+    def get_scheduler(self):
+        """Get the scheduler for the learning rate.
+
+        If the optimizer to use is 'adabound' it will return None to avoid affecting AdaBound.
+
+        Returns:
+            Scheduler: The scheduler to use.
+        """
+        if self.hyperparameters['optimizer']['use'].lower() == 'adabound':
+            return None
+
+        return super().get_scheduler()
+
     def get_criterion(self):
         """Get the criterion to use to train the model.
 
