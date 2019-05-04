@@ -54,7 +54,6 @@ def train():
     elif args.model.lower() == 'dldenet':
         DLDENetTrainer(
             hyperparameters={'optimizer': {'use': args.optimizer},
-                             'criterion': {'weights': {'similarity': 1e3}},
                              **common_hyperparameters},
             checkpoint=args.checkpoint,
             device=args.device
