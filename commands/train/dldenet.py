@@ -24,7 +24,12 @@ from torchsight.trainers import DLDENetTrainer
 def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, classes, optimizer, not_normalize,
             device):
     """Train the DLDENet with weighted classification vectors using the indicated dataset that
-    contains is data in DATASET_ROOT directory."""
+    contains is data in DATASET_ROOT directory.
+
+    You can use a checkpoint to resume the training but is not a good practice, because you can change the hyperparams
+    of the model get in some troubles like changing the resnet backbone or the number of classes of the model.
+    To avoid this you can use the subcommand 'dldenet-from-checkpoint' instead.
+    """
     classes = classes.split()
     n_classes = len(classes) if classes else 80
 
@@ -40,3 +45,26 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, cla
         checkpoint=checkpoint,
         device=device
     ).train()
+
+
+@click.command()
+@click.argument('dataset-root', type=click.Path(exists=True))
+@click.argument('checkpoint', type=click.Path(exists=True))
+@click.option('-b', '--batch-size', type=click.INT)
+@click.option('--logs-dir', type=click.Path(exists=True), help='Where to store the checkpoints and descriptions.')
+@click.option('--device', help='The device that the model must use.')
+def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device):
+    """Get an instance of the trainer from the checkpoint CHECKPOINT and resume the exact same training
+    with the dataset that contains its data in DATASET_ROOT.
+
+    You can only change things that will not affect the coherence of the training.
+    """
+    new_params = {'datasets': {'root': dataset_root}}
+
+    if batch_size is not None:
+        new_params['dataloaders'] = {'batch_size': batch_size}
+    if logs_dir is not None:
+        new_params['logger'] = {'dir': logs_dir}
+        new_params['checkpoint'] = {'dir': logs_dir}
+
+    DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train()

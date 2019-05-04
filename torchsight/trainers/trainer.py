@@ -341,7 +341,7 @@ class Trainer():
         return {'epoch': checkpoint['epoch']}
 
     @classmethod
-    def from_checkpoint(cls, checkpoint, device=None):
+    def from_checkpoint(cls, checkpoint, new_params=None, device=None, verbose=True):
         """Get an instance of the trainer based on the given checkpoint file.
 
         This is very useful because the checkpoint saves the hyperparameters too,
@@ -352,11 +352,14 @@ class Trainer():
 
         Arguments:
             checkpoint (str): The path to the file that contains the checkpoint file.
+            new_params (dict, optional): A dict with new hyperparameters to change the ones
+                in the checkpoint. Useful for example to change the batch size, the dataset root,
+                etc.
 
         Returns:
             Trainer: An instance of the trainer with the exact same hyperparameters and with
                 the modules with their state_dicts from the checkpoint too.
         """
-        hyperparameters = torch.load(checkpoint)['hyperparameters']
+        hyperparameters = merge_dicts(torch.load(checkpoint)['hyperparameters'], new_params, verbose)
 
         return cls(hyperparameters=hyperparameters, checkpoint=checkpoint, device=device)
