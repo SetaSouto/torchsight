@@ -2,6 +2,7 @@
 import click
 
 from .dldenet import dldenet
+from .retinanet import retinanet
 
 
 @click.group()
@@ -11,3 +12,4 @@ def train():
 
 # COMMANDS OF THR GROUP
 train.add_command(dldenet)
+train.add_command(retinanet)
