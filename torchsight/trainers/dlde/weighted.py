@@ -42,7 +42,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'sigma': 3.0,
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
             # Weight of each loss. See train method.
-            'weights': {'classification': 1e3, 'regression': 1, 'similarity': 10}
+            'weights': {'classification': 1e3, 'regression': 1, 'similarity': 1}
         },
         'datasets': {
             'root': './datasets/coco',

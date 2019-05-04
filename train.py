@@ -29,7 +29,7 @@ def train():
 
     args = parser.parse_args()
 
-    classes = ()
+    classes = ('sheep', 'bear', 'airplane')
     n_classes = len(classes) if classes else 80  # With an empty sequence it loads all the classes
 
     common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes},
