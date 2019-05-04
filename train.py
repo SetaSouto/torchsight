@@ -24,6 +24,8 @@ def train():
     parser.add_argument('--device', help='The device to use in the training.')
     parser.add_argument('--optimizer', default='adabound',
                         help='Indicate the optimizer for the DLDENet. Could be adabound or sgd. Default: adabound')
+    parser.add_argument('--not-normalize', action='store_const', const=True, default=False,
+                        help='In the weighted DLDENet, avoid normalization of the embeddings.')
 
     args = parser.parse_args()
 
@@ -32,7 +34,7 @@ def train():
 
     common_hyperparameters = {'datasets': {'root': args.root, 'class_names': classes},
                               'dataloaders': {'batch_size': int(args.batch_size)},
-                              'model': {'resnet': int(args.resnet), 'classes': n_classes},
+                              'model': {'resnet': int(args.resnet), 'classes': n_classes, 'normalize': not args.not_normalize},
                               'logger': {'dir': args.logs_dir},
                               'checkpoint': {'dir': args.logs_dir}}
 
@@ -52,6 +54,7 @@ def train():
     elif args.model.lower() == 'dldenet':
         DLDENetTrainer(
             hyperparameters={'optimizer': {'use': args.optimizer},
+                             'criterion': {'weights': {'similarity': 1e3}},
                              **common_hyperparameters},
             checkpoint=args.checkpoint,
             device=args.device

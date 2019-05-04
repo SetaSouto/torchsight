@@ -32,6 +32,7 @@ class DLDENetTrainer(RetinaNetTrainer):
                 'ratios': [0.5, 1, 2]
             },
             'embedding_size': 256,
+            'normalize': True,
             'pretrained': True,
             'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5}
         },
@@ -97,6 +98,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             features=hyperparameters['features'],
             anchors=hyperparameters['anchors'],
             embedding_size=hyperparameters['embedding_size'],
+            normalize=hyperparameters['normalize'],
             pretrained=hyperparameters['pretrained'],
             device=self.device
         )

@@ -47,7 +47,7 @@ class Trainer():
         # Add the base hyperparameters to the trainer hyperparameters
         self.hyperparameters = merge_dicts(self.hyperparameters, base_hyperparameters)
         # Add the modified hyperparameters given in the initialization
-        self.hyperparameters = merge_dicts(self.hyperparameters, hyperparameters)
+        self.hyperparameters = merge_dicts(self.hyperparameters, hyperparameters, verbose=True)
         # Set the device of the trainer
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 

@@ -1,7 +1,7 @@
 """Module with merge functions."""
 
 
-def merge_dicts(dict1, dict2):
+def merge_dicts(dict1, dict2, verbose=False):
     """Deeply merge two dicts.
 
     The second dict take precedence over the first dict. This means that if the two dicts
@@ -23,7 +23,11 @@ def merge_dicts(dict1, dict2):
             elif dict1[key] == dict2[key]:
                 pass  # same leaf value
             else:
+                if verbose:
+                    print('Replacing "{}" with value "{}" for "{}"'.format(key, dict1[key], dict2[key]))
                 dict1[key] = dict2[key]
         else:
+            if verbose:
+                print('Adding "{}" with value "{}"'.format(key, dict2[key]))
             dict1[key] = dict2[key]
     return dict1

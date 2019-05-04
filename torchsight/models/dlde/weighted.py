@@ -89,7 +89,7 @@ class ClassificationModule(nn.Module):
         embeddings = embeddings.view(batch_size, -1, self.embedding_size)
 
         if self.normalize:
-            embeddings /= embeddings.norm(dim=2, keepdim=True)
+            embeddings = embeddings / embeddings.norm(dim=2, keepdim=True)
 
         return embeddings
 
@@ -138,7 +138,7 @@ class DLDENet(RetinaNet):
     Based on the RetinaNet implementation of this package, for more information please see its docs.
     """
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, pretrained=True,
+    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
                  device=None):
         """Initialize the network.
 
@@ -150,11 +150,13 @@ class DLDENet(RetinaNet):
             anchors (dict, optional): The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
+            normalize (bool, optional): Indicates if the embeddings must be normalized.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
         """
         self.embedding_size = embedding_size
+        self.normalize = normalize
         super().__init__(classes, resnet, features, anchors, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
@@ -172,7 +174,7 @@ class DLDENet(RetinaNet):
             ClassificationModule: The module for classification.
         """
         return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
-                                    features=features, classes=classes)
+                                    features=features, classes=classes, normalize=self.normalize)
 
     def classify(self, feature_maps):
         """Perform the classification of the feature maps.
