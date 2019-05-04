@@ -15,21 +15,24 @@ def printlogger(log_file, loss_key, epoch_key):
     saved in a file.
 
     For example:
-    > python cli.py train dldenet ~/dataset/coco --logs-dir logs/ > logs/logs.txt
+
+    $ python cli.py train dldenet ~/dataset/coco --logs-dir logs/ > logs/logs.txt
 
     This command indicates that the trainer save the checkpoints to logs/ and the logger
-    save the description into logs/description.txt; and with the `>` we put all the prints
+    save the description into logs/description.txt; and with the '>' we put all the prints
     into the logs/logs.txt file.
 
     Now you can use:
-    > python cli.py stats printlogger logs/logs.txt
+
+    $ python cli.py stats printlogger logs/logs.txt
 
     And you'll get something like:
-    ```
+
     EPOCH |      TRAIN LOSS | VALIDATION LOSS
+
         1 |       1.9204515 |       1.1482288
+
         2 |       1.1309012 | ---
-    ```
 
     Where the `---` means that there is no data yet to show.
     """
