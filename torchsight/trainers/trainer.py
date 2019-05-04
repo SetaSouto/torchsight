@@ -294,7 +294,11 @@ class Trainer():
         if params['verbose']:
             print('[Epoch {}] Saving checkpoint to: {}'.format(epoch, path))
 
-        checkpoint = {'epoch': epoch, 'model': self.model.state_dict(), 'optimizer': self.optimizer.state_dict()}
+        checkpoint = {'epoch': epoch,
+                      'model': self.model.state_dict(),
+                      'optimizer': self.optimizer.state_dict(),
+                      'hyperparameters': self.hyperparameters}
+
         if self.scheduler is not None:
             checkpoint['scheduler'] = self.scheduler.state_dict()
 
@@ -322,7 +326,7 @@ class Trainer():
         if verbose:
             print('Loading checkpoint from {}'.format(checkpoint))
 
-        checkpoint = torch.load(checkpoint)
+        checkpoint = torch.load(checkpoint, map_location=self.device)
 
         self.model.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -335,3 +339,24 @@ class Trainer():
             self.scheduler.load_state_dict(checkpoint['scheduler'])
 
         return {'epoch': checkpoint['epoch']}
+
+    @classmethod
+    def from_checkpoint(cls, checkpoint, device=None):
+        """Get an instance of the trainer based on the given checkpoint file.
+
+        This is very useful because the checkpoint saves the hyperparameters too,
+        so you have a trainer with the same hyperparameters that one from the checkpoint.
+
+        Also, you can use this method to load the model, because you can do
+        `trainer.model` to get the model instance.
+
+        Arguments:
+            checkpoint (str): The path to the file that contains the checkpoint file.
+
+        Returns:
+            Trainer: An instance of the trainer with the exact same hyperparameters and with
+                the modules with their state_dicts from the checkpoint too.
+        """
+        hyperparameters = torch.load(checkpoint)['hyperparameters']
+
+        return cls(hyperparameters=hyperparameters, checkpoint=checkpoint, device=device)
