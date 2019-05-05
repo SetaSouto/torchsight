@@ -192,3 +192,30 @@ class DLDENet(RetinaNet):
                     `(batch size, number of anchors, number of classes)`
         """
         return self.classification(feature_maps)
+
+    @classmethod
+    def from_checkpoint(cls, checkpoint, device):
+        """Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
+
+        Arguments:
+            checkpoint (str): The path to the checkpoint file.
+            device (str): The device where to load the model. Necessary to avoid conflicts
+                with the device where the model was trained.
+
+        Returns:
+            DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+        """
+        checkpoint = torch.load(checkpoint, map_location=device)
+        params = checkpoint['hyperparameters']['model']
+
+        model = cls(classes=params['classes'],
+                    resnet=params['resnet'],
+                    features=params['features'],
+                    anchors=params['anchors'],
+                    embedding_size=params['embedding_size'],
+                    normalize=params['normalize'],
+                    pretrained=params['pretrained'],
+                    device=device)
+        model.load_state_dict(checkpoint['model'])
+
+        return model
