@@ -18,6 +18,7 @@ TRANSFORMS = transforms.Compose([Resize()])
 DATASET = CocoDataset(ARGUMENTS.root, ARGUMENTS.dataset, classes_names=(), transform=TRANSFORMS)
 INDEXES = list(range(len(DATASET)))
 
+
 if ARGUMENTS.no_random:
     random.shuffle(INDEXES)
 

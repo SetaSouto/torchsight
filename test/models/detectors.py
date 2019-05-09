@@ -58,8 +58,8 @@ if not ARGUMENTS.no_random:
 MODEL.eval(threshold=float(ARGUMENTS.threshold), iou_threshold=float(ARGUMENTS.iou_threshold))
 
 for index in INDEXES:
-    image, ground = DATASET[index]
-    image_human, _ = DATASET_HUMAN[index]
+    image, ground, *_ = DATASET[index]
+    image_human, *_ = DATASET_HUMAN[index]
     # print('Ground truth:\n', ground)
     image = image.unsqueeze(0).type(torch.float)  # To simulate a batch
     if CUDA:

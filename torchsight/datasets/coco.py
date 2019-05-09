@@ -8,6 +8,7 @@ import skimage
 import skimage.io
 import torch
 from pycocotools.coco import COCO
+from pycocotools.cocoeval import COCOeval
 from torch.utils.data import Dataset
 
 
@@ -63,7 +64,8 @@ class CocoDataset(Dataset):
 
         # Initialize the COCO api
         print('--- COCO API ---')
-        coco = COCO(os.path.join(root, 'annotations', 'instances_{}.json'.format(dataset)))
+        self.annotations_path = os.path.join(root, 'annotations', 'instances_{}.json'.format(dataset))
+        coco = COCO(self.annotations_path)
         print('----------------')
 
         # Load classes and set classes dict
@@ -99,7 +101,8 @@ class CocoDataset(Dataset):
 
             self.images.append((
                 os.path.join(root, 'images', dataset, image_info['file_name']),  # Image's path
-                bounding_boxes  # Bounding boxes with shape (N, 5)
+                bounding_boxes,  # Bounding boxes with shape (N, 5)
+                image_info
             ))
 
         # Print stats
@@ -139,7 +142,7 @@ class CocoDataset(Dataset):
             ndarray: The transformed image if there is any transformation or the original image.
             ndarray: The bounding boxes of the image.
         """
-        path, bounding_boxes = self.images[index]
+        path, bounding_boxes, image_info, *_ = self.images[index]
 
         image = skimage.io.imread(path)
         if len(image.shape) == 2:
@@ -153,7 +156,7 @@ class CocoDataset(Dataset):
         if self.transform:
             image, bounding_boxes = self.transform((image, bounding_boxes))
 
-        return image, bounding_boxes
+        return image, bounding_boxes, image_info
 
     def visualize(self, image, boxes=None, initial_time=None, n_colors=20):
         """Visualize an image and its bounding boxes.
@@ -214,5 +217,23 @@ class CocoDataset(Dataset):
             index (int): The index of the image in the dataset to be loaded.
             n_colors (int, optional): The number of colors to use. Optional. Already in the max value.
         """
-        image, boxes = self.__getitem__(index)
+        image, boxes, *_ = self.__getitem__(index)
         self.visualize(image, boxes, *args, **kwargs)
+
+    def compute_map(self, predictions_file):
+        """Compute the mAP using the pycocotools over the given categories ids.
+
+        Arguments:
+            predictions_file (str): The path to the file that contains the JSON with the predictions
+                in the correct format as indicated in: http://cocodataset.org/#detection-eval
+            cat_ids (list, optional): The ids of the categories over it must compute the mAP.
+                If None is provided it will compute the mAP for all the classes.
+        """
+        coco_gt = COCO(self.annotations_path)
+        coco_dt = coco_gt.loadRes(predictions_file)
+        coco_eval = COCOeval(coco_gt, coco_dt, 'bbox')
+        coco_eval.params.imgIds = [info['id'] for _, _, info in self.images]
+        coco_eval.params.catIds = list(self.classes['ids'].values())
+        coco_eval.evaluate()
+        coco_eval.accumulate()
+        coco_eval.summarize()

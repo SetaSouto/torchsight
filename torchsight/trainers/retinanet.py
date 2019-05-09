@@ -148,7 +148,7 @@ class RetinaNetTrainer(Trainer):
             Also it pads the images so all has the same size.
 
             Arguments:
-                data (sequence): Sequence of tuples as (image, annotations).
+                data (sequence): Sequence of tuples as (image, annotations, *_).
 
             Returns:
                 torch.Tensor: The images.
@@ -158,7 +158,7 @@ class RetinaNetTrainer(Trainer):
                     Shape:
                         (batch size, biggest amount of annotations, 5)
             """
-            images = [image for image, _ in data]
+            images = [image for image, *_ in data]
             max_width = max([image.shape[-1] for image in images])
             max_height = max([image.shape[-2] for image in images])
 
@@ -167,9 +167,9 @@ class RetinaNetTrainer(Trainer):
                 aux[:, :image.shape[1], :image.shape[2]] = image
                 return aux
 
-            images = torch.stack([pad_image(image) for image, _ in data], dim=0)
+            images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
 
-            max_annotations = max([annotations.shape[0] for _, annotations in data])
+            max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
 
             def fill_annotations(annotations):
                 aux = torch.ones((max_annotations, 5))
@@ -177,7 +177,7 @@ class RetinaNetTrainer(Trainer):
                 aux[:annotations.shape[0], :] = annotations
                 return aux
 
-            annotations = torch.stack([fill_annotations(a) for _, a in data], dim=0)
+            annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
             return images, annotations
 
         hyperparameters = {**self.hyperparameters['dataloaders'], 'collate_fn': collate}
