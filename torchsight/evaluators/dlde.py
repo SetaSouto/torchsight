@@ -156,18 +156,29 @@ class DLDENetEvaluator(Evaluator):
         self.model.eval(threshold=params['threshold'], iou_threshold=params['iou_threshold'])
 
     @staticmethod
-    def transform_boxes(boxes):
+    def transform_boxes(boxes, info):
         """Transform the bounding boxes from x1, y1, x2, y2 to x, y, width, height.
+
+        As the images were transformed using the Resize transformation we need to get the scale
+        used to update the boxes to use the same scale to revert the prediction to the scale
+        of the original annotations.
+        That scale is stored in the info of the image as info['resize_scale'].
 
         Arguments:
             boxes (torch.Tensor): A tensor with shape (n predictions, 4).
+            info (dict): The information of the image that contains the original height and width.
 
         Returns:
             torch.Tensor: The transformed bounding boxes.
                 Shape: (n predictions, 4)
         """
+        # Update the scale
+        if 'resize_scale' in info:
+            boxes /= info['resize_scale']
+
         x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
         w, h = x2 - x1, y2 - y1
+
         return torch.stack([x1, y1, w, h], dim=1)
 
     def forward(self, images, infos, *_):
@@ -187,9 +198,10 @@ class DLDENetEvaluator(Evaluator):
             if boxes.shape[0] == 0:
                 continue
 
-            image_id = infos[i]['id']
             scores, labels = classifications.max(dim=1)
-            boxes = self.transform_boxes(boxes)
+            boxes = self.transform_boxes(boxes, infos[i])
+            image_id = infos[i]['id']
+
             for j, box in enumerate(boxes):
                 score, label = scores[j], labels[j]
                 try:

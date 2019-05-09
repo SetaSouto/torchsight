@@ -142,7 +142,7 @@ class CocoDataset(Dataset):
             ndarray: The transformed image if there is any transformation or the original image.
             ndarray: The bounding boxes of the image.
         """
-        path, bounding_boxes, image_info, *_ = self.images[index]
+        path, bounding_boxes, info, *_ = self.images[index]
 
         image = skimage.io.imread(path)
         if len(image.shape) == 2:
@@ -154,9 +154,9 @@ class CocoDataset(Dataset):
         bounding_boxes[:, 3] = bounding_boxes[:, 1] + bounding_boxes[:, 3]
 
         if self.transform:
-            image, bounding_boxes = self.transform((image, bounding_boxes))
+            image, bounding_boxes, info = self.transform((image, bounding_boxes, info))
 
-        return image, bounding_boxes, image_info
+        return image, bounding_boxes, info
 
     def visualize(self, image, boxes=None, initial_time=None, n_colors=20):
         """Visualize an image and its bounding boxes.

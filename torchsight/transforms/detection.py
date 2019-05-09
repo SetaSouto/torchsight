@@ -33,7 +33,7 @@ class Resize():
         Args:
             data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
         """
-        image, bounding_boxes = data
+        image, bounding_boxes, info = data
         height, width, channels = image.shape
 
         smallest_side = height if height < width else width
@@ -57,8 +57,9 @@ class Resize():
         final[:height, :width, :] = image
 
         bounding_boxes[:, :4] *= scale
+        info['resize_scale'] = scale
 
-        return final, bounding_boxes
+        return final, bounding_boxes, info
 
 
 class ToTensor():
@@ -77,7 +78,7 @@ class ToTensor():
             torch.Tensor: The image.
             torch.Tensor: The annotations.
         """
-        return to_tensor(data[0]), torch.from_numpy(data[1])
+        return (to_tensor(data[0]), torch.from_numpy(data[1]), *data[2:])
 
 
 class Normalize():
@@ -88,16 +89,15 @@ class Normalize():
     It works with a tuple and it assumes that the first element is the image as a tensor.
     """
 
-    def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    def __init__(self, mean=None, std=None):
         """Initialize the normalizer with the given mean and std.
 
         Arguments:
             mean (sequence): Sequence of floats that contains the mean to which normalize each channel.
             std (sequence): The standard deviation for each of the channels.
         """
-
-        self.mean = mean
-        self.std = std
+        self.mean = mean if mean is not None else [0.485, 0.456, 0.406]
+        self.std = std if std is not None else [0.229, 0.224, 0.225]
 
     def __call__(self, data):
         """Normalize the first element of the tuple assuming that is an image.
