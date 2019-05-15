@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
-<title>torchsight API documentation</title>
-<meta name="description" content="" />
+<title>torchsight.cli.train.dldenet API documentation</title>
+<meta name="description" content="CLI to train the DLDENet." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,58 +17,85 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>torchsight</code> module</h1>
+<h1 class="title"><code>torchsight.cli.train.dldenet</code> module</h1>
 </header>
 <section id="section-intro">
+<p>CLI to train the DLDENet.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;CLI to train the DLDENet.&#34;&#34;&#34;
+import click
+
+from torchsight.trainers import DLDENetTrainer
+
+
+@click.command()
+@click.argument(&#39;dataset-root&#39;, type=click.Path(exists=True))
+# Currently we only have the COCO dataset for training
+@click.option(&#39;--dataset&#39;, default=&#39;COCO&#39;, show_default=True, type=click.Choice([&#39;COCO&#39;]))
+@click.option(&#39;-b&#39;, &#39;--batch-size&#39;, default=8, show_default=True)
+@click.option(&#39;--resnet&#39;, default=50, show_default=True, help=&#39;The resnet backbone that the model must use.&#39;)
+@click.option(&#39;--logs-dir&#39;, default=&#39;./logs&#39;, type=click.Path(exists=True), show_default=True,
+              help=&#39;Where to store the checkpoints and descriptions.&#39;)
+@click.option(&#39;-c&#39;, &#39;--checkpoint&#39;, type=click.Path(exists=True), help=&#39;A checkpoint to resume the training from it.&#39;)
+@click.option(&#39;--classes&#39;, default=&#39;&#39;,
+              help=&#39;Indicate which classes (identified by its string label) must be used for the training. &#39;
+              &#39;If no class is provided the trainer will use all the classes. Example: --classes &#34;bear sheep airplane&#34;&#39;)
+@click.option(&#39;--optimizer&#39;, default=&#39;adabound&#39;, type=click.Choice([&#39;adabound&#39;, &#39;sgd&#39;]), show_default=True,
+              help=&#39;Set the optimizer that the trainer must use to train the model.&#39;)
+@click.option(&#39;--not-normalize&#39;, is_flag=True,
+              help=&#39;Avoid normalization of the embeddings in the classification module.&#39;)
+@click.option(&#39;--device&#39;, default=None, help=&#39;The device that the model must use.&#39;)
+def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, classes, optimizer, not_normalize,
+            device):
+    &#34;&#34;&#34;Train the DLDENet with weighted classification vectors using the indicated dataset that
+    contains is data in DATASET_ROOT directory.
+
+    You can use a checkpoint to resume the training but is not a good practice, because you can change the hyperparams
+    of the model get in some troubles like changing the resnet backbone or the number of classes of the model.
+    To avoid this you can use the subcommand &#39;dldenet-from-checkpoint&#39; instead.
+    &#34;&#34;&#34;
+    classes = classes.split()
+    n_classes = len(classes) if classes else 80
+
+    DLDENetTrainer(
+        hyperparameters={
+            &#39;model&#39;: {&#39;resnet&#39;: resnet, &#39;classes&#39;: n_classes, &#39;normalize&#39;: not not_normalize},
+            &#39;datasets&#39;: {&#39;root&#39;: dataset_root, &#39;class_names&#39;: classes},
+            &#39;dataloaders&#39;: {&#39;batch_size&#39;: batch_size},
+            &#39;logger&#39;: {&#39;dir&#39;: logs_dir},
+            &#39;checkpoint&#39;: {&#39;dir&#39;: logs_dir},
+            &#39;optimizer&#39;: {&#39;use&#39;: optimizer}
+        },
+        checkpoint=checkpoint,
+        device=device
+    ).train()
+
+
+@click.command()
+@click.argument(&#39;dataset-root&#39;, type=click.Path(exists=True))
+@click.argument(&#39;checkpoint&#39;, type=click.Path(exists=True))
+@click.option(&#39;-b&#39;, &#39;--batch-size&#39;, type=click.INT)
+@click.option(&#39;--logs-dir&#39;, type=click.Path(exists=True), help=&#39;Where to store the checkpoints and descriptions.&#39;)
+@click.option(&#39;--device&#39;, help=&#39;The device that the model must use.&#39;)
+def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device):
+    &#34;&#34;&#34;Get an instance of the trainer from the checkpoint CHECKPOINT and resume the exact same training
+    with the dataset that contains its data in DATASET_ROOT.
+
+    You can only change things that will not affect the coherence of the training.
+    &#34;&#34;&#34;
+    new_params = {&#39;datasets&#39;: {&#39;root&#39;: dataset_root}}
+
+    if batch_size is not None:
+        new_params[&#39;dataloaders&#39;] = {&#39;batch_size&#39;: batch_size}
+    if logs_dir is not None:
+        new_params[&#39;logger&#39;] = {&#39;dir&#39;: logs_dir}
+        new_params[&#39;checkpoint&#39;] = {&#39;dir&#39;: logs_dir}
+
+    DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train()</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></dt>
-<dd>
-<section class="desc"><p>Package where are the CLI commands.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></dt>
-<dd>
-<section class="desc"><p>Evaluators for the different models.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></dt>
-<dd>
-<section class="desc"><p>Export the Loggers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></dt>
-<dd>
-<section class="desc"><p>Package for the custom optimizers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></dt>
-<dd>
-<section class="desc"><p>Utilities functions and modules.</p></section>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -83,19 +110,9 @@
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></li>
-<li><code><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></li>
-<li><code><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></li>
-<li><code><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></li>
-<li><code><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></li>
-<li><code><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></li>
-<li><code><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></li>
-<li><code><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></li>
-<li><code><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></li>
-<li><code><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></li>
-<li><code><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></li>
+<li><code><a title="torchsight.cli.train" href="index.html">torchsight.cli.train</a></code></li>
 </ul>
 </li>
 </ul>

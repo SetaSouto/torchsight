@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
-<title>torchsight.trainers.dlde API documentation</title>
-<meta name="description" content="DLDENet trainer" />
+<title>torchsight.trainers.dlde.tracked API documentation</title>
+<meta name="description" content="DLDENet trainer for the tracked means version." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,34 +17,32 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>torchsight.trainers.dlde</code> module</h1>
+<h1 class="title"><code>torchsight.trainers.dlde.tracked</code> module</h1>
 </header>
 <section id="section-intro">
-<p>DLDENet trainer</p>
+<p>DLDENet trainer for the tracked means version.</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">&#34;&#34;&#34;DLDENet trainer&#34;&#34;&#34;
+<pre><code class="python">&#34;&#34;&#34;DLDENet trainer for the tracked means version.&#34;&#34;&#34;
 import time
 
 import torch
 
-from ..models import DLDENet
-from ..optimizers import AdaBound
-from .retinanet import RetinaNetTrainer
+from torchsight.models import DLDENetWithTrackedMeans
+from torchsight.optimizers import AdaBound
+from ..retinanet import RetinaNetTrainer
 
 
-class DLDENetTrainer(RetinaNetTrainer):
-    &#34;&#34;&#34;Deep Local Directional Embedding trainer.
+class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
+    &#34;&#34;&#34;Deep Local Directional Embedding with tracked means trainer.
 
     As the architecture is very similar with RetinaNet we use the same trainer and only
     override some attributes and methods. For more information please read the RetinaNet
     trainer documentation.
     &#34;&#34;&#34;
-
-    # Base hyperparameters, can be replaced in the initialization of the trainer:
-    # &gt;&gt;&gt; RetinaNetTrainer(hyperparameters={&#39;RetinaNet&#39;: {&#39;classes&#39;: 1}})
+    # Base hyperparameters, can be replaced in the initialization of the trainer
     hyperparameters = {
-        &#39;DLDENet&#39;: {
+        &#39;model&#39;: {
             &#39;classes&#39;: 80,
             &#39;resnet&#39;: 18,
             &#39;features&#39;: {
@@ -65,7 +63,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             &#39;pretrained&#39;: True,
             &#39;evaluation&#39;: {&#39;threshold&#39;: 0.5, &#39;iou_threshold&#39;: 0.5}
         },
-        &#39;FocalLoss&#39;: {
+        &#39;criterion&#39;: {
             &#39;alpha&#39;: 0.25,
             &#39;gamma&#39;: 2.0,
             &#39;iou_thresholds&#39;: {&#39;background&#39;: 0.4, &#39;object&#39;: 0.5},
@@ -113,13 +111,10 @@ class DLDENetTrainer(RetinaNetTrainer):
         }
     }
 
-    def get_model_hyperparameters(self):
-        return self.hyperparameters[&#39;DLDENet&#39;]
-
     def get_model(self):
         &#34;&#34;&#34;Initialize and get a DLDENet model instance.&#34;&#34;&#34;
-        hyperparameters = self.get_model_hyperparameters()
-        return DLDENet(
+        hyperparameters = self.hyperparameters[&#39;model&#39;]
+        return DLDENetWithTrackedMeans(
             classes=hyperparameters[&#39;classes&#39;],
             resnet=hyperparameters[&#39;resnet&#39;],
             features=hyperparameters[&#39;features&#39;],
@@ -161,9 +156,32 @@ class DLDENetTrainer(RetinaNetTrainer):
 
         raise ValueError(&#39;Cannot find the parameters for the optimizer &#34;{}&#34;&#39;.format(params[&#39;use&#39;]))
 
-    def forward(self, images, annotations):
-        &#34;&#34;&#34;Forward pass through the network during training.&#34;&#34;&#34;
-        return self.model(images, annotations)
+    def forward(self, *args):
+        &#34;&#34;&#34;Forward pass through the network and loss computation.
+
+        Returns:
+            torch.Tensor: The loss of the batch.
+        &#34;&#34;&#34;
+        images, annotations, *_ = args
+        images, annotations = images.to(self.device), annotations.to(self.device)
+
+        anchors, regressions, classifications = self.model(images, annotations)
+        del images
+
+        classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+        del anchors, regressions, classifications, annotations
+
+        weights = self.hyperparameters[&#39;criterion&#39;][&#39;weights&#39;]
+        classification_loss *= weights[&#39;classification&#39;]
+        regression_loss *= weights[&#39;regression&#39;]
+
+        loss = classification_loss + regression_loss
+
+        # Log the classification and regression loss too:
+        self.current_log[&#39;Class.&#39;] = float(classification_loss)
+        self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+
+        return loss
 
     def train(self, epochs=100, validate=True):
         &#34;&#34;&#34;Train the model for the given epochs.
@@ -179,7 +197,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.model.train()
         n_batches = len(self.dataloader)
 
-        if self.checkpoint_epoch == 0:
+        if self.checkpoint is None:
             # Initialize the means of the classes
             with torch.no_grad():
                 start = time.time()
@@ -191,13 +209,18 @@ class DLDENetTrainer(RetinaNetTrainer):
                 self.model.update_means()
                 print(&#39;[Initializing] Means updated.&#39;)
             # Save the means as checkpoint in the epoch 0
-            self.save_checkpoint(0)
+            self.save(0)
 
-        def callback(epoch):
-            print(&#34;[Training] [Epoch {}] Updating the model&#39;s means.&#34;.format(epoch))
-            self.model.update_means()
+        super().train(epochs, validate)
 
-        super(DLDENetTrainer, self).train(epochs, validate, callback)</code></pre>
+    def epoch_callback(self, epoch):
+        &#34;&#34;&#34;Update the means after each epoch.
+
+        Arguments:
+            epoch (int): The number of the epoch.
+        &#34;&#34;&#34;
+        print(&#34;[Training] [Epoch {}] Updating the model&#39;s means.&#34;.format(epoch))
+        self.model.update_means()</code></pre>
 </details>
 </section>
 <section>
@@ -209,29 +232,27 @@ class DLDENetTrainer(RetinaNetTrainer):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="torchsight.trainers.dlde.DLDENetTrainer"><code class="flex name class">
-<span>class <span class="ident">DLDENetTrainer</span></span>
-<span>(</span><span><small>ancestors:</small> <a title="torchsight.trainers.retinanet.RetinaNetTrainer" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer">RetinaNetTrainer</a>, <a title="torchsight.trainers.abstract.AbstractTrainer" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer">AbstractTrainer</a>)</span>
+<dt id="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer"><code class="flex name class">
+<span>class <span class="ident">DLDENetWithTrackedMeansTrainer</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.trainers.retinanet.RetinaNetTrainer" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer">RetinaNetTrainer</a>, <a title="torchsight.trainers.trainer.Trainer" href="../trainer.html#torchsight.trainers.trainer.Trainer">Trainer</a>)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Deep Local Directional Embedding trainer.</p>
+<section class="desc"><p>Deep Local Directional Embedding with tracked means trainer.</p>
 <p>As the architecture is very similar with RetinaNet we use the same trainer and only
 override some attributes and methods. For more information please read the RetinaNet
 trainer documentation.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">class DLDENetTrainer(RetinaNetTrainer):
-    &#34;&#34;&#34;Deep Local Directional Embedding trainer.
+<pre><code class="python">class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
+    &#34;&#34;&#34;Deep Local Directional Embedding with tracked means trainer.
 
     As the architecture is very similar with RetinaNet we use the same trainer and only
     override some attributes and methods. For more information please read the RetinaNet
     trainer documentation.
     &#34;&#34;&#34;
-
-    # Base hyperparameters, can be replaced in the initialization of the trainer:
-    # &gt;&gt;&gt; RetinaNetTrainer(hyperparameters={&#39;RetinaNet&#39;: {&#39;classes&#39;: 1}})
+    # Base hyperparameters, can be replaced in the initialization of the trainer
     hyperparameters = {
-        &#39;DLDENet&#39;: {
+        &#39;model&#39;: {
             &#39;classes&#39;: 80,
             &#39;resnet&#39;: 18,
             &#39;features&#39;: {
@@ -252,7 +273,7 @@ trainer documentation.</p></section>
             &#39;pretrained&#39;: True,
             &#39;evaluation&#39;: {&#39;threshold&#39;: 0.5, &#39;iou_threshold&#39;: 0.5}
         },
-        &#39;FocalLoss&#39;: {
+        &#39;criterion&#39;: {
             &#39;alpha&#39;: 0.25,
             &#39;gamma&#39;: 2.0,
             &#39;iou_thresholds&#39;: {&#39;background&#39;: 0.4, &#39;object&#39;: 0.5},
@@ -300,13 +321,10 @@ trainer documentation.</p></section>
         }
     }
 
-    def get_model_hyperparameters(self):
-        return self.hyperparameters[&#39;DLDENet&#39;]
-
     def get_model(self):
         &#34;&#34;&#34;Initialize and get a DLDENet model instance.&#34;&#34;&#34;
-        hyperparameters = self.get_model_hyperparameters()
-        return DLDENet(
+        hyperparameters = self.hyperparameters[&#39;model&#39;]
+        return DLDENetWithTrackedMeans(
             classes=hyperparameters[&#39;classes&#39;],
             resnet=hyperparameters[&#39;resnet&#39;],
             features=hyperparameters[&#39;features&#39;],
@@ -348,9 +366,32 @@ trainer documentation.</p></section>
 
         raise ValueError(&#39;Cannot find the parameters for the optimizer &#34;{}&#34;&#39;.format(params[&#39;use&#39;]))
 
-    def forward(self, images, annotations):
-        &#34;&#34;&#34;Forward pass through the network during training.&#34;&#34;&#34;
-        return self.model(images, annotations)
+    def forward(self, *args):
+        &#34;&#34;&#34;Forward pass through the network and loss computation.
+
+        Returns:
+            torch.Tensor: The loss of the batch.
+        &#34;&#34;&#34;
+        images, annotations, *_ = args
+        images, annotations = images.to(self.device), annotations.to(self.device)
+
+        anchors, regressions, classifications = self.model(images, annotations)
+        del images
+
+        classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+        del anchors, regressions, classifications, annotations
+
+        weights = self.hyperparameters[&#39;criterion&#39;][&#39;weights&#39;]
+        classification_loss *= weights[&#39;classification&#39;]
+        regression_loss *= weights[&#39;regression&#39;]
+
+        loss = classification_loss + regression_loss
+
+        # Log the classification and regression loss too:
+        self.current_log[&#39;Class.&#39;] = float(classification_loss)
+        self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+
+        return loss
 
     def train(self, epochs=100, validate=True):
         &#34;&#34;&#34;Train the model for the given epochs.
@@ -366,7 +407,7 @@ trainer documentation.</p></section>
         self.model.train()
         n_batches = len(self.dataloader)
 
-        if self.checkpoint_epoch == 0:
+        if self.checkpoint is None:
             # Initialize the means of the classes
             with torch.no_grad():
                 start = time.time()
@@ -378,36 +419,51 @@ trainer documentation.</p></section>
                 self.model.update_means()
                 print(&#39;[Initializing] Means updated.&#39;)
             # Save the means as checkpoint in the epoch 0
-            self.save_checkpoint(0)
+            self.save(0)
 
-        def callback(epoch):
-            print(&#34;[Training] [Epoch {}] Updating the model&#39;s means.&#34;.format(epoch))
-            self.model.update_means()
+        super().train(epochs, validate)
 
-        super(DLDENetTrainer, self).train(epochs, validate, callback)</code></pre>
+    def epoch_callback(self, epoch):
+        &#34;&#34;&#34;Update the means after each epoch.
+
+        Arguments:
+            epoch (int): The number of the epoch.
+        &#34;&#34;&#34;
+        print(&#34;[Training] [Epoch {}] Updating the model&#39;s means.&#34;.format(epoch))
+        self.model.update_means()</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="torchsight.trainers.dlde.DLDENetTrainer.hyperparameters"><code class="name">var <span class="ident">hyperparameters</span></code></dt>
+<dt id="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.hyperparameters"><code class="name">var <span class="ident">hyperparameters</span></code></dt>
 <dd>
 <section class="desc"></section>
 </dd>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="torchsight.trainers.dlde.DLDENetTrainer.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, images, annotations)</span>
+<dt id="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.epoch_callback"><code class="name flex">
+<span>def <span class="ident">epoch_callback</span></span>(<span>self, epoch)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Forward pass through the network during training.</p></section>
+<section class="desc"><p>Update the means after each epoch.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>epoch</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of the epoch.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def forward(self, images, annotations):
-    &#34;&#34;&#34;Forward pass through the network during training.&#34;&#34;&#34;
-    return self.model(images, annotations)</code></pre>
+<pre><code class="python">def epoch_callback(self, epoch):
+    &#34;&#34;&#34;Update the means after each epoch.
+
+    Arguments:
+        epoch (int): The number of the epoch.
+    &#34;&#34;&#34;
+    print(&#34;[Training] [Epoch {}] Updating the model&#39;s means.&#34;.format(epoch))
+    self.model.update_means()</code></pre>
 </details>
 </dd>
-<dt id="torchsight.trainers.dlde.DLDENetTrainer.get_model"><code class="name flex">
+<dt id="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.get_model"><code class="name flex">
 <span>def <span class="ident">get_model</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -416,8 +472,8 @@ trainer documentation.</p></section>
 <summary>Source code</summary>
 <pre><code class="python">def get_model(self):
     &#34;&#34;&#34;Initialize and get a DLDENet model instance.&#34;&#34;&#34;
-    hyperparameters = self.get_model_hyperparameters()
-    return DLDENet(
+    hyperparameters = self.hyperparameters[&#39;model&#39;]
+    return DLDENetWithTrackedMeans(
         classes=hyperparameters[&#39;classes&#39;],
         resnet=hyperparameters[&#39;resnet&#39;],
         features=hyperparameters[&#39;features&#39;],
@@ -430,18 +486,7 @@ trainer documentation.</p></section>
     )</code></pre>
 </details>
 </dd>
-<dt id="torchsight.trainers.dlde.DLDENetTrainer.get_model_hyperparameters"><code class="name flex">
-<span>def <span class="ident">get_model_hyperparameters</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_model_hyperparameters(self):
-    return self.hyperparameters[&#39;DLDENet&#39;]</code></pre>
-</details>
-</dd>
-<dt id="torchsight.trainers.dlde.DLDENetTrainer.get_optimizer"><code class="name flex">
+<dt id="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.get_optimizer"><code class="name flex">
 <span>def <span class="ident">get_optimizer</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -490,7 +535,7 @@ you want to use.</p>
     raise ValueError(&#39;Cannot find the parameters for the optimizer &#34;{}&#34;&#39;.format(params[&#39;use&#39;]))</code></pre>
 </details>
 </dd>
-<dt id="torchsight.trainers.dlde.DLDENetTrainer.train"><code class="name flex">
+<dt id="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.train"><code class="name flex">
 <span>def <span class="ident">train</span></span>(<span>self, epochs=100, validate=True)</span>
 </code></dt>
 <dd>
@@ -520,7 +565,7 @@ dataset to initialize the means with the random generated embeddings.</p>
     self.model.train()
     n_batches = len(self.dataloader)
 
-    if self.checkpoint_epoch == 0:
+    if self.checkpoint is None:
         # Initialize the means of the classes
         with torch.no_grad():
             start = time.time()
@@ -532,31 +577,31 @@ dataset to initialize the means with the random generated embeddings.</p>
             self.model.update_means()
             print(&#39;[Initializing] Means updated.&#39;)
         # Save the means as checkpoint in the epoch 0
-        self.save_checkpoint(0)
+        self.save(0)
 
-    def callback(epoch):
-        print(&#34;[Training] [Epoch {}] Updating the model&#39;s means.&#34;.format(epoch))
-        self.model.update_means()
-
-    super(DLDENetTrainer, self).train(epochs, validate, callback)</code></pre>
+    super().train(epochs, validate)</code></pre>
 </details>
 </dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="torchsight.trainers.retinanet.RetinaNetTrainer" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer">RetinaNetTrainer</a></b></code>:
+<li><code><b><a title="torchsight.trainers.retinanet.RetinaNetTrainer" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer">RetinaNetTrainer</a></b></code>:
 <ul class="hlist">
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.__init__" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.__init__">__init__</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_criterion" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_criterion">get_criterion</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_dataloaders" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_dataloaders">get_dataloaders</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_datasets" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_datasets">get_datasets</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_scheduler" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_scheduler">get_scheduler</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_transform" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_transform">get_transform</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.merge_hyperparameters" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer.merge_hyperparameters">merge_hyperparameters</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.resume" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer.resume">resume</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.save_checkpoint" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer.save_checkpoint">save_checkpoint</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.validate" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.validate">validate</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.validate_map" href="retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.validate_map">validate_map</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.__init__" href="../trainer.html#torchsight.trainers.trainer.Trainer.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.backward" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.backward">backward</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.batch_callback" href="../trainer.html#torchsight.trainers.trainer.Trainer.batch_callback">batch_callback</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.eval" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.eval">eval</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.forward" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.forward">forward</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.from_checkpoint" href="../trainer.html#torchsight.trainers.trainer.Trainer.from_checkpoint">from_checkpoint</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_criterion" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_criterion">get_criterion</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_dataloaders" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_dataloaders">get_dataloaders</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_datasets" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_datasets">get_datasets</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_logger" href="../trainer.html#torchsight.trainers.trainer.Trainer.get_logger">get_logger</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_scheduler" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_scheduler">get_scheduler</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_transform" href="../retinanet.html#torchsight.trainers.retinanet.RetinaNetTrainer.get_transform">get_transform</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.resume" href="../trainer.html#torchsight.trainers.trainer.Trainer.resume">resume</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.save" href="../trainer.html#torchsight.trainers.trainer.Trainer.save">save</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.validate" href="../trainer.html#torchsight.trainers.trainer.Trainer.validate">validate</a></code></li>
 </ul>
 </li>
 </ul>
@@ -572,20 +617,19 @@ dataset to initialize the means with the random generated embeddings.</p>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="torchsight.trainers" href="index.html">torchsight.trainers</a></code></li>
+<li><code><a title="torchsight.trainers.dlde" href="index.html">torchsight.trainers.dlde</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="torchsight.trainers.dlde.DLDENetTrainer" href="#torchsight.trainers.dlde.DLDENetTrainer">DLDENetTrainer</a></code></h4>
+<h4><code><a title="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer" href="#torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer">DLDENetWithTrackedMeansTrainer</a></code></h4>
 <ul class="">
-<li><code><a title="torchsight.trainers.dlde.DLDENetTrainer.forward" href="#torchsight.trainers.dlde.DLDENetTrainer.forward">forward</a></code></li>
-<li><code><a title="torchsight.trainers.dlde.DLDENetTrainer.get_model" href="#torchsight.trainers.dlde.DLDENetTrainer.get_model">get_model</a></code></li>
-<li><code><a title="torchsight.trainers.dlde.DLDENetTrainer.get_model_hyperparameters" href="#torchsight.trainers.dlde.DLDENetTrainer.get_model_hyperparameters">get_model_hyperparameters</a></code></li>
-<li><code><a title="torchsight.trainers.dlde.DLDENetTrainer.get_optimizer" href="#torchsight.trainers.dlde.DLDENetTrainer.get_optimizer">get_optimizer</a></code></li>
-<li><code><a title="torchsight.trainers.dlde.DLDENetTrainer.hyperparameters" href="#torchsight.trainers.dlde.DLDENetTrainer.hyperparameters">hyperparameters</a></code></li>
-<li><code><a title="torchsight.trainers.dlde.DLDENetTrainer.train" href="#torchsight.trainers.dlde.DLDENetTrainer.train">train</a></code></li>
+<li><code><a title="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.epoch_callback" href="#torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.epoch_callback">epoch_callback</a></code></li>
+<li><code><a title="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.get_model" href="#torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.get_model">get_model</a></code></li>
+<li><code><a title="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.get_optimizer" href="#torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.get_optimizer">get_optimizer</a></code></li>
+<li><code><a title="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.hyperparameters" href="#torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.hyperparameters">hyperparameters</a></code></li>
+<li><code><a title="torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.train" href="#torchsight.trainers.dlde.tracked.DLDENetWithTrackedMeansTrainer.train">train</a></code></li>
 </ul>
 </li>
 </ul>

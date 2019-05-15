@@ -33,12 +33,23 @@ Import directly to perform more beautiful imports.
 See:
 http://mikegrouchy.com/blog/2012/05/be-pythonic-__init__py.html
 &#34;&#34;&#34;
-from .focal import FocalLoss</code></pre>
+from .focal import FocalLoss
+from .ccs import CCSLoss
+from .dlde import DLDENetLoss</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="torchsight.losses.ccs" href="ccs.html">torchsight.losses.ccs</a></code></dt>
+<dd>
+<section class="desc"><p>Implementation of the Classification vector-centered Cosine Similarity from the paper
+[One-shot Face Recognition by Promoting Underrepresented …</p></section>
+</dd>
+<dt><code class="name"><a title="torchsight.losses.dlde" href="dlde.html">torchsight.losses.dlde</a></code></dt>
+<dd>
+<section class="desc"><p>The criterion for the weighted DLDENet.</p></section>
+</dd>
 <dt><code class="name"><a title="torchsight.losses.focal" href="focal.html">torchsight.losses.focal</a></code></dt>
 <dd>
 <section class="desc"><p>Focal Loss module …</p></section>
@@ -65,6 +76,8 @@ from .focal import FocalLoss</code></pre>
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="torchsight.losses.ccs" href="ccs.html">torchsight.losses.ccs</a></code></li>
+<li><code><a title="torchsight.losses.dlde" href="dlde.html">torchsight.losses.dlde</a></code></li>
 <li><code><a title="torchsight.losses.focal" href="focal.html">torchsight.losses.focal</a></code></li>
 </ul>
 </li>

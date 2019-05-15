@@ -197,3 +197,11 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
 
         return loss
+
+    def backward(self, loss):
+        """Do the backward pass over the network.
+
+        Arguments:
+            loss (torch.Tensor): The loss value computed during the forward pass.
+        """
+        loss.backward()

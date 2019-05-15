@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
-<title>torchsight API documentation</title>
-<meta name="description" content="" />
+<title>torchsight.cli.evaluate.dldenet API documentation</title>
+<meta name="description" content="Evaluate the DLDENet models." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,58 +17,60 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>torchsight</code> module</h1>
+<h1 class="title"><code>torchsight.cli.evaluate.dldenet</code> module</h1>
 </header>
 <section id="section-intro">
+<p>Evaluate the DLDENet models.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Evaluate the DLDENet models.&#34;&#34;&#34;
+import click
+import torch
+
+from torchsight.evaluators import DLDENetEvaluator
+
+
+@click.command()
+@click.argument(&#39;checkpoint&#39;, type=click.Path(exists=True))
+@click.option(&#39;--dataset&#39;, default=&#39;coco&#39;, help=&#39;The dataset to use to validate.&#39;, show_default=True)
+@click.argument(&#39;dataset-root&#39;)
+@click.option(&#39;--results-dir&#39;, default=&#39;./evaluations/dldenet/{dataset}&#39;, show_default=True,
+              help=&#39;The directory where to store the results.&#39;)
+@click.option(&#39;--coco-dataset&#39;, default=&#39;val2017&#39;, help=&#39;The coco dataset to use.&#39;, show_default=True)
+@click.option(&#39;--classes&#39;, help=&#39;The name of the classes to detect. Default: Get from checkpoint.&#39;)
+@click.option(&#39;--batch-size&#39;, default=8, show_default=True)
+@click.option(&#39;--num-workers&#39;, default=8, show_default=True)
+@click.option(&#39;--width-tracked-means&#39;, is_flag=True, help=&#39;Use the version with tracked means.&#39;)
+@click.option(&#39;--device&#39;, help=&#39;The device where to run the evaluation. Default to cuda:0 if cuda is available.&#39;)
+@click.option(&#39;--threshold&#39;, default=0.5, help=&#39;The detection threshold.&#39;, show_default=True)
+@click.option(&#39;--iou-threshold&#39;, default=0.5, help=&#39;The IoU threshold for the NMS.&#39;, show_default=True)
+def dldenet(checkpoint, dataset, dataset_root, results_dir, coco_dataset, classes,
+            batch_size, num_workers, width_tracked_means, device, threshold, iou_threshold):
+    &#34;&#34;&#34;Evaluate the DLDENet with the indicated dataset that contains its data in DATASET-ROOT with the
+    model saved at CHECKPOINT.
+
+    Available datasets:
+
+    - COCO
+    &#34;&#34;&#34;
+    device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+    class_names_from_checkpoint = classes is None
+    class_names = () if classes is None else classes.split()
+    results_dir = results_dir.format(dataset=dataset)
+    results_file = &#39;{}.json&#39;.format(coco_dataset)
+    DLDENetEvaluator(checkpoint,
+                     params={&#39;results&#39;: {&#39;dir&#39;: results_dir, &#39;file&#39;: results_file},
+                             &#39;dataset&#39;: {&#39;root&#39;: dataset_root,
+                                         &#39;validation&#39;: coco_dataset,
+                                         &#39;class_names&#39;: class_names,
+                                         &#39;class_names_from_checkpoint&#39;: class_names_from_checkpoint},
+                             &#39;dataloader&#39;: {&#39;batch_size&#39;: batch_size, &#39;num_workers&#39;: num_workers},
+                             &#39;model&#39;: {&#39;with_tracked_means&#39;: width_tracked_means,
+                                       &#39;evaluation&#39;: {&#39;threshold&#39;: threshold, &#39;iou_threshold&#39;: iou_threshold}}},
+                     device=device).evaluate()</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></dt>
-<dd>
-<section class="desc"><p>Package where are the CLI commands.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></dt>
-<dd>
-<section class="desc"><p>Evaluators for the different models.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></dt>
-<dd>
-<section class="desc"><p>Export the Loggers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></dt>
-<dd>
-<section class="desc"><p>Package for the custom optimizers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></dt>
-<dd>
-<section class="desc"><p>Utilities functions and modules.</p></section>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -83,19 +85,9 @@
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></li>
-<li><code><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></li>
-<li><code><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></li>
-<li><code><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></li>
-<li><code><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></li>
-<li><code><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></li>
-<li><code><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></li>
-<li><code><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></li>
-<li><code><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></li>
-<li><code><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></li>
-<li><code><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></li>
+<li><code><a title="torchsight.cli.evaluate" href="index.html">torchsight.cli.evaluate</a></code></li>
 </ul>
 </li>
 </ul>

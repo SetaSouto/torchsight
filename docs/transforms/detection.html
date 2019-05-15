@@ -60,7 +60,7 @@ class Resize():
         Args:
             data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
         &#34;&#34;&#34;
-        image, bounding_boxes = data
+        image, bounding_boxes, info = data
         height, width, channels = image.shape
 
         smallest_side = height if height &lt; width else width
@@ -84,8 +84,9 @@ class Resize():
         final[:height, :width, :] = image
 
         bounding_boxes[:, :4] *= scale
+        info[&#39;resize_scale&#39;] = scale
 
-        return final, bounding_boxes
+        return final, bounding_boxes, info
 
 
 class ToTensor():
@@ -104,7 +105,7 @@ class ToTensor():
             torch.Tensor: The image.
             torch.Tensor: The annotations.
         &#34;&#34;&#34;
-        return to_tensor(data[0]), torch.from_numpy(data[1])
+        return (to_tensor(data[0]), torch.from_numpy(data[1]), *data[2:])
 
 
 class Normalize():
@@ -115,16 +116,15 @@ class Normalize():
     It works with a tuple and it assumes that the first element is the image as a tensor.
     &#34;&#34;&#34;
 
-    def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    def __init__(self, mean=None, std=None):
         &#34;&#34;&#34;Initialize the normalizer with the given mean and std.
 
         Arguments:
             mean (sequence): Sequence of floats that contains the mean to which normalize each channel.
             std (sequence): The standard deviation for each of the channels.
         &#34;&#34;&#34;
-
-        self.mean = mean
-        self.std = std
+        self.mean = mean if mean is not None else [0.485, 0.456, 0.406]
+        self.std = std if std is not None else [0.229, 0.224, 0.225]
 
     def __call__(self, data):
         &#34;&#34;&#34;Normalize the first element of the tuple assuming that is an image.
@@ -169,16 +169,15 @@ class Normalize():
     It works with a tuple and it assumes that the first element is the image as a tensor.
     &#34;&#34;&#34;
 
-    def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    def __init__(self, mean=None, std=None):
         &#34;&#34;&#34;Initialize the normalizer with the given mean and std.
 
         Arguments:
             mean (sequence): Sequence of floats that contains the mean to which normalize each channel.
             std (sequence): The standard deviation for each of the channels.
         &#34;&#34;&#34;
-
-        self.mean = mean
-        self.std = std
+        self.mean = mean if mean is not None else [0.485, 0.456, 0.406]
+        self.std = std if std is not None else [0.229, 0.224, 0.225]
 
     def __call__(self, data):
         &#34;&#34;&#34;Normalize the first element of the tuple assuming that is an image.
@@ -196,7 +195,7 @@ class Normalize():
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.transforms.detection.Normalize.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, mean=None, std=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the normalizer with the given mean and std.</p>
@@ -209,16 +208,15 @@ class Normalize():
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+<pre><code class="python">def __init__(self, mean=None, std=None):
     &#34;&#34;&#34;Initialize the normalizer with the given mean and std.
 
     Arguments:
         mean (sequence): Sequence of floats that contains the mean to which normalize each channel.
         std (sequence): The standard deviation for each of the channels.
     &#34;&#34;&#34;
-
-    self.mean = mean
-    self.std = std</code></pre>
+    self.mean = mean if mean is not None else [0.485, 0.456, 0.406]
+    self.std = std if std is not None else [0.229, 0.224, 0.225]</code></pre>
 </details>
 </dd>
 </dl>
@@ -257,7 +255,7 @@ better the feature map.</p></section>
         Args:
             data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
         &#34;&#34;&#34;
-        image, bounding_boxes = data
+        image, bounding_boxes, info = data
         height, width, channels = image.shape
 
         smallest_side = height if height &lt; width else width
@@ -281,8 +279,9 @@ better the feature map.</p></section>
         final[:height, :width, :] = image
 
         bounding_boxes[:, :4] *= scale
+        info[&#39;resize_scale&#39;] = scale
 
-        return final, bounding_boxes</code></pre>
+        return final, bounding_boxes, info</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -329,7 +328,7 @@ See help(type(self)) for accurate signature.</p></section>
             torch.Tensor: The image.
             torch.Tensor: The annotations.
         &#34;&#34;&#34;
-        return to_tensor(data[0]), torch.from_numpy(data[1])</code></pre>
+        return (to_tensor(data[0]), torch.from_numpy(data[1]), *data[2:])</code></pre>
 </details>
 </dd>
 </dl>

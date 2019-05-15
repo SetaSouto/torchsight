@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.models.dlde.weighted API documentation</title>
+<meta name="description" content="Weighted implementation of the DLDENet …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.models.dlde.weighted</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Weighted implementation of the DLDENet.</p>
+<p>The main difference with the tracked one is that this version does not do any track of the mean
+of the classes, instead it uses normal weight to perform the classification of the object.</p>
+<p>The other version does a normalization of the embeddings and the means that perform the classification
+doing cosine similarity and with a modified sigmoid. As shown in the paper
+<a href="https://arxiv.org/pdf/1707.05574.pdf">One-shot Face Recognition by Promoting Underrepresented Classes</a>
+this could lead poor performance in the classification.</p>
+<p>An idea to clarify why the classification vectors (in the other version called 'mean' because it was
+the mean of the embeddings of the classes) must have different norms is because the different classes
+could have different intravariance, and with a fixed (modified) sigmoid this could not be expressed.</p>
+<p>But is also true that if we have a few samples for a given class the variance is also low and that is
+reflected in one-shot or few-shot classification papers' results.</p>
+<p>Taking the idea of the paper to do promotion of the underrepresented classes we are going to add to the
+loss the necessary conditions to fit what we need:</p>
+<ul>
+<li>That the embeddings goes in the same direction as the classification weight.</li>
+<li>The classification weights could have any norm (not only unit norm).</li>
+<li>Promote the norm of the underrepresented classes.</li>
+</ul>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Weighted implementation of the DLDENet.
+
+The main difference with the tracked one is that this version does not do any track of the mean
+of the classes, instead it uses normal weight to perform the classification of the object.
+
+The other version does a normalization of the embeddings and the means that perform the classification
+doing cosine similarity and with a modified sigmoid. As shown in the paper
+[One-shot Face Recognition by Promoting Underrepresented Classes](https://arxiv.org/pdf/1707.05574.pdf)
+this could lead poor performance in the classification.
+
+An idea to clarify why the classification vectors (in the other version called &#39;mean&#39; because it was
+the mean of the embeddings of the classes) must have different norms is because the different classes
+could have different intravariance, and with a fixed (modified) sigmoid this could not be expressed.
+
+But is also true that if we have a few samples for a given class the variance is also low and that is
+reflected in one-shot or few-shot classification papers&#39; results.
+
+Taking the idea of the paper to do promotion of the underrepresented classes we are going to add to the
+loss the necessary conditions to fit what we need:
+
+- That the embeddings goes in the same direction as the classification weight.
+- The classification weights could have any norm (not only unit norm).
+- Promote the norm of the underrepresented classes.
+&#34;&#34;&#34;
+import math
+
+import torch
+from torch import nn
+
+from ..retinanet import RetinaNet, SubModule
+
+
+class ClassificationModule(nn.Module):
+    &#34;&#34;&#34;The module that performs the classification of the objects.
+
+    It receives the feature pyramid from the backbone network, encode the embeddings and perform the classification.
+
+    It has the parameters to perform the classification simply by doing cosine similarity and then applied a sigmoid.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False):
+        &#34;&#34;&#34;Initialize the classification module.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            embedding_size (int): Length of the embedding vector to generate.
+            anchors (int): Number of anchors per location in the feature map.
+            features (int): Number of features in the conv layers that generates the embedding.
+            classes (int): The number of classes to detect.
+            normalize (bool, optional): Indicate that it must normalize the embeddings.
+        &#34;&#34;&#34;
+        super().__init__()
+
+        self.embedding_size = embedding_size
+        self.normalize = normalize
+
+        self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size, anchors=anchors, features=features)
+
+        # Keep track of the generated embeddings, they are populated with the forward method
+        self.embeddings = None
+
+        self.sigmoid = nn.Sigmoid()
+        self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
+        self.reset_weights()
+
+    def reset_weights(self):
+        &#34;&#34;&#34;Reset and initialize with kaiming normal the weights.&#34;&#34;&#34;
+        nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
+
+    def encode(self, feature_map):
+        &#34;&#34;&#34;Generate the embeddings for the given feature map.
+
+        Arguments:
+            feature_map (torch.Tensor): The features to use to generate the embeddings.
+                Shape:
+                    (batch size, number of features, feature map&#39;s height, width)
+
+        Returns:
+            torch.Tensor: The embedding for each anchor for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, embedding size)
+        &#34;&#34;&#34;
+        batch_size = feature_map.shape[0]
+        # Shape (batch size, number of anchors per location * embedding size, height, width)
+        embeddings = self.encoder(feature_map)
+        # Move the embeddings to the last dimension
+        embeddings = embeddings.permute(0, 2, 3, 1).contiguous()
+        # Shape (batch size, number of total anchors, embedding size)
+        embeddings = embeddings.view(batch_size, -1, self.embedding_size)
+
+        if self.normalize:
+            embeddings = embeddings / embeddings.norm(dim=2, keepdim=True)
+
+        return embeddings
+
+    def classify(self, embeddings):
+        &#34;&#34;&#34;Get the probability for each embedding to below to each class.
+
+        Compute the cosine similarity between each embedding and each class&#39; weights and return
+        the sigmoid applied over the similarities to get probabilities.
+
+        Arguments:
+            embeddings (torch.Tensor): All the embeddings generated.
+                Shape:
+                    (batch size, total embeddings per image, embedding size)
+
+        Returns:
+            torch.Tensor: The probabilities for each embedding.
+                Shape:
+                    (batch size, total embeddings, number of classes)
+        &#34;&#34;&#34;
+        return self.sigmoid(torch.matmul(embeddings, self.weights))
+
+    def forward(self, feature_maps):
+        &#34;&#34;&#34;Generate the embeddings based on the feature maps and get thr probability of each one
+        to belong to any class.
+
+        Arguments:
+            feature_maps (torch.Tensor): Feature maps generated by the FPN module.
+                Shape:
+                    (batch size, channels, height, width)
+
+        Returns:
+            torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+                Shape:
+                    (batch size, feature map&#39;s height * width * number of anchors, classes)
+        &#34;&#34;&#34;
+        self.embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+        return self.classify(self.embeddings)
+
+
+class DLDENet(RetinaNet):
+    &#34;&#34;&#34;Deep local directional embeddings net.
+
+    Perform object detection by encoding for each anchor an embedding of the object that must point
+    in the same direction as its classification vector.
+
+    Based on the RetinaNet implementation of this package, for more information please see its docs.
+    &#34;&#34;&#34;
+
+    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
+                 device=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Arguments:
+            classes (int): The number of classes to detect.
+            resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+            features (dict, optional): The dict that indicates the features for each module of the network.
+                For the default dict please see RetinaNet module.
+            anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+                the Anchors module. For default values please see RetinaNet module.
+            embedding_size (int, optional): The length of the embedding to generate per anchor.
+            normalize (bool, optional): Indicates if the embeddings must be normalized.
+            pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+                This pretraining is provided by the torchvision package.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        self.embedding_size = embedding_size
+        self.normalize = normalize
+        super().__init__(classes, resnet, features, anchors, pretrained, device)
+
+    def get_classification_module(self, in_channels, classes, anchors, features):
+        &#34;&#34;&#34;Get the classification module according to this implementation.
+
+        See __init__ method in RetinaNet class for more information.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+        Returns:
+            ClassificationModule: The module for classification.
+        &#34;&#34;&#34;
+        return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
+                                    features=features, classes=classes, normalize=self.normalize)
+
+    def classify(self, feature_maps):
+        &#34;&#34;&#34;Perform the classification of the feature maps.
+
+        We override the original RetinaNet classification method because now we need
+        to generate all the embeddings first and then compute the probs to keep track
+        of all the embeddings and not only the last one in the for loop.
+
+        Arguments:
+            tuple: A tuple with the feature maps generated by the FPN backbone.
+
+        Returns:
+            torch.Tensor: The classification probability for each anchor.
+                Shape:
+                    `(batch size, number of anchors, number of classes)`
+        &#34;&#34;&#34;
+        return self.classification(feature_maps)
+
+    @classmethod
+    def from_checkpoint(cls, checkpoint, device):
+        &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
+
+        Arguments:
+            checkpoint (str): The path to the checkpoint file.
+            device (str): The device where to load the model. Necessary to avoid conflicts
+                with the device where the model was trained.
+
+        Returns:
+            DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+        &#34;&#34;&#34;
+        checkpoint = torch.load(checkpoint, map_location=device)
+        params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
+
+        model = cls(classes=params[&#39;classes&#39;],
+                    resnet=params[&#39;resnet&#39;],
+                    features=params[&#39;features&#39;],
+                    anchors=params[&#39;anchors&#39;],
+                    embedding_size=params[&#39;embedding_size&#39;],
+                    normalize=params[&#39;normalize&#39;],
+                    pretrained=params[&#39;pretrained&#39;],
+                    device=device)
+        model.load_state_dict(checkpoint[&#39;model&#39;])
+
+        return model</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.models.dlde.weighted.ClassificationModule"><code class="flex name class">
+<span>class <span class="ident">ClassificationModule</span></span>
+<span>(</span><span><small>ancestors:</small> torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>The module that performs the classification of the objects.</p>
+<p>It receives the feature pyramid from the backbone network, encode the embeddings and perform the classification.</p>
+<p>It has the parameters to perform the classification simply by doing cosine similarity and then applied a sigmoid.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class ClassificationModule(nn.Module):
+    &#34;&#34;&#34;The module that performs the classification of the objects.
+
+    It receives the feature pyramid from the backbone network, encode the embeddings and perform the classification.
+
+    It has the parameters to perform the classification simply by doing cosine similarity and then applied a sigmoid.
+    &#34;&#34;&#34;
+
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False):
+        &#34;&#34;&#34;Initialize the classification module.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            embedding_size (int): Length of the embedding vector to generate.
+            anchors (int): Number of anchors per location in the feature map.
+            features (int): Number of features in the conv layers that generates the embedding.
+            classes (int): The number of classes to detect.
+            normalize (bool, optional): Indicate that it must normalize the embeddings.
+        &#34;&#34;&#34;
+        super().__init__()
+
+        self.embedding_size = embedding_size
+        self.normalize = normalize
+
+        self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size, anchors=anchors, features=features)
+
+        # Keep track of the generated embeddings, they are populated with the forward method
+        self.embeddings = None
+
+        self.sigmoid = nn.Sigmoid()
+        self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
+        self.reset_weights()
+
+    def reset_weights(self):
+        &#34;&#34;&#34;Reset and initialize with kaiming normal the weights.&#34;&#34;&#34;
+        nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
+
+    def encode(self, feature_map):
+        &#34;&#34;&#34;Generate the embeddings for the given feature map.
+
+        Arguments:
+            feature_map (torch.Tensor): The features to use to generate the embeddings.
+                Shape:
+                    (batch size, number of features, feature map&#39;s height, width)
+
+        Returns:
+            torch.Tensor: The embedding for each anchor for each location in the feature map.
+                Shape:
+                    (batch size, number of total anchors, embedding size)
+        &#34;&#34;&#34;
+        batch_size = feature_map.shape[0]
+        # Shape (batch size, number of anchors per location * embedding size, height, width)
+        embeddings = self.encoder(feature_map)
+        # Move the embeddings to the last dimension
+        embeddings = embeddings.permute(0, 2, 3, 1).contiguous()
+        # Shape (batch size, number of total anchors, embedding size)
+        embeddings = embeddings.view(batch_size, -1, self.embedding_size)
+
+        if self.normalize:
+            embeddings = embeddings / embeddings.norm(dim=2, keepdim=True)
+
+        return embeddings
+
+    def classify(self, embeddings):
+        &#34;&#34;&#34;Get the probability for each embedding to below to each class.
+
+        Compute the cosine similarity between each embedding and each class&#39; weights and return
+        the sigmoid applied over the similarities to get probabilities.
+
+        Arguments:
+            embeddings (torch.Tensor): All the embeddings generated.
+                Shape:
+                    (batch size, total embeddings per image, embedding size)
+
+        Returns:
+            torch.Tensor: The probabilities for each embedding.
+                Shape:
+                    (batch size, total embeddings, number of classes)
+        &#34;&#34;&#34;
+        return self.sigmoid(torch.matmul(embeddings, self.weights))
+
+    def forward(self, feature_maps):
+        &#34;&#34;&#34;Generate the embeddings based on the feature maps and get thr probability of each one
+        to belong to any class.
+
+        Arguments:
+            feature_maps (torch.Tensor): Feature maps generated by the FPN module.
+                Shape:
+                    (batch size, channels, height, width)
+
+        Returns:
+            torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+                Shape:
+                    (batch size, feature map&#39;s height * width * number of anchors, classes)
+        &#34;&#34;&#34;
+        self.embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+        return self.classify(self.embeddings)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.dlde.weighted.ClassificationModule.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, embedding_size, anchors, features, classes, normalize=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the classification module.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of channels of the feature map.</dd>
+<dt><strong><code>embedding_size</code></strong> :&ensp;<code>int</code></dt>
+<dd>Length of the embedding vector to generate.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of anchors per location in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code></dt>
+<dd>Number of features in the conv layers that generates the embedding.</dd>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of classes to detect.</dd>
+<dt><strong><code>normalize</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Indicate that it must normalize the embeddings.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False):
+    &#34;&#34;&#34;Initialize the classification module.
+
+    Arguments:
+        in_channels (int): The number of channels of the feature map.
+        embedding_size (int): Length of the embedding vector to generate.
+        anchors (int): Number of anchors per location in the feature map.
+        features (int): Number of features in the conv layers that generates the embedding.
+        classes (int): The number of classes to detect.
+        normalize (bool, optional): Indicate that it must normalize the embeddings.
+    &#34;&#34;&#34;
+    super().__init__()
+
+    self.embedding_size = embedding_size
+    self.normalize = normalize
+
+    self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size, anchors=anchors, features=features)
+
+    # Keep track of the generated embeddings, they are populated with the forward method
+    self.embeddings = None
+
+    self.sigmoid = nn.Sigmoid()
+    self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
+    self.reset_weights()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.weighted.ClassificationModule.classify"><code class="name flex">
+<span>def <span class="ident">classify</span></span>(<span>self, embeddings)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the probability for each embedding to below to each class.</p>
+<p>Compute the cosine similarity between each embedding and each class' weights and return
+the sigmoid applied over the similarities to get probabilities.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>embeddings</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>All the embeddings generated.
+Shape:
+(batch size, total embeddings per image, embedding size)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The probabilities for each embedding.
+Shape:
+(batch size, total embeddings, number of classes)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def classify(self, embeddings):
+    &#34;&#34;&#34;Get the probability for each embedding to below to each class.
+
+    Compute the cosine similarity between each embedding and each class&#39; weights and return
+    the sigmoid applied over the similarities to get probabilities.
+
+    Arguments:
+        embeddings (torch.Tensor): All the embeddings generated.
+            Shape:
+                (batch size, total embeddings per image, embedding size)
+
+    Returns:
+        torch.Tensor: The probabilities for each embedding.
+            Shape:
+                (batch size, total embeddings, number of classes)
+    &#34;&#34;&#34;
+    return self.sigmoid(torch.matmul(embeddings, self.weights))</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.weighted.ClassificationModule.encode"><code class="name flex">
+<span>def <span class="ident">encode</span></span>(<span>self, feature_map)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate the embeddings for the given feature map.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>feature_map</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The features to use to generate the embeddings.
+Shape:
+(batch size, number of features, feature map's height, width)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The embedding for each anchor for each location in the feature map.
+Shape:
+(batch size, number of total anchors, embedding size)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def encode(self, feature_map):
+    &#34;&#34;&#34;Generate the embeddings for the given feature map.
+
+    Arguments:
+        feature_map (torch.Tensor): The features to use to generate the embeddings.
+            Shape:
+                (batch size, number of features, feature map&#39;s height, width)
+
+    Returns:
+        torch.Tensor: The embedding for each anchor for each location in the feature map.
+            Shape:
+                (batch size, number of total anchors, embedding size)
+    &#34;&#34;&#34;
+    batch_size = feature_map.shape[0]
+    # Shape (batch size, number of anchors per location * embedding size, height, width)
+    embeddings = self.encoder(feature_map)
+    # Move the embeddings to the last dimension
+    embeddings = embeddings.permute(0, 2, 3, 1).contiguous()
+    # Shape (batch size, number of total anchors, embedding size)
+    embeddings = embeddings.view(batch_size, -1, self.embedding_size)
+
+    if self.normalize:
+        embeddings = embeddings / embeddings.norm(dim=2, keepdim=True)
+
+    return embeddings</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.weighted.ClassificationModule.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, feature_maps)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate the embeddings based on the feature maps and get thr probability of each one
+to belong to any class.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>feature_maps</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>Feature maps generated by the FPN module.
+Shape:
+(batch size, channels, height, width)</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+Shape:
+(batch size, feature map's height * width * number of anchors, classes)</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, feature_maps):
+    &#34;&#34;&#34;Generate the embeddings based on the feature maps and get thr probability of each one
+    to belong to any class.
+
+    Arguments:
+        feature_maps (torch.Tensor): Feature maps generated by the FPN module.
+            Shape:
+                (batch size, channels, height, width)
+
+    Returns:
+        torch.Tensor: Tensor with the probability for each anchor to belong to each class.
+            Shape:
+                (batch size, feature map&#39;s height * width * number of anchors, classes)
+    &#34;&#34;&#34;
+    self.embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+    return self.classify(self.embeddings)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.weighted.ClassificationModule.reset_weights"><code class="name flex">
+<span>def <span class="ident">reset_weights</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reset and initialize with kaiming normal the weights.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def reset_weights(self):
+    &#34;&#34;&#34;Reset and initialize with kaiming normal the weights.&#34;&#34;&#34;
+    nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="torchsight.models.dlde.weighted.DLDENet"><code class="flex name class">
+<span>class <span class="ident">DLDENet</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.models.retinanet.RetinaNet" href="../retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a>, torch.nn.modules.module.Module)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Deep local directional embeddings net.</p>
+<p>Perform object detection by encoding for each anchor an embedding of the object that must point
+in the same direction as its classification vector.</p>
+<p>Based on the RetinaNet implementation of this package, for more information please see its docs.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class DLDENet(RetinaNet):
+    &#34;&#34;&#34;Deep local directional embeddings net.
+
+    Perform object detection by encoding for each anchor an embedding of the object that must point
+    in the same direction as its classification vector.
+
+    Based on the RetinaNet implementation of this package, for more information please see its docs.
+    &#34;&#34;&#34;
+
+    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
+                 device=None):
+        &#34;&#34;&#34;Initialize the network.
+
+        Arguments:
+            classes (int): The number of classes to detect.
+            resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+            features (dict, optional): The dict that indicates the features for each module of the network.
+                For the default dict please see RetinaNet module.
+            anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+                the Anchors module. For default values please see RetinaNet module.
+            embedding_size (int, optional): The length of the embedding to generate per anchor.
+            normalize (bool, optional): Indicates if the embeddings must be normalized.
+            pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+                This pretraining is provided by the torchvision package.
+            device (str, optional): The device where the module will run.
+        &#34;&#34;&#34;
+        self.embedding_size = embedding_size
+        self.normalize = normalize
+        super().__init__(classes, resnet, features, anchors, pretrained, device)
+
+    def get_classification_module(self, in_channels, classes, anchors, features):
+        &#34;&#34;&#34;Get the classification module according to this implementation.
+
+        See __init__ method in RetinaNet class for more information.
+
+        Arguments:
+            in_channels (int): The number of channels of the feature map.
+            classes (int): Indicates the number of classes to predict.
+            anchors (int, optional): The number of anchors per location in the feature map.
+            features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+        Returns:
+            ClassificationModule: The module for classification.
+        &#34;&#34;&#34;
+        return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
+                                    features=features, classes=classes, normalize=self.normalize)
+
+    def classify(self, feature_maps):
+        &#34;&#34;&#34;Perform the classification of the feature maps.
+
+        We override the original RetinaNet classification method because now we need
+        to generate all the embeddings first and then compute the probs to keep track
+        of all the embeddings and not only the last one in the for loop.
+
+        Arguments:
+            tuple: A tuple with the feature maps generated by the FPN backbone.
+
+        Returns:
+            torch.Tensor: The classification probability for each anchor.
+                Shape:
+                    `(batch size, number of anchors, number of classes)`
+        &#34;&#34;&#34;
+        return self.classification(feature_maps)
+
+    @classmethod
+    def from_checkpoint(cls, checkpoint, device):
+        &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
+
+        Arguments:
+            checkpoint (str): The path to the checkpoint file.
+            device (str): The device where to load the model. Necessary to avoid conflicts
+                with the device where the model was trained.
+
+        Returns:
+            DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+        &#34;&#34;&#34;
+        checkpoint = torch.load(checkpoint, map_location=device)
+        params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
+
+        model = cls(classes=params[&#39;classes&#39;],
+                    resnet=params[&#39;resnet&#39;],
+                    features=params[&#39;features&#39;],
+                    anchors=params[&#39;anchors&#39;],
+                    embedding_size=params[&#39;embedding_size&#39;],
+                    normalize=params[&#39;normalize&#39;],
+                    pretrained=params[&#39;pretrained&#39;],
+                    device=device)
+        model.load_state_dict(checkpoint[&#39;model&#39;])
+
+        return model</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.models.dlde.weighted.DLDENet.from_checkpoint"><code class="name flex">
+<span>def <span class="ident">from_checkpoint</span></span>(<span>cls, checkpoint, device)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get an instance of the model from a checkpoint generated with the DLDENetTrainer.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>checkpoint</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to the checkpoint file.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
+<dd>The device where to load the model. Necessary to avoid conflicts
+with the device where the model was trained.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><a title="torchsight.models.dlde.weighted.DLDENet" href="#torchsight.models.dlde.weighted.DLDENet"><code>DLDENet</code></a></strong></dt>
+<dd>An instance with the weights and hyperparameters got from the checkpoint file.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@classmethod
+def from_checkpoint(cls, checkpoint, device):
+    &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
+
+    Arguments:
+        checkpoint (str): The path to the checkpoint file.
+        device (str): The device where to load the model. Necessary to avoid conflicts
+            with the device where the model was trained.
+
+    Returns:
+        DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+    &#34;&#34;&#34;
+    checkpoint = torch.load(checkpoint, map_location=device)
+    params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
+
+    model = cls(classes=params[&#39;classes&#39;],
+                resnet=params[&#39;resnet&#39;],
+                features=params[&#39;features&#39;],
+                anchors=params[&#39;anchors&#39;],
+                embedding_size=params[&#39;embedding_size&#39;],
+                normalize=params[&#39;normalize&#39;],
+                pretrained=params[&#39;pretrained&#39;],
+                device=device)
+    model.load_state_dict(checkpoint[&#39;model&#39;])
+
+    return model</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.models.dlde.weighted.DLDENet.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the network.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of classes to detect.</dd>
+<dt><strong><code>resnet</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The depth of the resnet backbone for the Feature Pyramid Network.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>The dict that indicates the features for each module of the network.
+For the default dict please see RetinaNet module.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
+the Anchors module. For default values please see RetinaNet module.</dd>
+<dt><strong><code>embedding_size</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The length of the embedding to generate per anchor.</dd>
+<dt><strong><code>normalize</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Indicates if the embeddings must be normalized.</dd>
+<dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+This pretraining is provided by the torchvision package.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The device where the module will run.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
+             device=None):
+    &#34;&#34;&#34;Initialize the network.
+
+    Arguments:
+        classes (int): The number of classes to detect.
+        resnet (int, optional): The depth of the resnet backbone for the Feature Pyramid Network.
+        features (dict, optional): The dict that indicates the features for each module of the network.
+            For the default dict please see RetinaNet module.
+        anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
+            the Anchors module. For default values please see RetinaNet module.
+        embedding_size (int, optional): The length of the embedding to generate per anchor.
+        normalize (bool, optional): Indicates if the embeddings must be normalized.
+        pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
+            This pretraining is provided by the torchvision package.
+        device (str, optional): The device where the module will run.
+    &#34;&#34;&#34;
+    self.embedding_size = embedding_size
+    self.normalize = normalize
+    super().__init__(classes, resnet, features, anchors, pretrained, device)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.weighted.DLDENet.classify"><code class="name flex">
+<span>def <span class="ident">classify</span></span>(<span>self, feature_maps)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Perform the classification of the feature maps.</p>
+<p>We override the original RetinaNet classification method because now we need
+to generate all the embeddings first and then compute the probs to keep track
+of all the embeddings and not only the last one in the for loop.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>tuple</code></strong></dt>
+<dd>A tuple with the feature maps generated by the FPN backbone.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The classification probability for each anchor.
+Shape:
+<code>(batch size, number of anchors, number of classes)</code></p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def classify(self, feature_maps):
+    &#34;&#34;&#34;Perform the classification of the feature maps.
+
+    We override the original RetinaNet classification method because now we need
+    to generate all the embeddings first and then compute the probs to keep track
+    of all the embeddings and not only the last one in the for loop.
+
+    Arguments:
+        tuple: A tuple with the feature maps generated by the FPN backbone.
+
+    Returns:
+        torch.Tensor: The classification probability for each anchor.
+            Shape:
+                `(batch size, number of anchors, number of classes)`
+    &#34;&#34;&#34;
+    return self.classification(feature_maps)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.models.dlde.weighted.DLDENet.get_classification_module"><code class="name flex">
+<span>def <span class="ident">get_classification_module</span></span>(<span>self, in_channels, classes, anchors, features)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the classification module according to this implementation.</p>
+<p>See <strong>init</strong> method in RetinaNet class for more information.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>in_channels</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of channels of the feature map.</dd>
+<dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
+<dd>Indicates the number of classes to predict.</dd>
+<dt><strong><code>anchors</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The number of anchors per location in the feature map.</dd>
+<dt><strong><code>features</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Indicates the number of inner features that the conv layers must have.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><a title="torchsight.models.dlde.weighted.ClassificationModule" href="#torchsight.models.dlde.weighted.ClassificationModule"><code>ClassificationModule</code></a></strong></dt>
+<dd>The module for classification.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_classification_module(self, in_channels, classes, anchors, features):
+    &#34;&#34;&#34;Get the classification module according to this implementation.
+
+    See __init__ method in RetinaNet class for more information.
+
+    Arguments:
+        in_channels (int): The number of channels of the feature map.
+        classes (int): Indicates the number of classes to predict.
+        anchors (int, optional): The number of anchors per location in the feature map.
+        features (int, optional): Indicates the number of inner features that the conv layers must have.
+
+    Returns:
+        ClassificationModule: The module for classification.
+    &#34;&#34;&#34;
+    return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
+                                features=features, classes=classes, normalize=self.normalize)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.models.retinanet.RetinaNet" href="../retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.forward" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.to" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.to">to</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.models.dlde" href="index.html">torchsight.models.dlde</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.models.dlde.weighted.ClassificationModule" href="#torchsight.models.dlde.weighted.ClassificationModule">ClassificationModule</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.dlde.weighted.ClassificationModule.__init__" href="#torchsight.models.dlde.weighted.ClassificationModule.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.dlde.weighted.ClassificationModule.classify" href="#torchsight.models.dlde.weighted.ClassificationModule.classify">classify</a></code></li>
+<li><code><a title="torchsight.models.dlde.weighted.ClassificationModule.encode" href="#torchsight.models.dlde.weighted.ClassificationModule.encode">encode</a></code></li>
+<li><code><a title="torchsight.models.dlde.weighted.ClassificationModule.forward" href="#torchsight.models.dlde.weighted.ClassificationModule.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.dlde.weighted.ClassificationModule.reset_weights" href="#torchsight.models.dlde.weighted.ClassificationModule.reset_weights">reset_weights</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchsight.models.dlde.weighted.DLDENet" href="#torchsight.models.dlde.weighted.DLDENet">DLDENet</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.models.dlde.weighted.DLDENet.__init__" href="#torchsight.models.dlde.weighted.DLDENet.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.dlde.weighted.DLDENet.classify" href="#torchsight.models.dlde.weighted.DLDENet.classify">classify</a></code></li>
+<li><code><a title="torchsight.models.dlde.weighted.DLDENet.from_checkpoint" href="#torchsight.models.dlde.weighted.DLDENet.from_checkpoint">from_checkpoint</a></code></li>
+<li><code><a title="torchsight.models.dlde.weighted.DLDENet.get_classification_module" href="#torchsight.models.dlde.weighted.DLDENet.get_classification_module">get_classification_module</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

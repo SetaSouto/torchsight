@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
-<title>torchsight.models.dlde API documentation</title>
-<meta name="description" content="Deep Local Directional Embedding (DLDE) module …" />
+<title>torchsight.models.dlde.tracked API documentation</title>
+<meta name="description" content="First version of the DLDENet with tracked means …" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,15 +17,18 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>torchsight.models.dlde</code> module</h1>
+<h1 class="title"><code>torchsight.models.dlde.tracked</code> module</h1>
 </header>
 <section id="section-intro">
+<p>First version of the DLDENet with tracked means.</p>
 <p>Deep Local Directional Embedding (DLDE) module.</p>
 <p>This net is based on the RetinaNet architecture but provides a different submodule
 for classification and additional methods.</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">&#34;&#34;&#34;Deep Local Directional Embedding (DLDE) module.
+<pre><code class="python">&#34;&#34;&#34;First version of the DLDENet with tracked means.
+
+Deep Local Directional Embedding (DLDE) module.
 
 This net is based on the RetinaNet architecture but provides a different submodule
 for classification and additional methods.
@@ -33,8 +36,8 @@ for classification and additional methods.
 import torch
 from torch import nn
 
-from .retinanet import RetinaNet, SubModule
-from .anchors import Anchors
+from ..retinanet import RetinaNet, SubModule
+from ..anchors import Anchors
 
 
 class DirectionalClassification(nn.Module):
@@ -330,7 +333,7 @@ class DirectionalClassification(nn.Module):
         super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])
 
 
-class DLDENet(RetinaNet):
+class DLDENetWithTrackedMeans(RetinaNet):
     &#34;&#34;&#34;Deep Local Directional Embeddings Net.
 
     Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
@@ -364,7 +367,7 @@ class DLDENet(RetinaNet):
         else:
             self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
 
-        super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)
+        super().__init__(classes, resnet, features, anchors, pretrained, device)
 
     def to(self, device):
         &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
@@ -375,7 +378,7 @@ class DLDENet(RetinaNet):
         &#34;&#34;&#34;
         self.device = device
         self.classification.to(device)
-        return super(DLDENet, self).to(device)
+        return super().to(device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         &#34;&#34;&#34;Get the directional classification module.
@@ -472,7 +475,7 @@ class DLDENet(RetinaNet):
         &#34;&#34;&#34;
         return {
             &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
-            &#39;parameters&#39;: super(DLDENet, self).state_dict(*args, **kwargs)
+            &#39;parameters&#39;: super().state_dict(*args, **kwargs)
         }
 
     def load_state_dict(self, state_dict):
@@ -486,7 +489,7 @@ class DLDENet(RetinaNet):
         if &#39;parameters&#39; not in state_dict:
             raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
 
-        super(DLDENet, self).load_state_dict(state_dict[&#39;parameters&#39;])
+        super().load_state_dict(state_dict[&#39;parameters&#39;])
         self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
 </details>
 </section>
@@ -499,16 +502,16 @@ class DLDENet(RetinaNet):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="torchsight.models.dlde.DLDENet"><code class="flex name class">
-<span>class <span class="ident">DLDENet</span></span>
-<span>(</span><span><small>ancestors:</small> <a title="torchsight.models.retinanet.RetinaNet" href="retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a>, torch.nn.modules.module.Module)</span>
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans"><code class="flex name class">
+<span>class <span class="ident">DLDENetWithTrackedMeans</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.models.retinanet.RetinaNet" href="../retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a>, torch.nn.modules.module.Module)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Deep Local Directional Embeddings Net.</p>
 <p>Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">class DLDENet(RetinaNet):
+<pre><code class="python">class DLDENetWithTrackedMeans(RetinaNet):
     &#34;&#34;&#34;Deep Local Directional Embeddings Net.
 
     Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
@@ -542,7 +545,7 @@ class DLDENet(RetinaNet):
         else:
             self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
 
-        super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)
+        super().__init__(classes, resnet, features, anchors, pretrained, device)
 
     def to(self, device):
         &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
@@ -553,7 +556,7 @@ class DLDENet(RetinaNet):
         &#34;&#34;&#34;
         self.device = device
         self.classification.to(device)
-        return super(DLDENet, self).to(device)
+        return super().to(device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         &#34;&#34;&#34;Get the directional classification module.
@@ -650,7 +653,7 @@ class DLDENet(RetinaNet):
         &#34;&#34;&#34;
         return {
             &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
-            &#39;parameters&#39;: super(DLDENet, self).state_dict(*args, **kwargs)
+            &#39;parameters&#39;: super().state_dict(*args, **kwargs)
         }
 
     def load_state_dict(self, state_dict):
@@ -664,12 +667,12 @@ class DLDENet(RetinaNet):
         if &#39;parameters&#39; not in state_dict:
             raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
 
-        super(DLDENet, self).load_state_dict(state_dict[&#39;parameters&#39;])
+        super().load_state_dict(state_dict[&#39;parameters&#39;])
         self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="torchsight.models.dlde.DLDENet.__init__"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.__init__"><code class="name flex">
 <span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15, shift=0.8, assignation_thresholds=None, pretrained=True, device=None)</span>
 </code></dt>
 <dd>
@@ -729,10 +732,10 @@ This pretraining is provided by the torchvision package.</dd>
     else:
         self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
 
-    super(DLDENet, self).__init__(classes, resnet, features, anchors, pretrained, device)</code></pre>
+    super().__init__(classes, resnet, features, anchors, pretrained, device)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DLDENet.forward"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.forward"><code class="name flex">
 <span>def <span class="ident">forward</span></span>(<span>self, images, annotations=None, initializing=False)</span>
 </code></dt>
 <dd>
@@ -836,7 +839,7 @@ classification submodule.</dd>
     return self.transform(images, anchors, regressions, classifications)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DLDENet.get_classification_module"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.get_classification_module"><code class="name flex">
 <span>def <span class="ident">get_classification_module</span></span>(<span>self, in_channels, classes, anchors, features)</span>
 </code></dt>
 <dd>
@@ -855,7 +858,7 @@ classification submodule.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><a title="torchsight.models.dlde.DirectionalClassification" href="#torchsight.models.dlde.DirectionalClassification"><code>DirectionalClassification</code></a></strong></dt>
+<dt><strong><a title="torchsight.models.dlde.tracked.DirectionalClassification" href="#torchsight.models.dlde.tracked.DirectionalClassification"><code>DirectionalClassification</code></a></strong></dt>
 <dd>The module for classification.</dd>
 </dl></section>
 <details class="source">
@@ -881,7 +884,7 @@ classification submodule.</dd>
                                      device=self.device)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DLDENet.load_state_dict"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.load_state_dict"><code class="name flex">
 <span>def <span class="ident">load_state_dict</span></span>(<span>self, state_dict)</span>
 </code></dt>
 <dd>
@@ -904,11 +907,11 @@ classification submodule.</dd>
     if &#39;parameters&#39; not in state_dict:
         raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
 
-    super(DLDENet, self).load_state_dict(state_dict[&#39;parameters&#39;])
+    super().load_state_dict(state_dict[&#39;parameters&#39;])
     self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DLDENet.state_dict"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.state_dict"><code class="name flex">
 <span>def <span class="ident">state_dict</span></span>(<span>self, *args, **kwargs)</span>
 </code></dt>
 <dd>
@@ -931,11 +934,11 @@ classification submodule.</dd>
     &#34;&#34;&#34;
     return {
         &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
-        &#39;parameters&#39;: super(DLDENet, self).state_dict(*args, **kwargs)
+        &#39;parameters&#39;: super().state_dict(*args, **kwargs)
     }</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DLDENet.to"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.to"><code class="name flex">
 <span>def <span class="ident">to</span></span>(<span>self, device)</span>
 </code></dt>
 <dd>
@@ -957,10 +960,10 @@ parameters and attributes to the given device.</p>
     &#34;&#34;&#34;
     self.device = device
     self.classification.to(device)
-    return super(DLDENet, self).to(device)</code></pre>
+    return super().to(device)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DLDENet.update_means"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.update_means"><code class="name flex">
 <span>def <span class="ident">update_means</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -975,16 +978,17 @@ parameters and attributes to the given device.</p>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="torchsight.models.retinanet.RetinaNet" href="retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a></b></code>:
+<li><code><b><a title="torchsight.models.retinanet.RetinaNet" href="../retinanet.html#torchsight.models.retinanet.RetinaNet">RetinaNet</a></b></code>:
 <ul class="hlist">
-<li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="retinanet.html#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
-<li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="retinanet.html#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
-<li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="retinanet.html#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.classify" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.classify">classify</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>
 </ul>
 </li>
 </ul>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification"><code class="flex name class">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification"><code class="flex name class">
 <span>class <span class="ident">DirectionalClassification</span></span>
 <span>(</span><span><small>ancestors:</small> torch.nn.modules.module.Module)</span>
 </code></dt>
@@ -1328,7 +1332,7 @@ because it will compute the mean with the average of the class' embeddings.</p><
 </details>
 <h3>Methods</h3>
 <dl>
-<dt id="torchsight.models.dlde.DirectionalClassification.__init__"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.__init__"><code class="name flex">
 <span>def <span class="ident">__init__</span></span>(<span>self, in_channels, embedding_size, anchors, features, classes, concentration, shift, assignation_thresholds, device=None)</span>
 </code></dt>
 <dd>
@@ -1401,7 +1405,7 @@ or to background. It must have the keys 'object' and 'background' with float val
                              anchors=anchors, features=features).to(self.device)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.classify"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.classify"><code class="name flex">
 <span>def <span class="ident">classify</span></span>(<span>self, embeddings)</span>
 </code></dt>
 <dd>
@@ -1441,7 +1445,7 @@ Shape:
     return self.modified_sigmoid(similarity)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.encode"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.encode"><code class="name flex">
 <span>def <span class="ident">encode</span></span>(<span>self, feature_map)</span>
 </code></dt>
 <dd>
@@ -1483,7 +1487,7 @@ Shape:
     return embeddings / embeddings.norm(dim=2, keepdim=True)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.forward"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.forward"><code class="name flex">
 <span>def <span class="ident">forward</span></span>(<span>self, feature_maps, anchors=None, annotations=None, classify=True)</span>
 </code></dt>
 <dd>
@@ -1555,7 +1559,7 @@ Shape:
         return self.classify(embeddings)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.load_state_dict"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.load_state_dict"><code class="name flex">
 <span>def <span class="ident">load_state_dict</span></span>(<span>self, state_dict)</span>
 </code></dt>
 <dd>
@@ -1582,7 +1586,7 @@ Shape:
     super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.modified_sigmoid"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.modified_sigmoid"><code class="name flex">
 <span>def <span class="ident">modified_sigmoid</span></span>(<span>self, inputs)</span>
 </code></dt>
 <dd>
@@ -1612,7 +1616,7 @@ Shape:
     return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.state_dict"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.state_dict"><code class="name flex">
 <span>def <span class="ident">state_dict</span></span>(<span>self, *args, **kwargs)</span>
 </code></dt>
 <dd>
@@ -1639,7 +1643,7 @@ Shape:
     }</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.to"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.to"><code class="name flex">
 <span>def <span class="ident">to</span></span>(<span>self, device)</span>
 </code></dt>
 <dd>
@@ -1663,7 +1667,7 @@ Shape:
     return super(DirectionalClassification, self).to(device)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.track"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.track"><code class="name flex">
 <span>def <span class="ident">track</span></span>(<span>self, embeddings, anchors, annotations)</span>
 </code></dt>
 <dd>
@@ -1742,7 +1746,7 @@ Shape:
                 self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.DirectionalClassification.update_means"><code class="name flex">
+<dt id="torchsight.models.dlde.tracked.DirectionalClassification.update_means"><code class="name flex">
 <span>def <span class="ident">update_means</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -1768,36 +1772,36 @@ Shape:
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="torchsight.models" href="index.html">torchsight.models</a></code></li>
+<li><code><a title="torchsight.models.dlde" href="index.html">torchsight.models.dlde</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="torchsight.models.dlde.DLDENet" href="#torchsight.models.dlde.DLDENet">DLDENet</a></code></h4>
+<h4><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans">DLDENetWithTrackedMeans</a></code></h4>
 <ul class="">
-<li><code><a title="torchsight.models.dlde.DLDENet.__init__" href="#torchsight.models.dlde.DLDENet.__init__">__init__</a></code></li>
-<li><code><a title="torchsight.models.dlde.DLDENet.forward" href="#torchsight.models.dlde.DLDENet.forward">forward</a></code></li>
-<li><code><a title="torchsight.models.dlde.DLDENet.get_classification_module" href="#torchsight.models.dlde.DLDENet.get_classification_module">get_classification_module</a></code></li>
-<li><code><a title="torchsight.models.dlde.DLDENet.load_state_dict" href="#torchsight.models.dlde.DLDENet.load_state_dict">load_state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.DLDENet.state_dict" href="#torchsight.models.dlde.DLDENet.state_dict">state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.DLDENet.to" href="#torchsight.models.dlde.DLDENet.to">to</a></code></li>
-<li><code><a title="torchsight.models.dlde.DLDENet.update_means" href="#torchsight.models.dlde.DLDENet.update_means">update_means</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.__init__" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.forward" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.get_classification_module" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.get_classification_module">get_classification_module</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.load_state_dict" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.load_state_dict">load_state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.state_dict" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.state_dict">state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.to" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.to">to</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.update_means" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.update_means">update_means</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="torchsight.models.dlde.DirectionalClassification" href="#torchsight.models.dlde.DirectionalClassification">DirectionalClassification</a></code></h4>
+<h4><code><a title="torchsight.models.dlde.tracked.DirectionalClassification" href="#torchsight.models.dlde.tracked.DirectionalClassification">DirectionalClassification</a></code></h4>
 <ul class="two-column">
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.__init__" href="#torchsight.models.dlde.DirectionalClassification.__init__">__init__</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.classify" href="#torchsight.models.dlde.DirectionalClassification.classify">classify</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.encode" href="#torchsight.models.dlde.DirectionalClassification.encode">encode</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.forward" href="#torchsight.models.dlde.DirectionalClassification.forward">forward</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.load_state_dict" href="#torchsight.models.dlde.DirectionalClassification.load_state_dict">load_state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.modified_sigmoid" href="#torchsight.models.dlde.DirectionalClassification.modified_sigmoid">modified_sigmoid</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.state_dict" href="#torchsight.models.dlde.DirectionalClassification.state_dict">state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.to" href="#torchsight.models.dlde.DirectionalClassification.to">to</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.track" href="#torchsight.models.dlde.DirectionalClassification.track">track</a></code></li>
-<li><code><a title="torchsight.models.dlde.DirectionalClassification.update_means" href="#torchsight.models.dlde.DirectionalClassification.update_means">update_means</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.__init__" href="#torchsight.models.dlde.tracked.DirectionalClassification.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.classify" href="#torchsight.models.dlde.tracked.DirectionalClassification.classify">classify</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.encode" href="#torchsight.models.dlde.tracked.DirectionalClassification.encode">encode</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.forward" href="#torchsight.models.dlde.tracked.DirectionalClassification.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.load_state_dict" href="#torchsight.models.dlde.tracked.DirectionalClassification.load_state_dict">load_state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.modified_sigmoid" href="#torchsight.models.dlde.tracked.DirectionalClassification.modified_sigmoid">modified_sigmoid</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.state_dict" href="#torchsight.models.dlde.tracked.DirectionalClassification.state_dict">state_dict</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.to" href="#torchsight.models.dlde.tracked.DirectionalClassification.to">to</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.track" href="#torchsight.models.dlde.tracked.DirectionalClassification.track">track</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.update_means" href="#torchsight.models.dlde.tracked.DirectionalClassification.update_means">update_means</a></code></li>
 </ul>
 </li>
 </ul>

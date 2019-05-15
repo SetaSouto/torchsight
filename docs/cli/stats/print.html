@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
-<title>torchsight API documentation</title>
-<meta name="description" content="" />
+<title>torchsight.cli.stats.print API documentation</title>
+<meta name="description" content="Extract stats from the PrintLogger." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,58 +17,71 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>torchsight</code> module</h1>
+<h1 class="title"><code>torchsight.cli.stats.print</code> module</h1>
 </header>
 <section id="section-intro">
+<p>Extract stats from the PrintLogger.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Extract stats from the PrintLogger.&#34;&#34;&#34;
+import click
+
+from torchsight.loggers import PrintLogger
+
+
+@click.command()
+@click.argument(&#39;log_file&#39;)
+@click.option(&#39;-lk&#39;, &#39;--loss-key&#39;, default=&#39;Loss&#39;, help=&#39;The key in the logs that indicates the loss of the batch.&#39;)
+@click.option(&#39;-ek&#39;, &#39;--epoch-key&#39;, default=&#39;Epoch&#39;, help=&#39;The key in the logs that indicates the epoch.&#39;)
+def printlogger(log_file, loss_key, epoch_key):
+    &#34;&#34;&#34;Get the mean loss per epoch over the training dataset and validation dataset.
+
+    This stats could be generated from the logs that generated the PrintLogger and were
+    saved in a file.
+
+    For example:
+
+    $ python cli.py train dldenet ~/dataset/coco --logs-dir logs/ &gt; logs/logs.txt
+
+    This command indicates that the trainer save the checkpoints to logs/ and the logger
+    save the description into logs/description.txt; and with the &#39;&gt;&#39; we put all the prints
+    into the logs/logs.txt file.
+
+    Now you can use:
+
+    $ python cli.py stats printlogger logs/logs.txt
+
+    And you&#39;ll get something like:
+
+    EPOCH |      TRAIN LOSS | VALIDATION LOSS
+
+        1 |       1.9204515 |       1.1482288
+
+        2 |       1.1309012 | ---
+
+    Where the `---` means that there is no data yet to show.
+    &#34;&#34;&#34;
+    logger = PrintLogger(description=None)
+    train = logger.epochs_losses(filepath=log_file, epoch_key=epoch_key,
+                                 loss_key=loss_key, keep=lambda x: x[:10] == &#39;[Training]&#39;)
+    valid = logger.epochs_losses(filepath=log_file, epoch_key=epoch_key,
+                                 loss_key=loss_key, keep=lambda x: x[:12] == &#39;[Validating]&#39;)
+    epochs = train.keys()
+
+    padding = 15
+    print(&#39;{} | {} | {}&#39;.format(&#39;EPOCH&#39;.rjust(padding // 3),
+                                &#39;TRAIN LOSS&#39;.rjust(padding),
+                                &#39;VALIDATION LOSS&#39;.rjust(padding)))
+    for epoch in epochs:
+        train_loss = &#39;{:.7f}&#39;.format(float(train[epoch][&#39;average&#39;])).rjust(padding)
+        try:
+            valid_loss = &#39;{:.7f}&#39;.format(float(valid[epoch][&#39;average&#39;])).rjust(padding)
+        except KeyError:
+            valid_loss = &#39;---&#39;
+        print(&#39;{} | {} | {}&#39;.format(&#39;{}&#39;.format(epoch).rjust(padding // 3), train_loss, valid_loss))</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
-<dl>
-<dt><code class="name"><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></dt>
-<dd>
-<section class="desc"><p>Package where are the CLI commands.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></dt>
-<dd>
-<section class="desc"><p>Evaluators for the different models.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></dt>
-<dd>
-<section class="desc"><p>Export the Loggers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></dt>
-<dd>
-<section class="desc"><p>Package for the custom optimizers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></dt>
-<dd>
-<section class="desc"><p>Utilities functions and modules.</p></section>
-</dd>
-</dl>
 </section>
 <section>
 </section>
@@ -83,19 +96,9 @@
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></li>
-<li><code><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></li>
-<li><code><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></li>
-<li><code><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></li>
-<li><code><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></li>
-<li><code><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></li>
-<li><code><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></li>
-<li><code><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></li>
-<li><code><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></li>
-<li><code><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></li>
-<li><code><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></li>
+<li><code><a title="torchsight.cli.stats" href="index.html">torchsight.cli.stats</a></code></li>
 </ul>
 </li>
 </ul>

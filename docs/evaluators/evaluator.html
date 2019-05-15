@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.evaluators.evaluator API documentation</title>
+<meta name="description" content="Base Evaluator class." />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.evaluators.evaluator</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Base Evaluator class.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Base Evaluator class.&#34;&#34;&#34;
+import time
+
+import torch
+
+from torchsight.loggers import PrintLogger
+from torchsight.utils import merge_dicts
+
+
+class Evaluator():
+    &#34;&#34;&#34;An evaluator base class.
+
+    The evaluator is an interface to evaluate different models. You can override the methods to get the dataset,
+    the dataloader and the model, and override the method to compute the forward pass where you can put any
+    metric that you want to track.
+
+    This class is intended to avoid boilerplate code and only focus on compute the metric or evaluation that you
+    want to have.
+    &#34;&#34;&#34;
+    params = {}
+
+    def __init__(self, checkpoint, params=None, device=None):
+        &#34;&#34;&#34;Initialize the evaluator, get the dataset and the model to evaluate.
+
+        Arguments:
+            checkpoint (str): The checkpoint generated by the trainer where we can find the model state.
+            params (dict): A dict to replace the base params of the evaluator.
+            device (str, optional): The device to use for the evaluation.
+        &#34;&#34;&#34;
+        self.params = merge_dicts(self.params, params, verbose=True)
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.checkpoint = checkpoint
+        self.dataset = self.get_dataset()
+        self.dataloader = self.get_dataloader()
+        self.model = self.get_model()
+        self.logger = self.get_logger()
+
+        # Keep a dict with the key-value pairs to log after each batch
+        self.current_log = {}
+
+    ###############################
+    ###         GETTERS         ###
+    ###############################
+
+    def get_dataset(self):
+        &#34;&#34;&#34;Get the dataset for the evaluation.
+
+        Returns:
+            torch.utils.data.Dataset: The dataset to use for the evaluation.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;You must provide your own dataset&#39;)
+
+    def get_dataloader(self):
+        &#34;&#34;&#34;Get the dataloader to use for the evaluation.
+
+        Returns:
+            torch.utils.data.Dataloader: The dataloader to use for the evaluation.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;You must provide your own dataloader&#39;)
+
+    def get_model(self):
+        &#34;&#34;&#34;Get the model to use to make the predictions.
+
+        Returns:
+            torch.nn.Module: The model to use to make the predictions over the data.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;You must provide your own model&#39;)
+
+    def get_logger(self):
+        &#34;&#34;&#34;Get the logger to use during the training to show the information about the process.
+
+        This base implementation uses the PrintLogger that will print the log to the console.
+
+        Returns:
+            pymatch.loggers.Logger: A Logger to use during the training.
+        &#34;&#34;&#34;
+        return PrintLogger(description=None)
+
+    ###############################
+    ###         METHODS         ###
+    ###############################
+
+    def eval(self):
+        &#34;&#34;&#34;Put the model in evaluation mode.
+
+        You can override this method to pass arguments to the eval() method of the model
+        or do anything what you want.
+        &#34;&#34;&#34;
+        self.model.eval()
+
+    def evaluate(self):
+        &#34;&#34;&#34;Run the model over the entire dataset and compute the evaluation metric.&#34;&#34;&#34;
+        self.model.to(self.device)
+        self.eval()
+
+        # The number of batches that the dataset has
+        n_batches = len(self.dataloader)
+
+        # The start time of the evaluation and the last batch&#39;s end time
+        start_time = time.time()
+        last_endtime = start_time
+
+        with torch.no_grad():
+            for batch, data in enumerate(self.dataloader):
+                self.forward(*data)
+
+                total_time = time.time() - start_time
+                batch_time = time.time() - last_endtime
+                last_endtime = time.time()
+
+                self.logger.log(merge_dicts({
+                    &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
+                    &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
+                    &#39;Total&#39;: &#39;{:.1f} s&#39;.format(total_time)
+                }, self.current_log))
+                self.current_log = {}
+
+                # A callback after each batch
+                self.batch_callback(batch)
+
+        # A final callback
+        self.evaluate_callback()
+
+    def forward(self, *args):
+        &#34;&#34;&#34;Forward pass through the model, make the predictions and store them.
+
+        Inside this method you should store the predictions made by the model, perform
+        some metrics and do the evaluation.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;Yous should implement your own forward to make the predictions&#39;)
+
+    def batch_callback(self, batch):
+        &#34;&#34;&#34;A callback that is called after is batch.
+
+        Arguments:
+            batch (int): The number of the batch that was ran before this callback.
+        &#34;&#34;&#34;
+
+    def evaluate_callback(self):
+        &#34;&#34;&#34;A callback that is called at the end of the evaluation.&#34;&#34;&#34;</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.evaluators.evaluator.Evaluator"><code class="flex name class">
+<span>class <span class="ident">Evaluator</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>An evaluator base class.</p>
+<p>The evaluator is an interface to evaluate different models. You can override the methods to get the dataset,
+the dataloader and the model, and override the method to compute the forward pass where you can put any
+metric that you want to track.</p>
+<p>This class is intended to avoid boilerplate code and only focus on compute the metric or evaluation that you
+want to have.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Evaluator():
+    &#34;&#34;&#34;An evaluator base class.
+
+    The evaluator is an interface to evaluate different models. You can override the methods to get the dataset,
+    the dataloader and the model, and override the method to compute the forward pass where you can put any
+    metric that you want to track.
+
+    This class is intended to avoid boilerplate code and only focus on compute the metric or evaluation that you
+    want to have.
+    &#34;&#34;&#34;
+    params = {}
+
+    def __init__(self, checkpoint, params=None, device=None):
+        &#34;&#34;&#34;Initialize the evaluator, get the dataset and the model to evaluate.
+
+        Arguments:
+            checkpoint (str): The checkpoint generated by the trainer where we can find the model state.
+            params (dict): A dict to replace the base params of the evaluator.
+            device (str, optional): The device to use for the evaluation.
+        &#34;&#34;&#34;
+        self.params = merge_dicts(self.params, params, verbose=True)
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.checkpoint = checkpoint
+        self.dataset = self.get_dataset()
+        self.dataloader = self.get_dataloader()
+        self.model = self.get_model()
+        self.logger = self.get_logger()
+
+        # Keep a dict with the key-value pairs to log after each batch
+        self.current_log = {}
+
+    ###############################
+    ###         GETTERS         ###
+    ###############################
+
+    def get_dataset(self):
+        &#34;&#34;&#34;Get the dataset for the evaluation.
+
+        Returns:
+            torch.utils.data.Dataset: The dataset to use for the evaluation.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;You must provide your own dataset&#39;)
+
+    def get_dataloader(self):
+        &#34;&#34;&#34;Get the dataloader to use for the evaluation.
+
+        Returns:
+            torch.utils.data.Dataloader: The dataloader to use for the evaluation.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;You must provide your own dataloader&#39;)
+
+    def get_model(self):
+        &#34;&#34;&#34;Get the model to use to make the predictions.
+
+        Returns:
+            torch.nn.Module: The model to use to make the predictions over the data.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;You must provide your own model&#39;)
+
+    def get_logger(self):
+        &#34;&#34;&#34;Get the logger to use during the training to show the information about the process.
+
+        This base implementation uses the PrintLogger that will print the log to the console.
+
+        Returns:
+            pymatch.loggers.Logger: A Logger to use during the training.
+        &#34;&#34;&#34;
+        return PrintLogger(description=None)
+
+    ###############################
+    ###         METHODS         ###
+    ###############################
+
+    def eval(self):
+        &#34;&#34;&#34;Put the model in evaluation mode.
+
+        You can override this method to pass arguments to the eval() method of the model
+        or do anything what you want.
+        &#34;&#34;&#34;
+        self.model.eval()
+
+    def evaluate(self):
+        &#34;&#34;&#34;Run the model over the entire dataset and compute the evaluation metric.&#34;&#34;&#34;
+        self.model.to(self.device)
+        self.eval()
+
+        # The number of batches that the dataset has
+        n_batches = len(self.dataloader)
+
+        # The start time of the evaluation and the last batch&#39;s end time
+        start_time = time.time()
+        last_endtime = start_time
+
+        with torch.no_grad():
+            for batch, data in enumerate(self.dataloader):
+                self.forward(*data)
+
+                total_time = time.time() - start_time
+                batch_time = time.time() - last_endtime
+                last_endtime = time.time()
+
+                self.logger.log(merge_dicts({
+                    &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
+                    &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
+                    &#39;Total&#39;: &#39;{:.1f} s&#39;.format(total_time)
+                }, self.current_log))
+                self.current_log = {}
+
+                # A callback after each batch
+                self.batch_callback(batch)
+
+        # A final callback
+        self.evaluate_callback()
+
+    def forward(self, *args):
+        &#34;&#34;&#34;Forward pass through the model, make the predictions and store them.
+
+        Inside this method you should store the predictions made by the model, perform
+        some metrics and do the evaluation.
+        &#34;&#34;&#34;
+        raise NotImplementedError(&#39;Yous should implement your own forward to make the predictions&#39;)
+
+    def batch_callback(self, batch):
+        &#34;&#34;&#34;A callback that is called after is batch.
+
+        Arguments:
+            batch (int): The number of the batch that was ran before this callback.
+        &#34;&#34;&#34;
+
+    def evaluate_callback(self):
+        &#34;&#34;&#34;A callback that is called at the end of the evaluation.&#34;&#34;&#34;</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="torchsight.evaluators.evaluator.Evaluator.params"><code class="name">var <span class="ident">params</span></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.evaluators.evaluator.Evaluator.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, checkpoint, params=None, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the evaluator, get the dataset and the model to evaluate.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>checkpoint</code></strong> :&ensp;<code>str</code></dt>
+<dd>The checkpoint generated by the trainer where we can find the model state.</dd>
+<dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
+<dd>A dict to replace the base params of the evaluator.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The device to use for the evaluation.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, checkpoint, params=None, device=None):
+    &#34;&#34;&#34;Initialize the evaluator, get the dataset and the model to evaluate.
+
+    Arguments:
+        checkpoint (str): The checkpoint generated by the trainer where we can find the model state.
+        params (dict): A dict to replace the base params of the evaluator.
+        device (str, optional): The device to use for the evaluation.
+    &#34;&#34;&#34;
+    self.params = merge_dicts(self.params, params, verbose=True)
+    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+    self.checkpoint = checkpoint
+    self.dataset = self.get_dataset()
+    self.dataloader = self.get_dataloader()
+    self.model = self.get_model()
+    self.logger = self.get_logger()
+
+    # Keep a dict with the key-value pairs to log after each batch
+    self.current_log = {}</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.batch_callback"><code class="name flex">
+<span>def <span class="ident">batch_callback</span></span>(<span>self, batch)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>A callback that is called after is batch.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>batch</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number of the batch that was ran before this callback.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def batch_callback(self, batch):
+    &#34;&#34;&#34;A callback that is called after is batch.
+
+    Arguments:
+        batch (int): The number of the batch that was ran before this callback.
+    &#34;&#34;&#34;</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.eval"><code class="name flex">
+<span>def <span class="ident">eval</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Put the model in evaluation mode.</p>
+<p>You can override this method to pass arguments to the eval() method of the model
+or do anything what you want.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def eval(self):
+    &#34;&#34;&#34;Put the model in evaluation mode.
+
+    You can override this method to pass arguments to the eval() method of the model
+    or do anything what you want.
+    &#34;&#34;&#34;
+    self.model.eval()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.evaluate"><code class="name flex">
+<span>def <span class="ident">evaluate</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Run the model over the entire dataset and compute the evaluation metric.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def evaluate(self):
+    &#34;&#34;&#34;Run the model over the entire dataset and compute the evaluation metric.&#34;&#34;&#34;
+    self.model.to(self.device)
+    self.eval()
+
+    # The number of batches that the dataset has
+    n_batches = len(self.dataloader)
+
+    # The start time of the evaluation and the last batch&#39;s end time
+    start_time = time.time()
+    last_endtime = start_time
+
+    with torch.no_grad():
+        for batch, data in enumerate(self.dataloader):
+            self.forward(*data)
+
+            total_time = time.time() - start_time
+            batch_time = time.time() - last_endtime
+            last_endtime = time.time()
+
+            self.logger.log(merge_dicts({
+                &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
+                &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
+                &#39;Total&#39;: &#39;{:.1f} s&#39;.format(total_time)
+            }, self.current_log))
+            self.current_log = {}
+
+            # A callback after each batch
+            self.batch_callback(batch)
+
+    # A final callback
+    self.evaluate_callback()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.evaluate_callback"><code class="name flex">
+<span>def <span class="ident">evaluate_callback</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>A callback that is called at the end of the evaluation.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def evaluate_callback(self):
+    &#34;&#34;&#34;A callback that is called at the end of the evaluation.&#34;&#34;&#34;</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, *args)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Forward pass through the model, make the predictions and store them.</p>
+<p>Inside this method you should store the predictions made by the model, perform
+some metrics and do the evaluation.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def forward(self, *args):
+    &#34;&#34;&#34;Forward pass through the model, make the predictions and store them.
+
+    Inside this method you should store the predictions made by the model, perform
+    some metrics and do the evaluation.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#39;Yous should implement your own forward to make the predictions&#39;)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.get_dataloader"><code class="name flex">
+<span>def <span class="ident">get_dataloader</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the dataloader to use for the evaluation.</p>
+<h2 id="returns">Returns</h2>
+<p>torch.utils.data.Dataloader: The dataloader to use for the evaluation.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_dataloader(self):
+    &#34;&#34;&#34;Get the dataloader to use for the evaluation.
+
+    Returns:
+        torch.utils.data.Dataloader: The dataloader to use for the evaluation.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#39;You must provide your own dataloader&#39;)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.get_dataset"><code class="name flex">
+<span>def <span class="ident">get_dataset</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the dataset for the evaluation.</p>
+<h2 id="returns">Returns</h2>
+<p>torch.utils.data.Dataset: The dataset to use for the evaluation.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_dataset(self):
+    &#34;&#34;&#34;Get the dataset for the evaluation.
+
+    Returns:
+        torch.utils.data.Dataset: The dataset to use for the evaluation.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#39;You must provide your own dataset&#39;)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.get_logger"><code class="name flex">
+<span>def <span class="ident">get_logger</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the logger to use during the training to show the information about the process.</p>
+<p>This base implementation uses the PrintLogger that will print the log to the console.</p>
+<h2 id="returns">Returns</h2>
+<p>pymatch.loggers.Logger: A Logger to use during the training.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_logger(self):
+    &#34;&#34;&#34;Get the logger to use during the training to show the information about the process.
+
+    This base implementation uses the PrintLogger that will print the log to the console.
+
+    Returns:
+        pymatch.loggers.Logger: A Logger to use during the training.
+    &#34;&#34;&#34;
+    return PrintLogger(description=None)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.evaluator.Evaluator.get_model"><code class="name flex">
+<span>def <span class="ident">get_model</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the model to use to make the predictions.</p>
+<h2 id="returns">Returns</h2>
+<p>torch.nn.Module: The model to use to make the predictions over the data.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_model(self):
+    &#34;&#34;&#34;Get the model to use to make the predictions.
+
+    Returns:
+        torch.nn.Module: The model to use to make the predictions over the data.
+    &#34;&#34;&#34;
+    raise NotImplementedError(&#39;You must provide your own model&#39;)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.evaluators" href="index.html">torchsight.evaluators</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.evaluators.evaluator.Evaluator" href="#torchsight.evaluators.evaluator.Evaluator">Evaluator</a></code></h4>
+<ul class="two-column">
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.__init__" href="#torchsight.evaluators.evaluator.Evaluator.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.batch_callback" href="#torchsight.evaluators.evaluator.Evaluator.batch_callback">batch_callback</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.eval" href="#torchsight.evaluators.evaluator.Evaluator.eval">eval</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.evaluate" href="#torchsight.evaluators.evaluator.Evaluator.evaluate">evaluate</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.evaluate_callback" href="#torchsight.evaluators.evaluator.Evaluator.evaluate_callback">evaluate_callback</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.forward" href="#torchsight.evaluators.evaluator.Evaluator.forward">forward</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_dataloader" href="#torchsight.evaluators.evaluator.Evaluator.get_dataloader">get_dataloader</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_dataset" href="#torchsight.evaluators.evaluator.Evaluator.get_dataset">get_dataset</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_logger" href="#torchsight.evaluators.evaluator.Evaluator.get_logger">get_logger</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_model" href="#torchsight.evaluators.evaluator.Evaluator.get_model">get_model</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.params" href="#torchsight.evaluators.evaluator.Evaluator.params">params</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

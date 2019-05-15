@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
 <title>torchsight.trainers.retinanet API documentation</title>
-<meta name="description" content="RetinaNet trainer." />
+<meta name="description" content="RetinaNet Trainer." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -20,35 +20,28 @@
 <h1 class="title"><code>torchsight.trainers.retinanet</code> module</h1>
 </header>
 <section id="section-intro">
-<p>RetinaNet trainer.</p>
+<p>RetinaNet Trainer.</p>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">&#34;&#34;&#34;RetinaNet trainer.&#34;&#34;&#34;
-import time
-
+<pre><code class="python">&#34;&#34;&#34;RetinaNet Trainer.&#34;&#34;&#34;
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
-
 from torchvision import transforms
 
 from ..datasets import CocoDataset
 from ..losses import FocalLoss
-from ..metrics import MeanAP
 from ..models import RetinaNet
 from ..transforms.detection import Normalize, Resize, ToTensor
-from .abstract import AbstractTrainer
+from .trainer import Trainer
 
 
-class RetinaNetTrainer(AbstractTrainer):
-    &#34;&#34;&#34;Trainer for the RetinaNet model.
-
-    For each one of the hyperparameters please visit the class docstring.
-    &#34;&#34;&#34;
+class RetinaNetTrainer(Trainer):
+    &#34;&#34;&#34;RetinaNet trainer class.&#34;&#34;&#34;
     # Base hyperparameters, can be replaced in the initialization of the trainer:
     # &gt;&gt;&gt; RetinaNetTrainer(hyperparameters={&#39;RetinaNet&#39;: {&#39;classes&#39;: 1}})
     hyperparameters = {
-        &#39;RetinaNet&#39;: {
+        &#39;model&#39;: {
             &#39;classes&#39;: 80,
             &#39;resnet&#39;: 50,
             &#39;features&#39;: {
@@ -67,7 +60,7 @@ class RetinaNetTrainer(AbstractTrainer):
                 &#39;iou_threshold&#39;: 0.5
             }
         },
-        &#39;FocalLoss&#39;: {
+        &#39;criterion&#39;: {
             &#39;alpha&#39;: 0.25,
             &#39;gamma&#39;: 2.0,
             &#39;iou_thresholds&#39;: {
@@ -111,254 +104,9 @@ class RetinaNetTrainer(AbstractTrainer):
         }
     }
 
-    def __init__(self, *args, **kwargs):
-        &#34;&#34;&#34;Initialize the trainer.&#34;&#34;&#34;
-        self.compute_map = MeanAP()
-        super(RetinaNetTrainer, self).__init__(*args, **kwargs)
-
-    def get_model_hyperparameters(self):
-        return self.hyperparameters[&#39;RetinaNet&#39;]
-
-    def forward(self, images, *args, **kwargs):
-        &#34;&#34;&#34;Forward pass through the network.
-
-        Why this method? Is a software decision, that gives the freedom to override the forward pass
-        through the network and reuse all the other code. See the DLDE trainer for an example.
-        &#34;&#34;&#34;
-        return self.model(images)
-
-    def train(self, epochs=100, validate=True, epoch_callback=None):
-        &#34;&#34;&#34;Train the model for the given epochs.
-
-        Arguments:
-            epochs (int): The number of epochs to train.
-            validate (bool): If true it validates the model after each epoch using the validate method.
-            epoch_callback (function, optional): An optional function to call after each epoch.
-        &#34;&#34;&#34;
-        self.model.to(self.device)
-        self.criterion.to(self.device)
-
-        # Weights for each loss, to increase or decrease their values
-        weights = self.hyperparameters[&#39;FocalLoss&#39;][&#39;weights&#39;]
-
-        print(&#39;----- Training started ------&#39;)
-        print(&#39;Using device: {}&#39;.format(self.device))
-
-        n_batches = len(self.dataloader)
-        start_time = time.time()
-
-        for epoch in range(epochs):
-            epoch = epoch + 1 + self.checkpoint_epoch
-            last_endtime = time.time()
-
-            # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
-            # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
-            self.model.train()
-
-            for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-                images, annotations = images.to(self.device), annotations.to(self.device)
-
-                # Optimize
-                self.optimizer.zero_grad()
-                anchors, regressions, classifications = self.forward(images, annotations)
-                del images
-                classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
-                                                                      annotations)
-                del anchors, regressions, classifications, annotations
-
-                classification_loss *= weights[&#39;classification&#39;]
-                regression_loss *= weights[&#39;regression&#39;]
-                loss = classification_loss + regression_loss
-                # Set as float to free memory
-                classification_loss = float(classification_loss)
-                regression_loss = float(regression_loss)
-                # Optimize
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
-                self.optimizer.step()
-
-                # Log the batch
-                total_time = time.time() - start_time
-                batch_time = time.time() - last_endtime
-                last_endtime = time.time()
-                # Get the actual learning rate (modified by the scheduler)
-                learning_rates = [str(param_group[&#39;lr&#39;]) for i, param_group in enumerate(self.optimizer.param_groups)]
-                self.logger.log({
-                    &#39;Training&#39;: None,
-                    &#39;Epoch&#39;: epoch,
-                    &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch_index + 1, n_batches),
-                    &#39;LR&#39;: &#39; &#39;.join(learning_rates),
-                    &#39;Class.&#39;: &#39;{:.7f}&#39;.format(classification_loss),
-                    &#39;Regr.&#39;: &#39;{:.7f}&#39;.format(regression_loss),
-                    &#39;Loss&#39;: &#39;{:.7f}&#39;.format(loss),
-                    &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
-                    &#39;Total&#39;: &#39;{:.3f} s&#39;.format(total_time)
-                })
-
-                # Save the weights for this epoch every some batches
-                if batch_index % 100 == 0:
-                    self.save_checkpoint(epoch)
-
-            # Call the epoch callback
-            if epoch_callback is not None:
-                epoch_callback(epoch)
-
-            # Save the weights at the end of the epoch
-            self.save_checkpoint(epoch)
-
-            if validate:
-                validation_loss = self.validate(epoch)
-                self.scheduler.step(validation_loss)
-
-    def validate(self, epoch):
-        &#34;&#34;&#34;Compute the loss over the validation dataset.&#34;&#34;&#34;
-        self.model.to(self.device)
-        hyperparameters = self.get_model_hyperparameters()[&#39;evaluation&#39;]
-        self.model.eval(threshold=hyperparameters[&#39;threshold&#39;],
-                        iou_threshold=hyperparameters[&#39;iou_threshold&#39;],
-                        loss=True)
-
-        weights = self.hyperparameters[&#39;FocalLoss&#39;][&#39;weights&#39;]
-
-        classification_losses = []
-        regression_losses = []
-        losses = []
-
-        start_time = time.time()
-        last_endtime = time.time()
-        n_batches = len(self.valid_dataloader)
-
-        for batch, (images, annotations) in enumerate(self.valid_dataloader):
-            images, annotations = images.to(self.device), annotations.to(self.device)
-
-            anchors, regressions, classifications = self.model(images)
-            del images
-
-            classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
-            del anchors, regressions, classifications, annotations
-
-            classification_loss *= weights[&#39;classification&#39;]
-            regression_loss *= weights[&#39;regression&#39;]
-            classification_loss = float(classification_loss)
-            regression_loss = float(regression_loss)
-
-            classification_losses.append(classification_loss)
-            regression_losses.append(regression_loss)
-            losses.append(classification_loss + regression_loss)
-
-            batch_time = time.time() - last_endtime
-            last_endtime = time.time()
-            total_time = time.time() - start_time
-
-            self.logger.log({
-                &#39;Validating&#39;: None,
-                &#39;Epoch&#39;: epoch,
-                &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
-                &#39;Class.&#39;: &#39;{:.7f}&#39;.format(classification_loss),
-                &#39;Regr.&#39;: &#39;{:.7f}&#39;.format(regression_loss),
-                &#39;Loss&#39;: &#39;{:.7f}&#39;.format(losses[-1]),
-                &#39;Time&#39;: &#39;{:.3f}&#39;.format(batch_time),
-                &#39;Total&#39;: &#39;{:.3f}&#39;.format(total_time)
-            })
-
-        return torch.Tensor(losses).mean()
-
-    def validate_map(self):
-        &#34;&#34;&#34;Compute mAP over validation dataset.
-
-        We iterate over the images in the validation dataset, compute the detections using the current
-        state of the model, generate the detections tensor and compute the mAP using the MeanAP class.
-
-        As the MeanAP class does not computes the mAP for each class (it computes for the entire image),
-        we must filter the annotations by each class, compute mAP and store the value for the class and
-        continue.
-
-        Returns:
-            torch.Tensor: The mAP averaged over all the classes.
-        &#34;&#34;&#34;
-        print(&#39;--------- VALIDATING --------&#39;)
-
-        self.model.to(self.device)
-        self.model.eval(**self.hyperparameters[&#39;RetinaNet&#39;][&#39;evaluation&#39;])
-
-        mAP = {}  # The array of mAP per each class per each image
-        # mAP is something like {&#39;0&#39;: [0.15, ..., 0.87]} where the length of the list is the number of images
-        # in the validation dataset
-        aps = {}  # The array with the Average Precision for each IoU threshold, for each image, for each class
-        # aps is something like {&#39;0&#39;: [[0.67, ..., 0.54], ..., []]} where the length of the bigger array is the
-        # number of images that contains that label and the inner arrays is the number of IoU thresholds to compute
-        # the Average Precisions
-
-        for batch_index, (images, annotations) in enumerate(self.valid_dataloader):
-            images, annotations = images.to(self.device), annotations.to(self.device)
-            for index, (boxes, classifications) in enumerate(self.model(images)):
-                # Generate the detections
-                detections = torch.zeros((boxes.shape[0], 6)).to(self.device)
-                detections[:, :4] = boxes
-                prob, label = classifications.max(dim=1)
-                detections[:, 4] = label
-                detections[:, 5] = prob
-
-                # Get the actual annotations, clean and iterate over each unique label
-                actual_annotations = annotations[index].clone()
-                # Remove dummy annotations created by the data loader (label == -1)
-                mask = actual_annotations[:, -1] == -1
-                actual_annotations = actual_annotations[mask]
-                # Get the true labels in the actual annotation
-                labels = [int(label) for label in actual_annotations[:, -1].unique()]
-                # Iterate over each label to compute mAP per class
-                for label in labels:
-                    if label not in mAP:
-                        mAP[label] = []
-                    if label not in aps:
-                        aps[label] = []
-                    # Add zero values if there are no detections
-                    if not boxes.shape[0] &gt; 0:
-                        mAP[label].append(torch.zeros((1)).mean().to(self.device))
-                        aps[label].append(torch.zeros((self.compute_map.iou_thresholds.shape[0])).to(self.device))
-                        continue
-                    # Compute mAP
-                    actual_map, actual_aps = self.compute_map(actual_annotations, detections)
-                    mAP[label].append(actual_map)
-                    aps[label].append(actual_aps)
-
-            print(&#39;[Validating] [Batch {}]&#39;.format(batch_index))
-
-        # Set the model to train again
-        self.model.train()
-        # Compute the average of the map over all the classes
-        final_map = [torch.stack(mAP[label]).mean() for label in mAP]
-        final_aps = {label: torch.stack(aps[label]).mean(dim=0) for label in aps}
-        return torch.stack(final_map).mean(), final_aps
-
-    def get_model(self):
-        &#34;&#34;&#34;Initialize and get the RetinaNet.
-
-        Returns:
-            torch.nn.Module: The RetinaNet model.
-        &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;RetinaNet&#39;]
-        return RetinaNet(
-            classes=hyperparameters[&#39;classes&#39;],
-            resnet=hyperparameters[&#39;resnet&#39;],
-            features=hyperparameters[&#39;features&#39;],
-            anchors=hyperparameters[&#39;anchors&#39;],
-            pretrained=hyperparameters[&#39;pretrained&#39;]
-        )
-
-    def get_criterion(self):
-        &#34;&#34;&#34;Initialize and get the FocalLoss.
-
-        Returns:
-            torch.nn.Module: The FocalLoss.
-        &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;FocalLoss&#39;]
-        return FocalLoss(
-            alpha=hyperparameters[&#39;alpha&#39;],
-            gamma=hyperparameters[&#39;gamma&#39;],
-            iou_thresholds=hyperparameters[&#39;iou_thresholds&#39;],
-            device=self.device
-        )
+    ####################################
+    ###           GETTERS            ###
+    ####################################
 
     def get_transform(self):
         &#34;&#34;&#34;Initialize and get the transforms for the images.
@@ -374,16 +122,17 @@ class RetinaNetTrainer(AbstractTrainer):
         ])
 
     def get_datasets(self):
-        &#34;&#34;&#34;Initialize and get the Coco dataset for training and evaluation.
+        &#34;&#34;&#34;Initialize and get the Coco datasets for training and evaluation.
 
         Returns:
-            torch.utils.data.Dataset: The Coco dataset.
+            tuple: A Tuple with the torch.utils.data.Datasets for training and validation.
         &#34;&#34;&#34;
         transform = self.get_transform()
-        hyperparameters = self.hyperparameters[&#39;datasets&#39;]
 
-        model_classes = self.get_model_hyperparameters()[&#39;classes&#39;]
+        model_classes = self.hyperparameters[&#39;model&#39;][&#39;classes&#39;]
+        hyperparameters = self.hyperparameters[&#39;datasets&#39;]
         dataset_classes = len(hyperparameters[&#39;class_names&#39;])
+
         if dataset_classes &gt; 0 and model_classes != dataset_classes:
             raise ValueError(&#39; &#39;.join([&#39;The amount of classes for the model ({})&#39;.format(model_classes),
                                        &#39;must be the same to the length of &#34;class_names&#34; in&#39;,
@@ -424,7 +173,7 @@ class RetinaNetTrainer(AbstractTrainer):
             Also it pads the images so all has the same size.
 
             Arguments:
-                data (sequence): Sequence of tuples as (image, annotations).
+                data (sequence): Sequence of tuples as (image, annotations, *_).
 
             Returns:
                 torch.Tensor: The images.
@@ -434,7 +183,7 @@ class RetinaNetTrainer(AbstractTrainer):
                     Shape:
                         (batch size, biggest amount of annotations, 5)
             &#34;&#34;&#34;
-            images = [image for image, _ in data]
+            images = [image for image, *_ in data]
             max_width = max([image.shape[-1] for image in images])
             max_height = max([image.shape[-2] for image in images])
 
@@ -443,9 +192,9 @@ class RetinaNetTrainer(AbstractTrainer):
                 aux[:, :image.shape[1], :image.shape[2]] = image
                 return aux
 
-            images = torch.stack([pad_image(image) for image, _ in data], dim=0)
+            images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
 
-            max_annotations = max([annotations.shape[0] for _, annotations in data])
+            max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
 
             def fill_annotations(annotations):
                 aux = torch.ones((max_annotations, 5))
@@ -453,7 +202,7 @@ class RetinaNetTrainer(AbstractTrainer):
                 aux[:annotations.shape[0], :] = annotations
                 return aux
 
-            annotations = torch.stack([fill_annotations(a) for _, a in data], dim=0)
+            annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
             return images, annotations
 
         hyperparameters = {**self.hyperparameters[&#39;dataloaders&#39;], &#39;collate_fn&#39;: collate}
@@ -461,6 +210,37 @@ class RetinaNetTrainer(AbstractTrainer):
         return (
             DataLoader(dataset=self.dataset, **hyperparameters),
             DataLoader(dataset=self.valid_dataset, **hyperparameters)
+        )
+
+    def get_model(self):
+        &#34;&#34;&#34;Initialize and get the RetinaNet.
+
+        Returns:
+            torch.nn.Module: The RetinaNet model.
+        &#34;&#34;&#34;
+        hyperparameters = self.hyperparameters[&#39;model&#39;]
+
+        return RetinaNet(
+            classes=hyperparameters[&#39;classes&#39;],
+            resnet=hyperparameters[&#39;resnet&#39;],
+            features=hyperparameters[&#39;features&#39;],
+            anchors=hyperparameters[&#39;anchors&#39;],
+            pretrained=hyperparameters[&#39;pretrained&#39;]
+        )
+
+    def get_criterion(self):
+        &#34;&#34;&#34;Initialize and get the FocalLoss.
+
+        Returns:
+            torch.nn.Module: The FocalLoss.
+        &#34;&#34;&#34;
+        hyperparameters = self.hyperparameters[&#39;criterion&#39;]
+
+        return FocalLoss(
+            alpha=hyperparameters[&#39;alpha&#39;],
+            gamma=hyperparameters[&#39;gamma&#39;],
+            iou_thresholds=hyperparameters[&#39;iou_thresholds&#39;],
+            device=self.device
         )
 
     def get_optimizer(self):
@@ -495,7 +275,52 @@ class RetinaNetTrainer(AbstractTrainer):
             patience=hyperparameters[&#39;patience&#39;],
             verbose=True,
             threshold=hyperparameters[&#39;threshold&#39;]
-        )</code></pre>
+        )
+
+    ####################################
+    ###           METHODS            ###
+    ####################################
+
+    def forward(self, *args):
+        &#34;&#34;&#34;Forward pass through the network and loss computation.
+
+        Returns:
+            torch.Tensor: The loss of the batch.
+        &#34;&#34;&#34;
+        images, annotations, *_ = args
+        images, annotations = images.to(self.device), annotations.to(self.device)
+
+        anchors, regressions, classifications = self.model(images)
+        del images
+
+        classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+        del anchors, regressions, classifications, annotations
+
+        weights = self.hyperparameters[&#39;criterion&#39;][&#39;weights&#39;]
+        classification_loss *= weights[&#39;classification&#39;]
+        regression_loss *= weights[&#39;regression&#39;]
+
+        loss = classification_loss + regression_loss
+
+        # Log the classification and regression loss too:
+        self.current_log[&#39;Class.&#39;] = float(classification_loss)
+        self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+
+        return loss
+
+    def backward(self, loss):
+        &#34;&#34;&#34;Do the backward pass over the network.
+
+        Arguments:
+            loss (torch.Tensor): The loss value computed during the forward pass.
+        &#34;&#34;&#34;
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
+
+    def eval(self):
+        &#34;&#34;&#34;Put the model in evaluation mode.&#34;&#34;&#34;
+        params = self.hyperparameters[&#39;model&#39;][&#39;evaluation&#39;]
+        self.model.eval(threshold=params[&#39;threshold&#39;], iou_threshold=params[&#39;iou_threshold&#39;], loss=True)</code></pre>
 </details>
 </section>
 <section>
@@ -509,22 +334,18 @@ class RetinaNetTrainer(AbstractTrainer):
 <dl>
 <dt id="torchsight.trainers.retinanet.RetinaNetTrainer"><code class="flex name class">
 <span>class <span class="ident">RetinaNetTrainer</span></span>
-<span>(</span><span><small>ancestors:</small> <a title="torchsight.trainers.abstract.AbstractTrainer" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer">AbstractTrainer</a>)</span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.trainers.trainer.Trainer" href="trainer.html#torchsight.trainers.trainer.Trainer">Trainer</a>)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Trainer for the RetinaNet model.</p>
-<p>For each one of the hyperparameters please visit the class docstring.</p></section>
+<section class="desc"><p>RetinaNet trainer class.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">class RetinaNetTrainer(AbstractTrainer):
-    &#34;&#34;&#34;Trainer for the RetinaNet model.
-
-    For each one of the hyperparameters please visit the class docstring.
-    &#34;&#34;&#34;
+<pre><code class="python">class RetinaNetTrainer(Trainer):
+    &#34;&#34;&#34;RetinaNet trainer class.&#34;&#34;&#34;
     # Base hyperparameters, can be replaced in the initialization of the trainer:
     # &gt;&gt;&gt; RetinaNetTrainer(hyperparameters={&#39;RetinaNet&#39;: {&#39;classes&#39;: 1}})
     hyperparameters = {
-        &#39;RetinaNet&#39;: {
+        &#39;model&#39;: {
             &#39;classes&#39;: 80,
             &#39;resnet&#39;: 50,
             &#39;features&#39;: {
@@ -543,7 +364,7 @@ class RetinaNetTrainer(AbstractTrainer):
                 &#39;iou_threshold&#39;: 0.5
             }
         },
-        &#39;FocalLoss&#39;: {
+        &#39;criterion&#39;: {
             &#39;alpha&#39;: 0.25,
             &#39;gamma&#39;: 2.0,
             &#39;iou_thresholds&#39;: {
@@ -587,254 +408,9 @@ class RetinaNetTrainer(AbstractTrainer):
         }
     }
 
-    def __init__(self, *args, **kwargs):
-        &#34;&#34;&#34;Initialize the trainer.&#34;&#34;&#34;
-        self.compute_map = MeanAP()
-        super(RetinaNetTrainer, self).__init__(*args, **kwargs)
-
-    def get_model_hyperparameters(self):
-        return self.hyperparameters[&#39;RetinaNet&#39;]
-
-    def forward(self, images, *args, **kwargs):
-        &#34;&#34;&#34;Forward pass through the network.
-
-        Why this method? Is a software decision, that gives the freedom to override the forward pass
-        through the network and reuse all the other code. See the DLDE trainer for an example.
-        &#34;&#34;&#34;
-        return self.model(images)
-
-    def train(self, epochs=100, validate=True, epoch_callback=None):
-        &#34;&#34;&#34;Train the model for the given epochs.
-
-        Arguments:
-            epochs (int): The number of epochs to train.
-            validate (bool): If true it validates the model after each epoch using the validate method.
-            epoch_callback (function, optional): An optional function to call after each epoch.
-        &#34;&#34;&#34;
-        self.model.to(self.device)
-        self.criterion.to(self.device)
-
-        # Weights for each loss, to increase or decrease their values
-        weights = self.hyperparameters[&#39;FocalLoss&#39;][&#39;weights&#39;]
-
-        print(&#39;----- Training started ------&#39;)
-        print(&#39;Using device: {}&#39;.format(self.device))
-
-        n_batches = len(self.dataloader)
-        start_time = time.time()
-
-        for epoch in range(epochs):
-            epoch = epoch + 1 + self.checkpoint_epoch
-            last_endtime = time.time()
-
-            # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
-            # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
-            self.model.train()
-
-            for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-                images, annotations = images.to(self.device), annotations.to(self.device)
-
-                # Optimize
-                self.optimizer.zero_grad()
-                anchors, regressions, classifications = self.forward(images, annotations)
-                del images
-                classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
-                                                                      annotations)
-                del anchors, regressions, classifications, annotations
-
-                classification_loss *= weights[&#39;classification&#39;]
-                regression_loss *= weights[&#39;regression&#39;]
-                loss = classification_loss + regression_loss
-                # Set as float to free memory
-                classification_loss = float(classification_loss)
-                regression_loss = float(regression_loss)
-                # Optimize
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
-                self.optimizer.step()
-
-                # Log the batch
-                total_time = time.time() - start_time
-                batch_time = time.time() - last_endtime
-                last_endtime = time.time()
-                # Get the actual learning rate (modified by the scheduler)
-                learning_rates = [str(param_group[&#39;lr&#39;]) for i, param_group in enumerate(self.optimizer.param_groups)]
-                self.logger.log({
-                    &#39;Training&#39;: None,
-                    &#39;Epoch&#39;: epoch,
-                    &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch_index + 1, n_batches),
-                    &#39;LR&#39;: &#39; &#39;.join(learning_rates),
-                    &#39;Class.&#39;: &#39;{:.7f}&#39;.format(classification_loss),
-                    &#39;Regr.&#39;: &#39;{:.7f}&#39;.format(regression_loss),
-                    &#39;Loss&#39;: &#39;{:.7f}&#39;.format(loss),
-                    &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
-                    &#39;Total&#39;: &#39;{:.3f} s&#39;.format(total_time)
-                })
-
-                # Save the weights for this epoch every some batches
-                if batch_index % 100 == 0:
-                    self.save_checkpoint(epoch)
-
-            # Call the epoch callback
-            if epoch_callback is not None:
-                epoch_callback(epoch)
-
-            # Save the weights at the end of the epoch
-            self.save_checkpoint(epoch)
-
-            if validate:
-                validation_loss = self.validate(epoch)
-                self.scheduler.step(validation_loss)
-
-    def validate(self, epoch):
-        &#34;&#34;&#34;Compute the loss over the validation dataset.&#34;&#34;&#34;
-        self.model.to(self.device)
-        hyperparameters = self.get_model_hyperparameters()[&#39;evaluation&#39;]
-        self.model.eval(threshold=hyperparameters[&#39;threshold&#39;],
-                        iou_threshold=hyperparameters[&#39;iou_threshold&#39;],
-                        loss=True)
-
-        weights = self.hyperparameters[&#39;FocalLoss&#39;][&#39;weights&#39;]
-
-        classification_losses = []
-        regression_losses = []
-        losses = []
-
-        start_time = time.time()
-        last_endtime = time.time()
-        n_batches = len(self.valid_dataloader)
-
-        for batch, (images, annotations) in enumerate(self.valid_dataloader):
-            images, annotations = images.to(self.device), annotations.to(self.device)
-
-            anchors, regressions, classifications = self.model(images)
-            del images
-
-            classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
-            del anchors, regressions, classifications, annotations
-
-            classification_loss *= weights[&#39;classification&#39;]
-            regression_loss *= weights[&#39;regression&#39;]
-            classification_loss = float(classification_loss)
-            regression_loss = float(regression_loss)
-
-            classification_losses.append(classification_loss)
-            regression_losses.append(regression_loss)
-            losses.append(classification_loss + regression_loss)
-
-            batch_time = time.time() - last_endtime
-            last_endtime = time.time()
-            total_time = time.time() - start_time
-
-            self.logger.log({
-                &#39;Validating&#39;: None,
-                &#39;Epoch&#39;: epoch,
-                &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
-                &#39;Class.&#39;: &#39;{:.7f}&#39;.format(classification_loss),
-                &#39;Regr.&#39;: &#39;{:.7f}&#39;.format(regression_loss),
-                &#39;Loss&#39;: &#39;{:.7f}&#39;.format(losses[-1]),
-                &#39;Time&#39;: &#39;{:.3f}&#39;.format(batch_time),
-                &#39;Total&#39;: &#39;{:.3f}&#39;.format(total_time)
-            })
-
-        return torch.Tensor(losses).mean()
-
-    def validate_map(self):
-        &#34;&#34;&#34;Compute mAP over validation dataset.
-
-        We iterate over the images in the validation dataset, compute the detections using the current
-        state of the model, generate the detections tensor and compute the mAP using the MeanAP class.
-
-        As the MeanAP class does not computes the mAP for each class (it computes for the entire image),
-        we must filter the annotations by each class, compute mAP and store the value for the class and
-        continue.
-
-        Returns:
-            torch.Tensor: The mAP averaged over all the classes.
-        &#34;&#34;&#34;
-        print(&#39;--------- VALIDATING --------&#39;)
-
-        self.model.to(self.device)
-        self.model.eval(**self.hyperparameters[&#39;RetinaNet&#39;][&#39;evaluation&#39;])
-
-        mAP = {}  # The array of mAP per each class per each image
-        # mAP is something like {&#39;0&#39;: [0.15, ..., 0.87]} where the length of the list is the number of images
-        # in the validation dataset
-        aps = {}  # The array with the Average Precision for each IoU threshold, for each image, for each class
-        # aps is something like {&#39;0&#39;: [[0.67, ..., 0.54], ..., []]} where the length of the bigger array is the
-        # number of images that contains that label and the inner arrays is the number of IoU thresholds to compute
-        # the Average Precisions
-
-        for batch_index, (images, annotations) in enumerate(self.valid_dataloader):
-            images, annotations = images.to(self.device), annotations.to(self.device)
-            for index, (boxes, classifications) in enumerate(self.model(images)):
-                # Generate the detections
-                detections = torch.zeros((boxes.shape[0], 6)).to(self.device)
-                detections[:, :4] = boxes
-                prob, label = classifications.max(dim=1)
-                detections[:, 4] = label
-                detections[:, 5] = prob
-
-                # Get the actual annotations, clean and iterate over each unique label
-                actual_annotations = annotations[index].clone()
-                # Remove dummy annotations created by the data loader (label == -1)
-                mask = actual_annotations[:, -1] == -1
-                actual_annotations = actual_annotations[mask]
-                # Get the true labels in the actual annotation
-                labels = [int(label) for label in actual_annotations[:, -1].unique()]
-                # Iterate over each label to compute mAP per class
-                for label in labels:
-                    if label not in mAP:
-                        mAP[label] = []
-                    if label not in aps:
-                        aps[label] = []
-                    # Add zero values if there are no detections
-                    if not boxes.shape[0] &gt; 0:
-                        mAP[label].append(torch.zeros((1)).mean().to(self.device))
-                        aps[label].append(torch.zeros((self.compute_map.iou_thresholds.shape[0])).to(self.device))
-                        continue
-                    # Compute mAP
-                    actual_map, actual_aps = self.compute_map(actual_annotations, detections)
-                    mAP[label].append(actual_map)
-                    aps[label].append(actual_aps)
-
-            print(&#39;[Validating] [Batch {}]&#39;.format(batch_index))
-
-        # Set the model to train again
-        self.model.train()
-        # Compute the average of the map over all the classes
-        final_map = [torch.stack(mAP[label]).mean() for label in mAP]
-        final_aps = {label: torch.stack(aps[label]).mean(dim=0) for label in aps}
-        return torch.stack(final_map).mean(), final_aps
-
-    def get_model(self):
-        &#34;&#34;&#34;Initialize and get the RetinaNet.
-
-        Returns:
-            torch.nn.Module: The RetinaNet model.
-        &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;RetinaNet&#39;]
-        return RetinaNet(
-            classes=hyperparameters[&#39;classes&#39;],
-            resnet=hyperparameters[&#39;resnet&#39;],
-            features=hyperparameters[&#39;features&#39;],
-            anchors=hyperparameters[&#39;anchors&#39;],
-            pretrained=hyperparameters[&#39;pretrained&#39;]
-        )
-
-    def get_criterion(self):
-        &#34;&#34;&#34;Initialize and get the FocalLoss.
-
-        Returns:
-            torch.nn.Module: The FocalLoss.
-        &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;FocalLoss&#39;]
-        return FocalLoss(
-            alpha=hyperparameters[&#39;alpha&#39;],
-            gamma=hyperparameters[&#39;gamma&#39;],
-            iou_thresholds=hyperparameters[&#39;iou_thresholds&#39;],
-            device=self.device
-        )
+    ####################################
+    ###           GETTERS            ###
+    ####################################
 
     def get_transform(self):
         &#34;&#34;&#34;Initialize and get the transforms for the images.
@@ -850,16 +426,17 @@ class RetinaNetTrainer(AbstractTrainer):
         ])
 
     def get_datasets(self):
-        &#34;&#34;&#34;Initialize and get the Coco dataset for training and evaluation.
+        &#34;&#34;&#34;Initialize and get the Coco datasets for training and evaluation.
 
         Returns:
-            torch.utils.data.Dataset: The Coco dataset.
+            tuple: A Tuple with the torch.utils.data.Datasets for training and validation.
         &#34;&#34;&#34;
         transform = self.get_transform()
-        hyperparameters = self.hyperparameters[&#39;datasets&#39;]
 
-        model_classes = self.get_model_hyperparameters()[&#39;classes&#39;]
+        model_classes = self.hyperparameters[&#39;model&#39;][&#39;classes&#39;]
+        hyperparameters = self.hyperparameters[&#39;datasets&#39;]
         dataset_classes = len(hyperparameters[&#39;class_names&#39;])
+
         if dataset_classes &gt; 0 and model_classes != dataset_classes:
             raise ValueError(&#39; &#39;.join([&#39;The amount of classes for the model ({})&#39;.format(model_classes),
                                        &#39;must be the same to the length of &#34;class_names&#34; in&#39;,
@@ -900,7 +477,7 @@ class RetinaNetTrainer(AbstractTrainer):
             Also it pads the images so all has the same size.
 
             Arguments:
-                data (sequence): Sequence of tuples as (image, annotations).
+                data (sequence): Sequence of tuples as (image, annotations, *_).
 
             Returns:
                 torch.Tensor: The images.
@@ -910,7 +487,7 @@ class RetinaNetTrainer(AbstractTrainer):
                     Shape:
                         (batch size, biggest amount of annotations, 5)
             &#34;&#34;&#34;
-            images = [image for image, _ in data]
+            images = [image for image, *_ in data]
             max_width = max([image.shape[-1] for image in images])
             max_height = max([image.shape[-2] for image in images])
 
@@ -919,9 +496,9 @@ class RetinaNetTrainer(AbstractTrainer):
                 aux[:, :image.shape[1], :image.shape[2]] = image
                 return aux
 
-            images = torch.stack([pad_image(image) for image, _ in data], dim=0)
+            images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
 
-            max_annotations = max([annotations.shape[0] for _, annotations in data])
+            max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
 
             def fill_annotations(annotations):
                 aux = torch.ones((max_annotations, 5))
@@ -929,7 +506,7 @@ class RetinaNetTrainer(AbstractTrainer):
                 aux[:annotations.shape[0], :] = annotations
                 return aux
 
-            annotations = torch.stack([fill_annotations(a) for _, a in data], dim=0)
+            annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
             return images, annotations
 
         hyperparameters = {**self.hyperparameters[&#39;dataloaders&#39;], &#39;collate_fn&#39;: collate}
@@ -937,6 +514,37 @@ class RetinaNetTrainer(AbstractTrainer):
         return (
             DataLoader(dataset=self.dataset, **hyperparameters),
             DataLoader(dataset=self.valid_dataset, **hyperparameters)
+        )
+
+    def get_model(self):
+        &#34;&#34;&#34;Initialize and get the RetinaNet.
+
+        Returns:
+            torch.nn.Module: The RetinaNet model.
+        &#34;&#34;&#34;
+        hyperparameters = self.hyperparameters[&#39;model&#39;]
+
+        return RetinaNet(
+            classes=hyperparameters[&#39;classes&#39;],
+            resnet=hyperparameters[&#39;resnet&#39;],
+            features=hyperparameters[&#39;features&#39;],
+            anchors=hyperparameters[&#39;anchors&#39;],
+            pretrained=hyperparameters[&#39;pretrained&#39;]
+        )
+
+    def get_criterion(self):
+        &#34;&#34;&#34;Initialize and get the FocalLoss.
+
+        Returns:
+            torch.nn.Module: The FocalLoss.
+        &#34;&#34;&#34;
+        hyperparameters = self.hyperparameters[&#39;criterion&#39;]
+
+        return FocalLoss(
+            alpha=hyperparameters[&#39;alpha&#39;],
+            gamma=hyperparameters[&#39;gamma&#39;],
+            iou_thresholds=hyperparameters[&#39;iou_thresholds&#39;],
+            device=self.device
         )
 
     def get_optimizer(self):
@@ -971,7 +579,52 @@ class RetinaNetTrainer(AbstractTrainer):
             patience=hyperparameters[&#39;patience&#39;],
             verbose=True,
             threshold=hyperparameters[&#39;threshold&#39;]
-        )</code></pre>
+        )
+
+    ####################################
+    ###           METHODS            ###
+    ####################################
+
+    def forward(self, *args):
+        &#34;&#34;&#34;Forward pass through the network and loss computation.
+
+        Returns:
+            torch.Tensor: The loss of the batch.
+        &#34;&#34;&#34;
+        images, annotations, *_ = args
+        images, annotations = images.to(self.device), annotations.to(self.device)
+
+        anchors, regressions, classifications = self.model(images)
+        del images
+
+        classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+        del anchors, regressions, classifications, annotations
+
+        weights = self.hyperparameters[&#39;criterion&#39;][&#39;weights&#39;]
+        classification_loss *= weights[&#39;classification&#39;]
+        regression_loss *= weights[&#39;regression&#39;]
+
+        loss = classification_loss + regression_loss
+
+        # Log the classification and regression loss too:
+        self.current_log[&#39;Class.&#39;] = float(classification_loss)
+        self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+
+        return loss
+
+    def backward(self, loss):
+        &#34;&#34;&#34;Do the backward pass over the network.
+
+        Arguments:
+            loss (torch.Tensor): The loss value computed during the forward pass.
+        &#34;&#34;&#34;
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
+
+    def eval(self):
+        &#34;&#34;&#34;Put the model in evaluation mode.&#34;&#34;&#34;
+        params = self.hyperparameters[&#39;model&#39;][&#39;evaluation&#39;]
+        self.model.eval(threshold=params[&#39;threshold&#39;], iou_threshold=params[&#39;iou_threshold&#39;], loss=True)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -982,35 +635,76 @@ class RetinaNetTrainer(AbstractTrainer):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="torchsight.trainers.retinanet.RetinaNetTrainer.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, *args, **kwargs)</span>
+<dt id="torchsight.trainers.retinanet.RetinaNetTrainer.backward"><code class="name flex">
+<span>def <span class="ident">backward</span></span>(<span>self, loss)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Initialize the trainer.</p></section>
+<section class="desc"><p>Do the backward pass over the network.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>loss</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The loss value computed during the forward pass.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, *args, **kwargs):
-    &#34;&#34;&#34;Initialize the trainer.&#34;&#34;&#34;
-    self.compute_map = MeanAP()
-    super(RetinaNetTrainer, self).__init__(*args, **kwargs)</code></pre>
+<pre><code class="python">def backward(self, loss):
+    &#34;&#34;&#34;Do the backward pass over the network.
+
+    Arguments:
+        loss (torch.Tensor): The loss value computed during the forward pass.
+    &#34;&#34;&#34;
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.trainers.retinanet.RetinaNetTrainer.eval"><code class="name flex">
+<span>def <span class="ident">eval</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Put the model in evaluation mode.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def eval(self):
+    &#34;&#34;&#34;Put the model in evaluation mode.&#34;&#34;&#34;
+    params = self.hyperparameters[&#39;model&#39;][&#39;evaluation&#39;]
+    self.model.eval(threshold=params[&#39;threshold&#39;], iou_threshold=params[&#39;iou_threshold&#39;], loss=True)</code></pre>
 </details>
 </dd>
 <dt id="torchsight.trainers.retinanet.RetinaNetTrainer.forward"><code class="name flex">
-<span>def <span class="ident">forward</span></span>(<span>self, images, *args, **kwargs)</span>
+<span>def <span class="ident">forward</span></span>(<span>self, *args)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Forward pass through the network.</p>
-<p>Why this method? Is a software decision, that gives the freedom to override the forward pass
-through the network and reuse all the other code. See the DLDE trainer for an example.</p></section>
+<section class="desc"><p>Forward pass through the network and loss computation.</p>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The loss of the batch.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def forward(self, images, *args, **kwargs):
-    &#34;&#34;&#34;Forward pass through the network.
+<pre><code class="python">def forward(self, *args):
+    &#34;&#34;&#34;Forward pass through the network and loss computation.
 
-    Why this method? Is a software decision, that gives the freedom to override the forward pass
-    through the network and reuse all the other code. See the DLDE trainer for an example.
+    Returns:
+        torch.Tensor: The loss of the batch.
     &#34;&#34;&#34;
-    return self.model(images)</code></pre>
+    images, annotations, *_ = args
+    images, annotations = images.to(self.device), annotations.to(self.device)
+
+    anchors, regressions, classifications = self.model(images)
+    del images
+
+    classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
+    del anchors, regressions, classifications, annotations
+
+    weights = self.hyperparameters[&#39;criterion&#39;][&#39;weights&#39;]
+    classification_loss *= weights[&#39;classification&#39;]
+    regression_loss *= weights[&#39;regression&#39;]
+
+    loss = classification_loss + regression_loss
+
+    # Log the classification and regression loss too:
+    self.current_log[&#39;Class.&#39;] = float(classification_loss)
+    self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+
+    return loss</code></pre>
 </details>
 </dd>
 <dt id="torchsight.trainers.retinanet.RetinaNetTrainer.get_criterion"><code class="name flex">
@@ -1028,7 +722,8 @@ through the network and reuse all the other code. See the DLDE trainer for an ex
     Returns:
         torch.nn.Module: The FocalLoss.
     &#34;&#34;&#34;
-    hyperparameters = self.hyperparameters[&#39;FocalLoss&#39;]
+    hyperparameters = self.hyperparameters[&#39;criterion&#39;]
+
     return FocalLoss(
         alpha=hyperparameters[&#39;alpha&#39;],
         gamma=hyperparameters[&#39;gamma&#39;],
@@ -1067,7 +762,7 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
         Also it pads the images so all has the same size.
 
         Arguments:
-            data (sequence): Sequence of tuples as (image, annotations).
+            data (sequence): Sequence of tuples as (image, annotations, *_).
 
         Returns:
             torch.Tensor: The images.
@@ -1077,7 +772,7 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
                 Shape:
                     (batch size, biggest amount of annotations, 5)
         &#34;&#34;&#34;
-        images = [image for image, _ in data]
+        images = [image for image, *_ in data]
         max_width = max([image.shape[-1] for image in images])
         max_height = max([image.shape[-2] for image in images])
 
@@ -1086,9 +781,9 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
             aux[:, :image.shape[1], :image.shape[2]] = image
             return aux
 
-        images = torch.stack([pad_image(image) for image, _ in data], dim=0)
+        images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
 
-        max_annotations = max([annotations.shape[0] for _, annotations in data])
+        max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
 
         def fill_annotations(annotations):
             aux = torch.ones((max_annotations, 5))
@@ -1096,7 +791,7 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
             aux[:annotations.shape[0], :] = annotations
             return aux
 
-        annotations = torch.stack([fill_annotations(a) for _, a in data], dim=0)
+        annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
         return images, annotations
 
     hyperparameters = {**self.hyperparameters[&#39;dataloaders&#39;], &#39;collate_fn&#39;: collate}
@@ -1111,22 +806,26 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
 <span>def <span class="ident">get_datasets</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Initialize and get the Coco dataset for training and evaluation.</p>
+<section class="desc"><p>Initialize and get the Coco datasets for training and evaluation.</p>
 <h2 id="returns">Returns</h2>
-<p>torch.utils.data.Dataset: The Coco dataset.</p></section>
+<dl>
+<dt><strong><code>tuple</code></strong></dt>
+<dd>A Tuple with the torch.utils.data.Datasets for training and validation.</dd>
+</dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def get_datasets(self):
-    &#34;&#34;&#34;Initialize and get the Coco dataset for training and evaluation.
+    &#34;&#34;&#34;Initialize and get the Coco datasets for training and evaluation.
 
     Returns:
-        torch.utils.data.Dataset: The Coco dataset.
+        tuple: A Tuple with the torch.utils.data.Datasets for training and validation.
     &#34;&#34;&#34;
     transform = self.get_transform()
-    hyperparameters = self.hyperparameters[&#39;datasets&#39;]
 
-    model_classes = self.get_model_hyperparameters()[&#39;classes&#39;]
+    model_classes = self.hyperparameters[&#39;model&#39;][&#39;classes&#39;]
+    hyperparameters = self.hyperparameters[&#39;datasets&#39;]
     dataset_classes = len(hyperparameters[&#39;class_names&#39;])
+
     if dataset_classes &gt; 0 and model_classes != dataset_classes:
         raise ValueError(&#39; &#39;.join([&#39;The amount of classes for the model ({})&#39;.format(model_classes),
                                    &#39;must be the same to the length of &#34;class_names&#34; in&#39;,
@@ -1163,7 +862,8 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
     Returns:
         torch.nn.Module: The RetinaNet model.
     &#34;&#34;&#34;
-    hyperparameters = self.hyperparameters[&#39;RetinaNet&#39;]
+    hyperparameters = self.hyperparameters[&#39;model&#39;]
+
     return RetinaNet(
         classes=hyperparameters[&#39;classes&#39;],
         resnet=hyperparameters[&#39;resnet&#39;],
@@ -1171,17 +871,6 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
         anchors=hyperparameters[&#39;anchors&#39;],
         pretrained=hyperparameters[&#39;pretrained&#39;]
     )</code></pre>
-</details>
-</dd>
-<dt id="torchsight.trainers.retinanet.RetinaNetTrainer.get_model_hyperparameters"><code class="name flex">
-<span>def <span class="ident">get_model_hyperparameters</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def get_model_hyperparameters(self):
-    return self.hyperparameters[&#39;RetinaNet&#39;]</code></pre>
 </details>
 </dd>
 <dt id="torchsight.trainers.retinanet.RetinaNetTrainer.get_optimizer"><code class="name flex">
@@ -1267,258 +956,20 @@ For the optimizer package see: <a href="https://pytorch.org/docs/stable/optim.ht
     ])</code></pre>
 </details>
 </dd>
-<dt id="torchsight.trainers.retinanet.RetinaNetTrainer.train"><code class="name flex">
-<span>def <span class="ident">train</span></span>(<span>self, epochs=100, validate=True, epoch_callback=None)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Train the model for the given epochs.</p>
-<h2 id="arguments">Arguments</h2>
-<dl>
-<dt><strong><code>epochs</code></strong> :&ensp;<code>int</code></dt>
-<dd>The number of epochs to train.</dd>
-<dt><strong><code>validate</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If true it validates the model after each epoch using the validate method.</dd>
-<dt><strong><code>epoch_callback</code></strong> :&ensp;<code>function</code>, optional</dt>
-<dd>An optional function to call after each epoch.</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def train(self, epochs=100, validate=True, epoch_callback=None):
-    &#34;&#34;&#34;Train the model for the given epochs.
-
-    Arguments:
-        epochs (int): The number of epochs to train.
-        validate (bool): If true it validates the model after each epoch using the validate method.
-        epoch_callback (function, optional): An optional function to call after each epoch.
-    &#34;&#34;&#34;
-    self.model.to(self.device)
-    self.criterion.to(self.device)
-
-    # Weights for each loss, to increase or decrease their values
-    weights = self.hyperparameters[&#39;FocalLoss&#39;][&#39;weights&#39;]
-
-    print(&#39;----- Training started ------&#39;)
-    print(&#39;Using device: {}&#39;.format(self.device))
-
-    n_batches = len(self.dataloader)
-    start_time = time.time()
-
-    for epoch in range(epochs):
-        epoch = epoch + 1 + self.checkpoint_epoch
-        last_endtime = time.time()
-
-        # Set model to train mode, useful for batch normalization or dropouts modules. For more info see:
-        # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
-        self.model.train()
-
-        for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-            images, annotations = images.to(self.device), annotations.to(self.device)
-
-            # Optimize
-            self.optimizer.zero_grad()
-            anchors, regressions, classifications = self.forward(images, annotations)
-            del images
-            classification_loss, regression_loss = self.criterion(anchors, regressions, classifications,
-                                                                  annotations)
-            del anchors, regressions, classifications, annotations
-
-            classification_loss *= weights[&#39;classification&#39;]
-            regression_loss *= weights[&#39;regression&#39;]
-            loss = classification_loss + regression_loss
-            # Set as float to free memory
-            classification_loss = float(classification_loss)
-            regression_loss = float(regression_loss)
-            # Optimize
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.1)
-            self.optimizer.step()
-
-            # Log the batch
-            total_time = time.time() - start_time
-            batch_time = time.time() - last_endtime
-            last_endtime = time.time()
-            # Get the actual learning rate (modified by the scheduler)
-            learning_rates = [str(param_group[&#39;lr&#39;]) for i, param_group in enumerate(self.optimizer.param_groups)]
-            self.logger.log({
-                &#39;Training&#39;: None,
-                &#39;Epoch&#39;: epoch,
-                &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch_index + 1, n_batches),
-                &#39;LR&#39;: &#39; &#39;.join(learning_rates),
-                &#39;Class.&#39;: &#39;{:.7f}&#39;.format(classification_loss),
-                &#39;Regr.&#39;: &#39;{:.7f}&#39;.format(regression_loss),
-                &#39;Loss&#39;: &#39;{:.7f}&#39;.format(loss),
-                &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
-                &#39;Total&#39;: &#39;{:.3f} s&#39;.format(total_time)
-            })
-
-            # Save the weights for this epoch every some batches
-            if batch_index % 100 == 0:
-                self.save_checkpoint(epoch)
-
-        # Call the epoch callback
-        if epoch_callback is not None:
-            epoch_callback(epoch)
-
-        # Save the weights at the end of the epoch
-        self.save_checkpoint(epoch)
-
-        if validate:
-            validation_loss = self.validate(epoch)
-            self.scheduler.step(validation_loss)</code></pre>
-</details>
-</dd>
-<dt id="torchsight.trainers.retinanet.RetinaNetTrainer.validate"><code class="name flex">
-<span>def <span class="ident">validate</span></span>(<span>self, epoch)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Compute the loss over the validation dataset.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def validate(self, epoch):
-    &#34;&#34;&#34;Compute the loss over the validation dataset.&#34;&#34;&#34;
-    self.model.to(self.device)
-    hyperparameters = self.get_model_hyperparameters()[&#39;evaluation&#39;]
-    self.model.eval(threshold=hyperparameters[&#39;threshold&#39;],
-                    iou_threshold=hyperparameters[&#39;iou_threshold&#39;],
-                    loss=True)
-
-    weights = self.hyperparameters[&#39;FocalLoss&#39;][&#39;weights&#39;]
-
-    classification_losses = []
-    regression_losses = []
-    losses = []
-
-    start_time = time.time()
-    last_endtime = time.time()
-    n_batches = len(self.valid_dataloader)
-
-    for batch, (images, annotations) in enumerate(self.valid_dataloader):
-        images, annotations = images.to(self.device), annotations.to(self.device)
-
-        anchors, regressions, classifications = self.model(images)
-        del images
-
-        classification_loss, regression_loss = self.criterion(anchors, regressions, classifications, annotations)
-        del anchors, regressions, classifications, annotations
-
-        classification_loss *= weights[&#39;classification&#39;]
-        regression_loss *= weights[&#39;regression&#39;]
-        classification_loss = float(classification_loss)
-        regression_loss = float(regression_loss)
-
-        classification_losses.append(classification_loss)
-        regression_losses.append(regression_loss)
-        losses.append(classification_loss + regression_loss)
-
-        batch_time = time.time() - last_endtime
-        last_endtime = time.time()
-        total_time = time.time() - start_time
-
-        self.logger.log({
-            &#39;Validating&#39;: None,
-            &#39;Epoch&#39;: epoch,
-            &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
-            &#39;Class.&#39;: &#39;{:.7f}&#39;.format(classification_loss),
-            &#39;Regr.&#39;: &#39;{:.7f}&#39;.format(regression_loss),
-            &#39;Loss&#39;: &#39;{:.7f}&#39;.format(losses[-1]),
-            &#39;Time&#39;: &#39;{:.3f}&#39;.format(batch_time),
-            &#39;Total&#39;: &#39;{:.3f}&#39;.format(total_time)
-        })
-
-    return torch.Tensor(losses).mean()</code></pre>
-</details>
-</dd>
-<dt id="torchsight.trainers.retinanet.RetinaNetTrainer.validate_map"><code class="name flex">
-<span>def <span class="ident">validate_map</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Compute mAP over validation dataset.</p>
-<p>We iterate over the images in the validation dataset, compute the detections using the current
-state of the model, generate the detections tensor and compute the mAP using the MeanAP class.</p>
-<p>As the MeanAP class does not computes the mAP for each class (it computes for the entire image),
-we must filter the annotations by each class, compute mAP and store the value for the class and
-continue.</p>
-<h2 id="returns">Returns</h2>
-<p>torch.Tensor: The mAP averaged over all the classes.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def validate_map(self):
-    &#34;&#34;&#34;Compute mAP over validation dataset.
-
-    We iterate over the images in the validation dataset, compute the detections using the current
-    state of the model, generate the detections tensor and compute the mAP using the MeanAP class.
-
-    As the MeanAP class does not computes the mAP for each class (it computes for the entire image),
-    we must filter the annotations by each class, compute mAP and store the value for the class and
-    continue.
-
-    Returns:
-        torch.Tensor: The mAP averaged over all the classes.
-    &#34;&#34;&#34;
-    print(&#39;--------- VALIDATING --------&#39;)
-
-    self.model.to(self.device)
-    self.model.eval(**self.hyperparameters[&#39;RetinaNet&#39;][&#39;evaluation&#39;])
-
-    mAP = {}  # The array of mAP per each class per each image
-    # mAP is something like {&#39;0&#39;: [0.15, ..., 0.87]} where the length of the list is the number of images
-    # in the validation dataset
-    aps = {}  # The array with the Average Precision for each IoU threshold, for each image, for each class
-    # aps is something like {&#39;0&#39;: [[0.67, ..., 0.54], ..., []]} where the length of the bigger array is the
-    # number of images that contains that label and the inner arrays is the number of IoU thresholds to compute
-    # the Average Precisions
-
-    for batch_index, (images, annotations) in enumerate(self.valid_dataloader):
-        images, annotations = images.to(self.device), annotations.to(self.device)
-        for index, (boxes, classifications) in enumerate(self.model(images)):
-            # Generate the detections
-            detections = torch.zeros((boxes.shape[0], 6)).to(self.device)
-            detections[:, :4] = boxes
-            prob, label = classifications.max(dim=1)
-            detections[:, 4] = label
-            detections[:, 5] = prob
-
-            # Get the actual annotations, clean and iterate over each unique label
-            actual_annotations = annotations[index].clone()
-            # Remove dummy annotations created by the data loader (label == -1)
-            mask = actual_annotations[:, -1] == -1
-            actual_annotations = actual_annotations[mask]
-            # Get the true labels in the actual annotation
-            labels = [int(label) for label in actual_annotations[:, -1].unique()]
-            # Iterate over each label to compute mAP per class
-            for label in labels:
-                if label not in mAP:
-                    mAP[label] = []
-                if label not in aps:
-                    aps[label] = []
-                # Add zero values if there are no detections
-                if not boxes.shape[0] &gt; 0:
-                    mAP[label].append(torch.zeros((1)).mean().to(self.device))
-                    aps[label].append(torch.zeros((self.compute_map.iou_thresholds.shape[0])).to(self.device))
-                    continue
-                # Compute mAP
-                actual_map, actual_aps = self.compute_map(actual_annotations, detections)
-                mAP[label].append(actual_map)
-                aps[label].append(actual_aps)
-
-        print(&#39;[Validating] [Batch {}]&#39;.format(batch_index))
-
-    # Set the model to train again
-    self.model.train()
-    # Compute the average of the map over all the classes
-    final_map = [torch.stack(mAP[label]).mean() for label in mAP]
-    final_aps = {label: torch.stack(aps[label]).mean(dim=0) for label in aps}
-    return torch.stack(final_map).mean(), final_aps</code></pre>
-</details>
-</dd>
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="torchsight.trainers.abstract.AbstractTrainer" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer">AbstractTrainer</a></b></code>:
+<li><code><b><a title="torchsight.trainers.trainer.Trainer" href="trainer.html#torchsight.trainers.trainer.Trainer">Trainer</a></b></code>:
 <ul class="hlist">
-<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.merge_hyperparameters" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer.merge_hyperparameters">merge_hyperparameters</a></code></li>
-<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.resume" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer.resume">resume</a></code></li>
-<li><code><a title="torchsight.trainers.abstract.AbstractTrainer.save_checkpoint" href="abstract.html#torchsight.trainers.abstract.AbstractTrainer.save_checkpoint">save_checkpoint</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.__init__" href="trainer.html#torchsight.trainers.trainer.Trainer.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.batch_callback" href="trainer.html#torchsight.trainers.trainer.Trainer.batch_callback">batch_callback</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.epoch_callback" href="trainer.html#torchsight.trainers.trainer.Trainer.epoch_callback">epoch_callback</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.from_checkpoint" href="trainer.html#torchsight.trainers.trainer.Trainer.from_checkpoint">from_checkpoint</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.get_logger" href="trainer.html#torchsight.trainers.trainer.Trainer.get_logger">get_logger</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.resume" href="trainer.html#torchsight.trainers.trainer.Trainer.resume">resume</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.save" href="trainer.html#torchsight.trainers.trainer.Trainer.save">save</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.train" href="trainer.html#torchsight.trainers.trainer.Trainer.train">train</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.validate" href="trainer.html#torchsight.trainers.trainer.Trainer.validate">validate</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1541,21 +992,18 @@ continue.</p>
 <ul>
 <li>
 <h4><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer" href="#torchsight.trainers.retinanet.RetinaNetTrainer">RetinaNetTrainer</a></code></h4>
-<ul class="">
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.__init__" href="#torchsight.trainers.retinanet.RetinaNetTrainer.__init__">__init__</a></code></li>
+<ul class="two-column">
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.backward" href="#torchsight.trainers.retinanet.RetinaNetTrainer.backward">backward</a></code></li>
+<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.eval" href="#torchsight.trainers.retinanet.RetinaNetTrainer.eval">eval</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.forward" href="#torchsight.trainers.retinanet.RetinaNetTrainer.forward">forward</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_criterion" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_criterion">get_criterion</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_dataloaders" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_dataloaders">get_dataloaders</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_datasets" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_datasets">get_datasets</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_model" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_model">get_model</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_model_hyperparameters" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_model_hyperparameters">get_model_hyperparameters</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_optimizer" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_optimizer">get_optimizer</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_scheduler" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_scheduler">get_scheduler</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.get_transform" href="#torchsight.trainers.retinanet.RetinaNetTrainer.get_transform">get_transform</a></code></li>
 <li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.hyperparameters" href="#torchsight.trainers.retinanet.RetinaNetTrainer.hyperparameters">hyperparameters</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.train" href="#torchsight.trainers.retinanet.RetinaNetTrainer.train">train</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.validate" href="#torchsight.trainers.retinanet.RetinaNetTrainer.validate">validate</a></code></li>
-<li><code><a title="torchsight.trainers.retinanet.RetinaNetTrainer.validate_map" href="#torchsight.trainers.retinanet.RetinaNetTrainer.validate_map">validate_map</a></code></li>
 </ul>
 </li>
 </ul>

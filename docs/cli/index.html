@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
-<title>torchsight API documentation</title>
-<meta name="description" content="" />
+<title>torchsight.cli API documentation</title>
+<meta name="description" content="Package where are the CLI commands." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,56 +17,45 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>torchsight</code> module</h1>
+<h1 class="title"><code>torchsight.cli</code> module</h1>
 </header>
 <section id="section-intro">
+<p>Package where are the CLI commands.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Package where are the CLI commands.&#34;&#34;&#34;
+import click
+
+from .evaluate import evaluate
+from .stats import stats
+from .train import train
+
+
+@click.group()
+def cli():
+    &#34;&#34;&#34;Command Line Interface to interact with the project.&#34;&#34;&#34;
+
+
+# COMMANDS OF THE CLI
+cli.add_command(evaluate)
+cli.add_command(stats)
+cli.add_command(train)</code></pre>
+</details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></dt>
+<dt><code class="name"><a title="torchsight.cli.evaluate" href="evaluate/index.html">torchsight.cli.evaluate</a></code></dt>
 <dd>
-<section class="desc"><p>Package where are the CLI commands.</p></section>
+<section class="desc"><p>Commands to evaluate the models.</p></section>
 </dd>
-<dt><code class="name"><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></dt>
+<dt><code class="name"><a title="torchsight.cli.stats" href="stats/index.html">torchsight.cli.stats</a></code></dt>
 <dd>
-<section class="desc"><p>Initialize the package …</p></section>
+<section class="desc"><p>Commands to extract some stats from the log files.</p></section>
 </dd>
-<dt><code class="name"><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></dt>
+<dt><code class="name"><a title="torchsight.cli.train" href="train/index.html">torchsight.cli.train</a></code></dt>
 <dd>
-<section class="desc"><p>Evaluators for the different models.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></dt>
-<dd>
-<section class="desc"><p>Export the Loggers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></dt>
-<dd>
-<section class="desc"><p>Package for the custom optimizers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></dt>
-<dd>
-<section class="desc"><p>Utilities functions and modules.</p></section>
+<section class="desc"><p>Train commands for the CLI.</p></section>
 </dd>
 </dl>
 </section>
@@ -83,19 +72,16 @@
 <ul></ul>
 </div>
 <ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight" href="../index.html">torchsight</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></li>
-<li><code><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></li>
-<li><code><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></li>
-<li><code><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></li>
-<li><code><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></li>
-<li><code><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></li>
-<li><code><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></li>
-<li><code><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></li>
-<li><code><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></li>
-<li><code><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></li>
-<li><code><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></li>
+<li><code><a title="torchsight.cli.evaluate" href="evaluate/index.html">torchsight.cli.evaluate</a></code></li>
+<li><code><a title="torchsight.cli.stats" href="stats/index.html">torchsight.cli.stats</a></code></li>
+<li><code><a title="torchsight.cli.train" href="train/index.html">torchsight.cli.train</a></code></li>
 </ul>
 </li>
 </ul>

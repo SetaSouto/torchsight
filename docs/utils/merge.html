@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.5.4" />
-<title>torchsight API documentation</title>
-<meta name="description" content="" />
+<title>torchsight.utils.merge API documentation</title>
+<meta name="description" content="Module with merge functions." />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -17,62 +17,110 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title"><code>torchsight</code> module</h1>
+<h1 class="title"><code>torchsight.utils.merge</code> module</h1>
 </header>
 <section id="section-intro">
+<p>Module with merge functions.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Module with merge functions.&#34;&#34;&#34;
+
+
+def merge_dicts(dict1, dict2, verbose=False):
+    &#34;&#34;&#34;Deeply merge two dicts.
+
+    The second dict take precedence over the first dict. This means that if the two dicts
+    has the same key, the value stored in that key will be the second value.
+    Anyway, if the values are dicts too it will call recursively this function to deeply merge
+    the two dict values.
+
+    Arguments:
+        dict1 (dict): One of the dictionaries to merge.
+        dict2 (dict): One of the dictionaries to merge.
+
+    Returns:
+        dict: The deeply merged dict.
+    &#34;&#34;&#34;
+    for key in dict2:
+        if key in dict1:
+            if isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
+                dict1[key] = merge_dicts(dict1[key], dict2[key], verbose)
+            elif dict1[key] == dict2[key]:
+                pass  # same leaf value
+            else:
+                if verbose:
+                    print(&#39;Replacing &#34;{}&#34; with value &#34;{}&#34; for &#34;{}&#34;&#39;.format(key, dict1[key], dict2[key]))
+                dict1[key] = dict2[key]
+        else:
+            if verbose:
+                print(&#39;Adding &#34;{}&#34; with value &#34;{}&#34;&#39;.format(key, dict2[key]))
+            dict1[key] = dict2[key]
+    return dict1</code></pre>
+</details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></dt>
+<dt id="torchsight.utils.merge.merge_dicts"><code class="name flex">
+<span>def <span class="ident">merge_dicts</span></span>(<span>dict1, dict2, verbose=False)</span>
+</code></dt>
 <dd>
-<section class="desc"><p>Package where are the CLI commands.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></dt>
-<dd>
-<section class="desc"><p>Evaluators for the different models.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></dt>
-<dd>
-<section class="desc"><p>Export the Loggers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></dt>
-<dd>
-<section class="desc"><p>Package for the custom optimizers.</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></dt>
-<dd>
-<section class="desc"><p>Initialize the package …</p></section>
-</dd>
-<dt><code class="name"><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></dt>
-<dd>
-<section class="desc"></section>
-</dd>
-<dt><code class="name"><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></dt>
-<dd>
-<section class="desc"><p>Utilities functions and modules.</p></section>
+<section class="desc"><p>Deeply merge two dicts.</p>
+<p>The second dict take precedence over the first dict. This means that if the two dicts
+has the same key, the value stored in that key will be the second value.
+Anyway, if the values are dicts too it will call recursively this function to deeply merge
+the two dict values.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>dict1</code></strong> :&ensp;<code>dict</code></dt>
+<dd>One of the dictionaries to merge.</dd>
+<dt><strong><code>dict2</code></strong> :&ensp;<code>dict</code></dt>
+<dd>One of the dictionaries to merge.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>The deeply merged dict.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def merge_dicts(dict1, dict2, verbose=False):
+    &#34;&#34;&#34;Deeply merge two dicts.
+
+    The second dict take precedence over the first dict. This means that if the two dicts
+    has the same key, the value stored in that key will be the second value.
+    Anyway, if the values are dicts too it will call recursively this function to deeply merge
+    the two dict values.
+
+    Arguments:
+        dict1 (dict): One of the dictionaries to merge.
+        dict2 (dict): One of the dictionaries to merge.
+
+    Returns:
+        dict: The deeply merged dict.
+    &#34;&#34;&#34;
+    for key in dict2:
+        if key in dict1:
+            if isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
+                dict1[key] = merge_dicts(dict1[key], dict2[key], verbose)
+            elif dict1[key] == dict2[key]:
+                pass  # same leaf value
+            else:
+                if verbose:
+                    print(&#39;Replacing &#34;{}&#34; with value &#34;{}&#34; for &#34;{}&#34;&#39;.format(key, dict1[key], dict2[key]))
+                dict1[key] = dict2[key]
+        else:
+            if verbose:
+                print(&#39;Adding &#34;{}&#34; with value &#34;{}&#34;&#39;.format(key, dict2[key]))
+            dict1[key] = dict2[key]
+    return dict1</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -83,19 +131,14 @@
 <ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="torchsight.cli" href="cli/index.html">torchsight.cli</a></code></li>
-<li><code><a title="torchsight.datasets" href="datasets/index.html">torchsight.datasets</a></code></li>
-<li><code><a title="torchsight.evaluators" href="evaluators/index.html">torchsight.evaluators</a></code></li>
-<li><code><a title="torchsight.loggers" href="loggers/index.html">torchsight.loggers</a></code></li>
-<li><code><a title="torchsight.losses" href="losses/index.html">torchsight.losses</a></code></li>
-<li><code><a title="torchsight.metrics" href="metrics/index.html">torchsight.metrics</a></code></li>
-<li><code><a title="torchsight.models" href="models/index.html">torchsight.models</a></code></li>
-<li><code><a title="torchsight.optimizers" href="optimizers/index.html">torchsight.optimizers</a></code></li>
-<li><code><a title="torchsight.trainers" href="trainers/index.html">torchsight.trainers</a></code></li>
-<li><code><a title="torchsight.transforms" href="transforms/index.html">torchsight.transforms</a></code></li>
-<li><code><a title="torchsight.utils" href="utils/index.html">torchsight.utils</a></code></li>
+<li><code><a title="torchsight.utils" href="index.html">torchsight.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="torchsight.utils.merge.merge_dicts" href="#torchsight.utils.merge.merge_dicts">merge_dicts</a></code></li>
 </ul>
 </li>
 </ul>
