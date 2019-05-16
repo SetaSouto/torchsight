@@ -3,7 +3,10 @@
 Dataset extracted from:
 http://www.ivl.disco.unimib.it/activities/logo-recognition/
 """
+import json
+import math
 import os
+import random
 import time
 
 import matplotlib
@@ -25,7 +28,8 @@ class Logo32plusDataset(torch.utils.data.Dataset):
     - Provide the path to that directory in the initialization.
     """
 
-    def __init__(self, root, dataset='training', transform=None, annot_file='groundtruth.mat'):
+    def __init__(self, root, dataset='training', transform=None, annot_file='groundtruth.mat',
+                 split_file='train_valid.json'):
         """Initialize the dataset.
 
         Arguments:
@@ -37,7 +41,9 @@ class Logo32plusDataset(torch.utils.data.Dataset):
         """
         self.root = self.validate_root(root)
         self.dataset = self.validate_dataset(dataset)
-        self.annotations = self.get_annotations(annot_file)
+        self.annot_file = annot_file
+        self.split = self.get_split(split_file)
+        self.annotations = self.get_annotations()
         self.label_to_class, self.class_to_label = self.generate_classes()
         self.transform = transform
 
@@ -77,16 +83,30 @@ class Logo32plusDataset(torch.utils.data.Dataset):
 
         return dataset
 
-    def get_annotations(self, annot_file):
-        """Load and parse the annotations of the images.
+    def get_split(self, split_file):
+        """Get the JSON with the split file or generate a new one.
 
         Arguments:
-            annot_file (str): The file that contains the annotations.
+            split_file (str): The name of the file that contains the json with the split.
         """
-        annotations = loadmat(os.path.join(self.root, annot_file))['groundtruth'][0]
+        filepath = os.path.join(self.root, split_file)
+
+        if not os.path.exists(filepath):
+            self.generate_split(annotations=self.get_annotations(), split_file=split_file)
+
+        with open(filepath, 'r') as file:
+            return json.loads(file.read())
+
+    def get_annotations(self):
+        """Load and parse the annotations of the images."""
+        annotations = loadmat(os.path.join(self.root, self.annot_file))['groundtruth'][0]
         result = []
         for annot in annotations:
             image = annot[0][0].replace('\\', '/')
+
+            if getattr(self, 'split', None) is not None and image not in self.split[self.dataset]:
+                continue
+
             boxes = self.transform_boxes(annot[1])
             name = annot[2][0]
             result.append((image, boxes, name))
@@ -159,7 +179,7 @@ class Logo32plusDataset(torch.utils.data.Dataset):
         """
         initial_time = initial_time if initial_time is not None else time.time()
 
-        image, boxes = self[index]
+        image, boxes, _ = self[index]
 
         if torch.is_tensor(image):
             image = image.numpy().transpose(1, 2, 0)
@@ -191,3 +211,38 @@ class Logo32plusDataset(torch.utils.data.Dataset):
         # Show image and plot
         axes.imshow(image)
         plt.show()
+
+    def generate_split(self, annotations, proportion=0.8, split_file='train_valid.json'):
+        """Create the validation and training datasets with the given proportion.
+
+        The proportion is used in each class. For example, with a proportion of 0.8 and a class with
+        20 elements, this method creates a training dataset with 16 of those 20 images.
+
+        Arguments:
+            proportion (float): A float between [0, 1] that is the amount of training samples extracted
+                from the total samples in each class.
+        """
+        brands = {}
+        training = {}
+        validation = {}
+
+        for image, _, brand in annotations:
+            if brand not in brands:
+                brands[brand] = set()
+                training[brand] = set()
+                validation[brand] = set()
+
+            brands[brand].add(image)
+
+        result = {'training': [], 'validation': []}
+
+        for brand, images in brands.items():
+            n_train = math.ceil(len(images) * proportion)
+            train = set(random.sample(images, n_train))
+            valid = images - train
+
+            result['training'] += list(train)
+            result['validation'] += list(valid)
+
+        with open(os.path.join(self.root, split_file), 'w') as file:
+            file.write(json.dumps(result))
