@@ -167,7 +167,7 @@ class Logo32plusDataset(torch.utils.data.Dataset):
         image = Image.open(filepath)
 
         if self.transform:
-            image, boxes = self.transform(image, boxes)
+            image, boxes, info = self.transform((image, boxes, info))
 
         return image, boxes, info
 

@@ -3,11 +3,10 @@
 The recomendation is to compose the transforms in the order that are written:
 Resize(), ToTensor(), Normalize().
 """
-
 import numpy as np
 import torch
-from skimage.transform import resize
-
+from PIL.Image import Image
+import skimage
 from torchvision.transforms.functional import normalize, to_tensor
 
 
@@ -34,6 +33,13 @@ class Resize():
             data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
         """
         image, bounding_boxes, info = data
+
+        if isinstance(image, Image):
+            image = np.array(image)
+
+        if len(image.shape) == 2:
+            image = skimage.color.gray2rgb(image)
+
         height, width, channels = image.shape
 
         smallest_side = height if height < width else width
@@ -50,7 +56,7 @@ class Resize():
         padding_height = self.stride - (new_height % self.stride)
         padding_height = 0 if padding_height == self.stride else padding_height
 
-        image = resize(image, (new_height, new_width), mode='constant', anti_aliasing=True)
+        image = skimage.transform.resize(image, (new_height, new_width), mode='constant', anti_aliasing=True)
         height, width, channels = image.shape
 
         final = np.zeros((new_height + padding_height, new_width + padding_width, channels))
@@ -78,7 +84,14 @@ class ToTensor():
             torch.Tensor: The image.
             torch.Tensor: The annotations.
         """
-        return (to_tensor(data[0]), torch.from_numpy(data[1]), *data[2:])
+        image, boxes, *rest = data
+
+        image = to_tensor(image)
+
+        if not torch.is_tensor(boxes):
+            boxes = torch.from_numpy(boxes)
+
+        return (image, boxes, *rest)
 
 
 class Normalize():

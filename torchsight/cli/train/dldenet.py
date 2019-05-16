@@ -7,7 +7,7 @@ from torchsight.trainers import DLDENetTrainer
 @click.command()
 @click.argument('dataset-root', type=click.Path(exists=True))
 # Currently we only have the COCO dataset for training
-@click.option('--dataset', default='coco', show_default=True, type=click.Choice(['coco', 'log32plus']))
+@click.option('--dataset', default='coco', show_default=True, type=click.Choice(['coco', 'logo32plus']))
 @click.option('-b', '--batch-size', default=8, show_default=True)
 @click.option('--resnet', default=50, show_default=True, help='The resnet backbone that the model must use.')
 @click.option('--logs-dir', default='./logs', type=click.Path(exists=True), show_default=True,
@@ -38,7 +38,7 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, cla
             'datasets': {
                 'use': dataset,
                 'coco': {'root': dataset_root, 'class_names': classes},
-                'log32plus': {'root': dataset_root}
+                'logo32plus': {'root': dataset_root}
             },
             'dataloaders': {'batch_size': batch_size},
             'logger': {'dir': logs_dir},
