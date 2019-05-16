@@ -134,6 +134,8 @@ class Logo32plusDataset(torch.utils.data.Dataset):
         """
         image, boxes, name = self.annotations[index]
 
+        info = {'brand': name, 'file': image}
+
         # Append the label to the boxes
         label = self.class_to_label[name]
         n_boxes = boxes.shape[0]
@@ -147,7 +149,7 @@ class Logo32plusDataset(torch.utils.data.Dataset):
         if self.transform:
             image, boxes = self.transform(image, boxes)
 
-        return image, boxes
+        return image, boxes, info
 
     def visualize(self, index, initial_time=None):
         """Visualize the annotations for the item in the given index.
