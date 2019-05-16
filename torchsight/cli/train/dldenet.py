@@ -7,7 +7,7 @@ from torchsight.trainers import DLDENetTrainer
 @click.command()
 @click.argument('dataset-root', type=click.Path(exists=True))
 # Currently we only have the COCO dataset for training
-@click.option('--dataset', default='COCO', show_default=True, type=click.Choice(['COCO']))
+@click.option('--dataset', default='coco', show_default=True, type=click.Choice(['coco', 'log32plus']))
 @click.option('-b', '--batch-size', default=8, show_default=True)
 @click.option('--resnet', default=50, show_default=True, help='The resnet backbone that the model must use.')
 @click.option('--logs-dir', default='./logs', type=click.Path(exists=True), show_default=True,
@@ -27,16 +27,19 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, cla
     contains is data in DATASET_ROOT directory.
 
     You can use a checkpoint to resume the training but is not a good practice, because you can change the hyperparams
-    of the model get in some troubles like changing the resnet backbone or the number of classes of the model.
+    of the model get in some troubles like changing the resnet backbone.
     To avoid this you can use the subcommand 'dldenet-from-checkpoint' instead.
     """
     classes = classes.split()
-    n_classes = len(classes) if classes else 80
 
     DLDENetTrainer(
         hyperparameters={
-            'model': {'resnet': resnet, 'classes': n_classes, 'normalize': not not_normalize},
-            'datasets': {'root': dataset_root, 'class_names': classes},
+            'model': {'resnet': resnet, 'normalize': not not_normalize},
+            'datasets': {
+                'use': dataset,
+                'coco': {'root': dataset_root, 'class_names': classes},
+                'log32plus': {'root': dataset_root}
+            },
             'dataloaders': {'batch_size': batch_size},
             'logger': {'dir': logs_dir},
             'checkpoint': {'dir': logs_dir},

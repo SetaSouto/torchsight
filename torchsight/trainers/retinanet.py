@@ -4,7 +4,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from ..datasets import CocoDataset
+from ..datasets import CocoDataset, Logo32plusDataset
 from ..losses import FocalLoss
 from ..models import RetinaNet
 from ..transforms.detection import Normalize, Resize, ToTensor
@@ -17,7 +17,6 @@ class RetinaNetTrainer(Trainer):
     # >>> RetinaNetTrainer(hyperparameters={'RetinaNet': {'classes': 1}})
     hyperparameters = {
         'model': {
-            'classes': 80,
             'resnet': 50,
             'features': {
                 'pyramid': 256,
@@ -46,10 +45,16 @@ class RetinaNetTrainer(Trainer):
             'weights': {'classification': 1e5, 'regression': 1}
         },
         'datasets': {
-            'root': './datasets/coco',
-            'class_names': (),  # () indicates all classes
-            'train': 'train2017',
-            'validation': 'val2017'
+            'use': 'coco',
+            'coco': {
+                'root': './datasets/coco',
+                'class_names': (),  # () indicates all classes
+                'train': 'train2017',
+                'validation': 'val2017'
+            },
+            'logo32plus': {
+                'root': './datasets/logo32plus'
+            }
         },
         'dataloaders': {
             'batch_size': 1,
@@ -104,29 +109,32 @@ class RetinaNetTrainer(Trainer):
         """
         transform = self.get_transform()
 
-        model_classes = self.hyperparameters['model']['classes']
-        hyperparameters = self.hyperparameters['datasets']
-        dataset_classes = len(hyperparameters['class_names'])
+        params = self.hyperparameters['datasets']
+        dataset = params['use']
 
-        if dataset_classes > 0 and model_classes != dataset_classes:
-            raise ValueError(' '.join(['The amount of classes for the model ({})'.format(model_classes),
-                                       'must be the same to the length of "class_names" in',
-                                       'the "dataset" hyperparameters ({}).'.format(dataset_classes)]))
+        if dataset == 'coco':
+            params = params['coco']
 
-        return (
-            CocoDataset(
-                root=hyperparameters['root'],
-                dataset=hyperparameters['train'],
-                classes_names=hyperparameters['class_names'],
-                transform=transform
-            ),
-            CocoDataset(
-                root=hyperparameters['root'],
-                dataset=hyperparameters['validation'],
-                classes_names=hyperparameters['class_names'],
-                transform=transform
-            )
-        )
+            n_classes = len(params['class_names'])
+            n_classes = 80 if n_classes == 0 else n_classes
+            self.hyperparameters['model']['classes'] = n_classes
+
+            return (CocoDataset(root=params['root'],
+                                dataset=params['train'],
+                                classes_names=params['class_names'],
+                                transform=transform),
+                    CocoDataset(root=params['root'],
+                                dataset=params['validation'],
+                                classes_names=params['class_names'],
+                                transform=transform))
+
+        if dataset == 'logo32plus':
+            params = params['logo32plus']
+
+            self.hyperparameters['model']['classes'] = 32
+
+            return (Logo32plusDataset(**params, dataset='training', transform=transform),
+                    Logo32plusDataset(**params, dataset='validation', transform=transform))
 
     def get_dataloaders(self):
         """Initialize and get the dataloaders for the datasets.

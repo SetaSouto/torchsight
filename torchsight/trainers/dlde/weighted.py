@@ -45,10 +45,16 @@ class DLDENetTrainer(RetinaNetTrainer):
             'weights': {'classification': 1e3, 'regression': 1, 'similarity': 1}
         },
         'datasets': {
-            'root': './datasets/coco',
-            'class_names': (),  # Empty tuple indicates all classes
-            'train': 'train2017',
-            'validation': 'val2017'
+            'use': 'coco',
+            'coco': {
+                'root': './datasets/coco',
+                'class_names': (),  # () indicates all classes
+                'train': 'train2017',
+                'validation': 'val2017'
+            },
+            'logo32plus': {
+                'root': './datasets/logo32plus'
+            }
         },
         'dataloaders': {
             'batch_size': 1,
