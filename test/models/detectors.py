@@ -55,6 +55,7 @@ MODEL.to(DEVICE)
 if not ARGUMENTS.no_random:
     random.shuffle(INDEXES)
 
+
 MODEL.eval(threshold=float(ARGUMENTS.threshold), iou_threshold=float(ARGUMENTS.iou_threshold))
 
 for index in INDEXES:
