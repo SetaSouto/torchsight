@@ -6,3 +6,4 @@ See:
 http://mikegrouchy.com/blog/2012/05/be-pythonic-__init__py.html
 """
 from .coco import CocoDataset
+from .logo32plus import Logo32plusDataset
