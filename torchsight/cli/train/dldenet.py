@@ -53,10 +53,12 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, cla
 @click.command()
 @click.argument('dataset-root', type=click.Path(exists=True))
 @click.argument('checkpoint', type=click.Path(exists=True))
-@click.option('-b', '--batch-size', type=click.INT)
-@click.option('--logs-dir', type=click.Path(exists=True), help='Where to store the checkpoints and descriptions.')
+@click.option('-b', '--batch-size', default=8, show_default=True, type=click.INT)
+@click.option('--logs-dir', default='./logs', show_default=True, type=click.Path(exists=True),
+              help='Where to store the checkpoints and descriptions.')
 @click.option('--device', help='The device that the model must use.')
-def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device):
+@click.option('--epochs', default=100, show_default=True)
+def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device, epochs):
     """Get an instance of the trainer from the checkpoint CHECKPOINT and resume the exact same training
     with the dataset that contains its data in DATASET_ROOT.
 
@@ -70,4 +72,4 @@ def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, devi
         new_params['logger'] = {'dir': logs_dir}
         new_params['checkpoint'] = {'dir': logs_dir}
 
-    DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train()
+    DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)
