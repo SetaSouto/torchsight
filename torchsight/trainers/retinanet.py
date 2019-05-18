@@ -88,17 +88,21 @@ class RetinaNetTrainer(Trainer):
     ###           GETTERS            ###
     ####################################
 
-    def get_transform(self):
+    @staticmethod
+    def get_transform(params):
         """Initialize and get the transforms for the images.
+
+        Arguments:
+            params (dict): The dict with the params for the transforms.
+                It must have 'resize' and 'normalize' args values.
 
         Returns:
             torchvision.transform.Compose: The Compose of the transformations.
         """
-        hyperparameters = self.hyperparameters['transforms']
         return transforms.Compose([
-            Resize(**hyperparameters['resize']),
+            Resize(**params['resize']),
             ToTensor(),
-            Normalize(**hyperparameters['normalize'])
+            Normalize(**params['normalize'])
         ])
 
     def get_datasets(self):
@@ -107,7 +111,7 @@ class RetinaNetTrainer(Trainer):
         Returns:
             tuple: A Tuple with the torch.utils.data.Datasets for training and validation.
         """
-        transform = self.get_transform()
+        transform = self.get_transform(self.hyperparameters['transforms'])
 
         params = self.hyperparameters['datasets']
         dataset = params['use']

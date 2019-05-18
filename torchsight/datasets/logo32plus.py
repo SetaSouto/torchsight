@@ -7,14 +7,12 @@ import json
 import math
 import os
 import random
-import time
 
-import matplotlib
-import numpy as np
 import torch
-from matplotlib import pyplot as plt
 from PIL import Image
 from scipy.io import loadmat
+
+from torchsight.utils import visualize_boxes
 
 
 class Logo32plusDataset(torch.utils.data.Dataset):
@@ -104,7 +102,7 @@ class Logo32plusDataset(torch.utils.data.Dataset):
         for annot in annotations:
             image = annot[0][0].replace('\\', '/')
 
-            if getattr(self, 'split', None) is not None and image not in self.split[self.dataset]:
+            if self.dataset != 'both' and getattr(self, 'split', None) is not None and image not in self.split[self.dataset]:
                 continue
 
             boxes = self.transform_boxes(annot[1])
@@ -171,46 +169,26 @@ class Logo32plusDataset(torch.utils.data.Dataset):
 
         return image, boxes, info
 
-    def visualize(self, index, initial_time=None):
+    def visualize(self, *args):
         """Visualize the annotations for the item in the given index.
 
         Arguments:
             index (int): The index of the item to visualize.
+
+            Or
+
+            image (torch.Tensor): The image to visualize.
+            boxes (torch.Tensor): The bounding boxes of the given image.
         """
-        initial_time = initial_time if initial_time is not None else time.time()
+        if len(args) == 1 and isinstance(args[0], int):
+            index, *_ = args
+            image, boxes, _ = self[index]
+        elif len(args) == 2:
+            image, boxes = args
+        else:
+            raise ValueError('Please provide inly the index or the only the image and the bounding boxes.')
 
-        image, boxes, _ = self[index]
-
-        if torch.is_tensor(image):
-            image = image.numpy().transpose(1, 2, 0)
-
-        # Select n_colors colors from 0 to 1
-        n_colors = 20
-        colormap = plt.get_cmap('tab20')
-        colors = [colormap(i) for i in np.linspace(0, 1, n_colors)]
-
-        _, axes = plt.subplots(1)
-
-        for box in boxes:
-            if box.shape[0] == 6:
-                x, y, x2, y2, label, prob = box
-                prob = ' {:.2f}'.format(prob)
-            else:
-                x, y, x2, y2, label = box
-                prob = ''
-            w, h = x2 - x, y2 - y
-            color = colors[int(label) % n_colors]
-            # Generate and add rectangle to plot
-            axes.add_patch(matplotlib.patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=color, facecolor='none'))
-            # Generate text if there are any classes
-            tag = '{}{}'.format(self.label_to_class[int(label)], prob)
-            plt.text(x, y, s=tag, color='white', verticalalignment='top', bbox={'color': color, 'pad': 0})
-
-        # Print stats
-        print('-----\nProcessing time: {}\nBounding boxes:\n{}'.format(time.time() - initial_time, boxes))
-        # Show image and plot
-        axes.imshow(image)
-        plt.show()
+        visualize_boxes(image, boxes, self.label_to_class)
 
     def generate_split(self, annotations, proportion=0.8, split_file='train_valid.json'):
         """Create the validation and training datasets with the given proportion.

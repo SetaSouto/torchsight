@@ -194,18 +194,21 @@ class DLDENet(RetinaNet):
         return self.classification(feature_maps)
 
     @classmethod
-    def from_checkpoint(cls, checkpoint, device):
+    def from_checkpoint(cls, checkpoint, device=None):
         """Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
 
         Arguments:
-            checkpoint (str): The path to the checkpoint file.
-            device (str): The device where to load the model. Necessary to avoid conflicts
-                with the device where the model was trained.
+            checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+            device (str, optional): The device where to load the model.
 
         Returns:
             DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
         """
-        checkpoint = torch.load(checkpoint, map_location=device)
+        device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint, map_location=device)
+
         params = checkpoint['hyperparameters']['model']
 
         model = cls(classes=params['classes'],
