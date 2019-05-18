@@ -16,7 +16,7 @@ from torchsight.trainers import DLDENetTrainer
 @click.option('--classes', default='',
               help='Indicate which classes (identified by its string label) must be used for the training. '
               'If no class is provided the trainer will use all the classes. Example: --classes "bear sheep airplane"')
-@click.option('--optimizer', default='adabound', type=click.Choice(['adabound', 'sgd']), show_default=True,
+@click.option('--optimizer', default='sgd', type=click.Choice(['adabound', 'sgd']), show_default=True,
               help='Set the optimizer that the trainer must use to train the model.')
 @click.option('--not-normalize', is_flag=True,
               help='Avoid normalization of the embeddings in the classification module.')
