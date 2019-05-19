@@ -18,7 +18,6 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
     # Base hyperparameters, can be replaced in the initialization of the trainer
     hyperparameters = {
         'model': {
-            'classes': 80,
             'resnet': 18,
             'features': {
                 'pyramid': 256,
@@ -31,10 +30,6 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
                 'ratios': [0.5, 1, 2]
             },
             'embedding_size': 256,
-            'concentration': 15,
-            'shift': 0.8,
-            # Keep in mind that this thresholds must be the same as in the FocalLoss
-            'assignation_thresholds': {'object': 0.5, 'background': 0.4},
             'pretrained': True,
             'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5}
         },
@@ -95,16 +90,16 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
     def get_model(self):
         """Initialize and get a DLDENet model instance."""
         hyperparameters = self.hyperparameters['model']
+        hyperparameters['assignation_thresholds'] = self.hyperparameters['criterion']['assignation_thresholds']
+
         return DLDENetWithTrackedMeans(
             classes=hyperparameters['classes'],
             resnet=hyperparameters['resnet'],
             features=hyperparameters['features'],
             anchors=hyperparameters['anchors'],
             embedding_size=hyperparameters['embedding_size'],
-            concentration=hyperparameters['concentration'],
             assignation_thresholds=hyperparameters['assignation_thresholds'],
-            pretrained=hyperparameters['pretrained'],
-            device=self.device
+            pretrained=hyperparameters['pretrained']
         )
 
     def get_optimizer(self):
@@ -201,4 +196,4 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
             epoch (int): The number of the epoch.
         """
         print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
-        self.model.update_means()
+        self.model.classification.update_means()

@@ -43,11 +43,10 @@ class DirectionalClassification(nn.Module):
     this won't allow us to identify correctly a background embedding, i.e., a non interesting object
     for the model.
 
-    To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
-    -1 and 1 we can adjust the sigmoid to get:
-
-    sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
-    f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)
+    To avoid this, we can use the sigmoid function instead of the softmax. But if we only use
+    the cosine similarity and the sigmoid function it could be impossible to have a precision of 1
+    (because sigmoid(maximum cosine similarity = 1) = 0.7311).
+    So we must add a weight and a bias to modify the sigmoid and get coherent values.
 
     Where x is the cosine similarity between the embedding and a class' mean, k is the concentration
     parameter and b is the shift parameter. The division is to fit the max value possible to one, and
@@ -75,8 +74,7 @@ class DirectionalClassification(nn.Module):
     because it will compute the mean with the average of the class' embeddings.
     """
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
-                 assignation_thresholds, device=None):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, assignation_thresholds):
         """Initialize the module.
 
         Arguments:
@@ -85,11 +83,8 @@ class DirectionalClassification(nn.Module):
             anchors (int): Number of anchors per location in the feature map.
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
-            concentration (int): The concentration parameter for the modified sigmoid.
-            shift (float): The shift value for the modified sigmoid.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys 'object' and 'background' with float values.
-            device (str, optional): The device where the module will run.
         """
         super(DirectionalClassification, self).__init__()
 
@@ -99,15 +94,15 @@ class DirectionalClassification(nn.Module):
             raise ValueError('There is no "background" threshold in the assignation threshold dict')
 
         self.assignation_thresholds = assignation_thresholds
-        self.classes = classes
-        self.concentration = concentration
-        self.shift = shift
-        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.embedding_size = embedding_size
 
         # Start the means for the distributions as zero vectors
         # We can get the mean for the i-th class with self.means[i]
-        self.means = torch.zeros(classes, embedding_size).type(torch.float).to(self.device)
+        self.register_buffer('means', torch.zeros(classes, embedding_size))
+        self.weight = nn.Parameter(torch.Tensor(classes))
+        self.bias = nn.Parameter(torch.Tensor(classes))
+        nn.init.constant_(self.weight, 15)
+        nn.init.constant_(self.bias, -0.7)
 
         # We need to keep track of embeddings for each class to update the means. How? The mean could be
         # calculated by the average of the embeddings of the same class normalized. So it's the sum of
@@ -117,32 +112,6 @@ class DirectionalClassification(nn.Module):
         # Create the encoder
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
                                  anchors=anchors, features=features).to(self.device)
-
-    def to(self, device):
-        """Move the module and the means to the given device.
-
-        Arguments:
-            device (str): The device where to move the module and its attributes.
-        """
-        self.device = device
-        self.means = self.means.to(device)
-        self.embeddings_sums = self.embeddings_sums.to(device)
-        return super(DirectionalClassification, self).to(device)
-
-    def modified_sigmoid(self, inputs):
-        """Return the modified sigmoid value applied to the given values.
-
-        Arguments:
-            x (torch.Tensor): The tensor with the values to apply the modified function.
-
-        Returns:
-            torch.Tensor: The value for each x that the function returns.
-        """
-        def sigmoid(inputs):
-            """Original sigmoid."""
-            return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
-
-        return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))
 
     def encode(self, feature_map):
         """Generate the embeddings for the given feature map.
@@ -231,7 +200,7 @@ class DirectionalClassification(nn.Module):
                     (batch size, total embeddings, number of classes)
         """
         similarity = torch.matmul(embeddings, self.means.permute(1, 0))
-        return self.modified_sigmoid(similarity)
+        return self.modified_sigmoid(self.weight * (similarity + self.bias))
 
     def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
         """Update means and get the probabilities for each embedding to belong to each class.
@@ -277,33 +246,6 @@ class DirectionalClassification(nn.Module):
         with torch.no_grad():
             self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
 
-    def state_dict(self, *args, **kwargs):
-        """Get the state dict of the model.
-
-        Why to override this method? Because we must also save the means.
-
-        Returns:
-            dict: The dict with the whole state of the model.
-        """
-        return {
-            'means': self.means,
-            'parameters': super(DirectionalClassification, self).state_dict(*args, **kwargs)
-        }
-
-    def load_state_dict(self, state_dict):
-        """Load a given state dict of this model.
-
-        Arguments:
-            state_dict (dict): A state dict generated by this model.
-        """
-        if 'means' not in state_dict:
-            raise ValueError('The given state dict does not contains "means" key.')
-        if 'parameters' not in state_dict:
-            raise ValueError('The given state dict does not contains "parameters" key.')
-
-        self.means = state_dict['means']
-        super(DirectionalClassification, self).load_state_dict(state_dict['parameters'])
-
 
 class DLDENetWithTrackedMeans(RetinaNet):
     """Deep Local Directional Embeddings Net.
@@ -311,8 +253,8 @@ class DLDENetWithTrackedMeans(RetinaNet):
     Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
     """
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
-                 shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512,
+                 assignation_thresholds=None, pretrained=True, device=None):
         """Initialize the network.
 
         Arguments:
@@ -323,7 +265,6 @@ class DLDENetWithTrackedMeans(RetinaNet):
             anchors (dict, optional): The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
-            concentration (int): The concentration parameter for the distribution in the classification module.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys 'object' and 'background' with float values.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
@@ -331,8 +272,6 @@ class DLDENetWithTrackedMeans(RetinaNet):
             device (str, optional): The device where the module will run.
         """
         self.embedding_size = embedding_size
-        self.concentration = concentration
-        self.shift = shift
 
         if assignation_thresholds is not None:
             self.assignation_thresholds = assignation_thresholds
@@ -340,17 +279,6 @@ class DLDENetWithTrackedMeans(RetinaNet):
             self.assignation_thresholds = {'object': 0.5, 'background': 0.4}
 
         super().__init__(classes, resnet, features, anchors, pretrained, device)
-
-    def to(self, device):
-        """Move the module to the given device and also notify the classification module to move its
-        parameters and attributes to the given device.
-
-        Arguments:
-            device (str): The device where to move the module.
-        """
-        self.device = device
-        self.classification.to(device)
-        return super().to(device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         """Get the directional classification module.
@@ -368,9 +296,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         """
         return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
                                          anchors=anchors, features=features, classes=classes,
-                                         concentration=self.concentration, shift=self.shift,
-                                         assignation_thresholds=self.assignation_thresholds,
-                                         device=self.device)
+                                         assignation_thresholds=self.assignation_thresholds)
 
     def forward(self, images, annotations=None, initializing=False):
         """Forward pass through the network.
@@ -380,7 +306,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         In training mode (model.train()) returns the base anchors, the regressions for those anchors
         and the classification probabilities for each anchor.
 
-        While training is mandatory to provide the annotations to keep track of the means for each class'
+        During training is mandatory to provide the annotations to keep track of the means for each class'
         direction. As each image could have different amounts of annotations to fit them in only one tensor
         you can fill the 'false' annotations with -1 and so those annotations will be ignored.
 
@@ -433,33 +359,31 @@ class DLDENetWithTrackedMeans(RetinaNet):
 
         return self.transform(images, anchors, regressions, classifications)
 
-    def update_means(self):
-        """Update the means of the classification submodule."""
-        return self.classification.update_means()
-
-    def state_dict(self, *args, **kwargs):
-        """Get the state dict of the model.
-
-        Why to override this method? Because we must also save the means of the classifier.
-
-        Returns:
-            dict: The dict with the whole state of the model.
-        """
-        return {
-            'classification': self.classification.state_dict(*args, **kwargs),
-            'parameters': super().state_dict(*args, **kwargs)
-        }
-
-    def load_state_dict(self, state_dict):
-        """Load a given state dict of this model.
+    @classmethod
+    def from_checkpoint(cls, checkpoint, device=None):
+        """Get an instance of the model from a checkpoint generated with the DLDENetWithTrackedMeansTrainer.
 
         Arguments:
-            state_dict (dict): A state dict generated by this model.
-        """
-        if 'classification' not in state_dict:
-            raise ValueError('The given state dict does not contains "classification" key.')
-        if 'parameters' not in state_dict:
-            raise ValueError('The given state dict does not contains "parameters" key.')
+            checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+            device (str, optional): The device where to load the model.
 
-        super().load_state_dict(state_dict['parameters'])
-        self.classification.load_state_dict(state_dict['classification'])
+        Returns:
+            DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+        """
+        device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint, map_location=device)
+
+        params = checkpoint['hyperparameters']['model']
+
+        model = cls(classes=params['classes'],
+                    resnet=params['resnet'],
+                    features=params['features'],
+                    anchors=params['anchors'],
+                    embedding_size=params['embedding_size'],
+                    assignation_thresholds=params['assignation_thresholds'],
+                    pretrained=params['pretrained'])
+        model.load_state_dict(checkpoint['model'])
+
+        return model
