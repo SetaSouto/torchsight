@@ -90,7 +90,7 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
     def get_model(self):
         """Initialize and get a DLDENet model instance."""
         hyperparameters = self.hyperparameters['model']
-        hyperparameters['assignation_thresholds'] = self.hyperparameters['criterion']['assignation_thresholds']
+        hyperparameters['assignation_thresholds'] = self.hyperparameters['criterion']['iou_thresholds']
 
         return DLDENetWithTrackedMeans(
             classes=hyperparameters['classes'],
