@@ -1,7 +1,7 @@
 """CLI to train the DLDENet."""
 import click
 
-from torchsight.trainers import DLDENetTrainer
+from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
 
 
 @click.command()
@@ -12,42 +12,40 @@ from torchsight.trainers import DLDENetTrainer
 @click.option('--resnet', default=50, show_default=True, help='The resnet backbone that the model must use.')
 @click.option('--logs-dir', default='./logs', type=click.Path(exists=True), show_default=True,
               help='Where to store the checkpoints and descriptions.')
-@click.option('-c', '--checkpoint', type=click.Path(exists=True), help='A checkpoint to resume the training from it.')
 @click.option('--classes', default='',
               help='Indicate which classes (identified by its string label) must be used for the training. '
               'If no class is provided the trainer will use all the classes. Example: --classes "bear sheep airplane"')
-@click.option('--optimizer', default='sgd', type=click.Choice(['adabound', 'sgd']), show_default=True,
+@click.option('--optimizer', default='adabound', type=click.Choice(['adabound', 'sgd']), show_default=True,
               help='Set the optimizer that the trainer must use to train the model.')
 @click.option('--not-normalize', is_flag=True,
-              help='Avoid normalization of the embeddings in the classification module.')
+              help='Avoid normalization of the embeddings in the classification module. Only available without tracked means.')
 @click.option('--device', default=None, help='The device that the model must use.')
-def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, classes, optimizer, not_normalize,
-            device):
+@click.option('--tracked-means', is_flag=True, help='Use the version that tracks the means.')
+@click.option('--epochs', default=100, show_default=True)
+def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, classes, optimizer, not_normalize,
+            device, tracked_means, epochs):
     """Train the DLDENet with weighted classification vectors using the indicated dataset that
     contains is data in DATASET_ROOT directory.
-
-    You can use a checkpoint to resume the training but is not a good practice, because you can change the hyperparams
-    of the model get in some troubles like changing the resnet backbone.
-    To avoid this you can use the subcommand 'dldenet-from-checkpoint' instead.
     """
     classes = classes.split()
-
-    DLDENetTrainer(
-        hyperparameters={
-            'model': {'resnet': resnet, 'normalize': not not_normalize},
-            'datasets': {
-                'use': dataset,
-                'coco': {'root': dataset_root, 'class_names': classes},
-                'logo32plus': {'root': dataset_root}
-            },
-            'dataloaders': {'batch_size': batch_size},
-            'logger': {'dir': logs_dir},
-            'checkpoint': {'dir': logs_dir},
-            'optimizer': {'use': optimizer}
+    hyperparameters = {
+        'model': {'resnet': resnet, 'normalize': not not_normalize},
+        'datasets': {
+            'use': dataset,
+            'coco': {'root': dataset_root, 'class_names': classes},
+            'logo32plus': {'root': dataset_root}
         },
-        checkpoint=checkpoint,
-        device=device
-    ).train()
+        'dataloaders': {'batch_size': batch_size},
+        'logger': {'dir': logs_dir},
+        'checkpoint': {'dir': logs_dir},
+        'optimizer': {'use': optimizer}
+    }
+    params = {'hyperparameters': hyperparameters, 'device': device}
+
+    if tracked_means:
+        DLDENetWithTrackedMeansTrainer(**params).train(epochs)
+    else:
+        DLDENetTrainer(**params).train(epochs)
 
 
 @click.command()
@@ -58,7 +56,8 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, cla
               help='Where to store the checkpoints and descriptions.')
 @click.option('--device', help='The device that the model must use.')
 @click.option('--epochs', default=100, show_default=True)
-def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device, epochs):
+@click.option('--tracked-means', is_flag=True, help='Use the tracked means version.')
+def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device, epochs, tracked_means):
     """Get an instance of the trainer from the checkpoint CHECKPOINT and resume the exact same training
     with the dataset that contains its data in DATASET_ROOT.
 
@@ -72,4 +71,7 @@ def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, devi
         new_params['logger'] = {'dir': logs_dir}
         new_params['checkpoint'] = {'dir': logs_dir}
 
-    DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)
+    if tracked_means:
+        DLDENetWithTrackedMeansTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)
+    else:
+        DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)
