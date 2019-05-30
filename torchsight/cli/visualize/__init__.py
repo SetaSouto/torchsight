@@ -3,6 +3,7 @@ import click
 
 from .dldenet import dldenet
 from .logo32plus import logo32plus
+from .sigmoid import sigmoid
 
 
 @click.group()
@@ -12,3 +13,4 @@ def visualize():
 
 visualize.add_command(dldenet)
 visualize.add_command(logo32plus)
+visualize.add_command(sigmoid)
