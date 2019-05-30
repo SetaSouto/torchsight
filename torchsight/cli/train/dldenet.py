@@ -40,7 +40,7 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, classes, optimi
         'datasets': {
             'use': dataset,
             'coco': {'root': dataset_root, 'class_names': classes},
-            'logo32plus': {'root': dataset_root, 'classes': classes}
+            'logo32plus': {'root': dataset_root, 'classes': classes if classes else None}
         },
         'dataloaders': {'batch_size': batch_size},
         'logger': {'dir': logs_dir},
