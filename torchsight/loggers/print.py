@@ -118,7 +118,10 @@ class PrintLogger(AbstractLogger):
 
         for log in PrintLogger.read(filepath, keep):
             epoch = log[epoch_key]
-            loss = log[loss_key]
+            try:
+                loss = log[loss_key]
+            except KeyError:
+                continue
             if epoch not in losses:
                 losses[epoch] = {'sum': 0, 'count': 0}
             losses[epoch]['sum'] += float(loss)
