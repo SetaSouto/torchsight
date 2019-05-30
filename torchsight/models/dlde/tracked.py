@@ -58,7 +58,8 @@ class DirectionalClassification(nn.Module):
     because it will compute the mean with the average of the class' embeddings.
     """
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, assignation_thresholds):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, assignation_thresholds,
+                 means_update='batch', means_lr=0.1):
         """Initialize the module.
 
         Arguments:
@@ -69,14 +70,21 @@ class DirectionalClassification(nn.Module):
             classes (int): The number of classes to detect.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys 'object' and 'background' with float values.
+            means_update (str, optional): The update method to use. Options: ['batch', 'manual'].
+                See track() method for more documentation.
+            means_lr (float, optional): The learning rate used in the 'batch' means update method.
         """
         super(DirectionalClassification, self).__init__()
 
+        if means_update not in ['batch', 'manual']:
+            raise ValueError('Unsupported means update method "{}". Options: "batch", "manual".'.format(means_update))
         if 'object' not in assignation_thresholds:
             raise ValueError('There is no "object" threshold in the assignation threshold dict')
         if 'background' not in assignation_thresholds:
             raise ValueError('There is no "background" threshold in the assignation threshold dict')
 
+        self.means_update = means_update
+        self.means_lr = means_lr
         self.assignation_thresholds = assignation_thresholds
         self.embedding_size = embedding_size
         self.sigmoid = nn.Sigmoid()
@@ -125,6 +133,15 @@ class DirectionalClassification(nn.Module):
     def track(self, embeddings, anchors, annotations):
         """Track the embeddings to accumulate the embeddings assigned to the same class.
 
+        We have two ways to track the embedding: batch update or one-shot update.
+
+        The batch update change the mean of the class every time a batch of images pass through
+        the network. It applies learning rate to update so the update is like:
+        mean(t+1) = (1 - lr) * mean(t) + lr * batch_embeddings(t).
+
+        The one-shot update keep track of the embeddings in another tensor, the embeddings_sums
+        and you must call the method `update_means()` to update the means with those sums.
+
         Take the embeddings, assign the annotations to each anchor get the assigned anchors
         to objects and with those embeddings sum to the embeddings_sums according with their
         assignations to annotations.
@@ -167,7 +184,20 @@ class DirectionalClassification(nn.Module):
                 # and sum them to the embeddings_sum
                 for label in assigned_annotations[:, -1].unique():
                     mask = objects_annotations[:, -1] == label
-                    self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)
+                    label = label.long()
+                    label_embeddings = objects_embeddings[mask].sum(dim=0)
+                    if self.means_update == 'batch':
+                        embeddings_norm = label_embeddings.norm()
+                        if embeddings_norm == 0:
+                            continue
+                        label_embeddings /= embeddings_norm
+                        self.means[label] = (1 - self.means_lr) * self.means[label]
+                        self.means[label] += self.means_lr * label_embeddings
+                        self.means[label] /= self.means[label].norm()
+                    elif self.means_update == 'manual':
+                        self.embeddings_sums[label] += label_embeddings
+                    else:
+                        raise ValueError('Unsupported means update type: "{}"'.format(self.means_update))
 
     def classify(self, embeddings):
         """Get the probability for each embedding to below to each class.
@@ -229,8 +259,9 @@ class DirectionalClassification(nn.Module):
 
     def update_means(self):
         """Normalize the embeddings_sums and set them as the new means for the module."""
-        with torch.no_grad():
-            self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
+        if self.means_update == 'manual':
+            with torch.no_grad():
+                self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
 
 
 class DLDENetWithTrackedMeans(RetinaNet):
@@ -240,7 +271,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
     """
 
     def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512,
-                 assignation_thresholds=None, pretrained=True, device=None):
+                 assignation_thresholds=None, means_update='batch', means_lr=0.1, pretrained=True, device=None):
         """Initialize the network.
 
         Arguments:
@@ -253,11 +284,16 @@ class DLDENetWithTrackedMeans(RetinaNet):
             embedding_size (int, optional): The length of the embedding to generate per anchor.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys 'object' and 'background' with float values.
+            means_update_type (str, optional): The update method to use. Options: ['batch', 'manual'].
+                See DirectionalClassification.track() method for more documentation.
+            means_lr (float, optional): The learning rate used in the 'batch' means update method.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
         """
         self.embedding_size = embedding_size
+        self.means_update = means_update
+        self.means_lr = means_lr
 
         if assignation_thresholds is not None:
             self.assignation_thresholds = assignation_thresholds
@@ -282,7 +318,8 @@ class DLDENetWithTrackedMeans(RetinaNet):
         """
         return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
                                          anchors=anchors, features=features, classes=classes,
-                                         assignation_thresholds=self.assignation_thresholds)
+                                         assignation_thresholds=self.assignation_thresholds,
+                                         means_update=self.means_update, means_lr=self.means_lr)
 
     def forward(self, images, annotations=None, initializing=False):
         """Forward pass through the network.

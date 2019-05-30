@@ -31,7 +31,9 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
             },
             'embedding_size': 256,
             'pretrained': True,
-            'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5}
+            'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
+            'means_update': 'batch',  # Could be 'batch' or 'manual'. See DirectionalClassifier module for more info.
+            'means_lr': 0.1,  # Learning rate for the means in 'batch' mode
         },
         'criterion': {
             'alpha': 0.25,
@@ -71,7 +73,7 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         },
         'scheduler': {
             'factor': 0.1,
-            'patience': 2,
+            'patience': 4,
             'threshold': 0.1
         },
         'transforms': {
@@ -99,6 +101,8 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
             anchors=hyperparameters['anchors'],
             embedding_size=hyperparameters['embedding_size'],
             assignation_thresholds=hyperparameters['assignation_thresholds'],
+            means_update=hyperparameters['means_update'],
+            means_lr=hyperparameters['means_lr'],
             pretrained=hyperparameters['pretrained']
         )
 
@@ -172,30 +176,31 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
             epochs (int): The number of epochs to train.
             validate (bool): If true it validates the model after each epoch using the validate method.
         """
-        self.model.to(self.device)
-        self.model.train()
-        n_batches = len(self.dataloader)
+        if self.hyperparameters['model']['means_update'] == 'manual':
+            self.model.to(self.device)
+            self.model.train()
+            n_batches = len(self.dataloader)
 
-        if self.checkpoint is None:
-            # Initialize the means of the classes
-            with torch.no_grad():
-                start = time.time()
-                for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
-                    batch_start = time.time()
-                    self.model(images.to(self.device), annotations.to(self.device), initializing=True)
+            if self.checkpoint is None:
+                # Initialize the means of the classes
+                with torch.no_grad():
+                    start = time.time()
+                    for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
+                        batch_start = time.time()
+                        self.model(images.to(self.device), annotations.to(self.device), initializing=True)
+                        self.logger.log({
+                            'Initializing': None,
+                            'Batch': '{}/{}'.format(batch_index + 1, n_batches),
+                            'Time': '{:.3f} s'.format(time.time() - batch_start),
+                            'Total': '{:.3f} s'.format(time.time() - start)
+                        })
+                    self.model.classification.update_means()
                     self.logger.log({
                         'Initializing': None,
-                        'Batch': '{}/{}'.format(batch_index + 1, n_batches),
-                        'Time': '{:.3f} s'.format(time.time() - batch_start),
-                        'Total': '{:.3f} s'.format(time.time() - start)
+                        'Means updated': None
                     })
-                self.model.classification.update_means()
-                self.logger.log({
-                    'Initializing': None,
-                    'Means updated': None
-                })
-            # Save the means as checkpoint in the epoch 0
-            self.save(0)
+                # Save the means as checkpoint in the epoch 0
+                self.save(0)
 
         super().train(epochs, validate)
 
