@@ -1,0 +1,8 @@
+
+
+COMMAND:
+F:\research\FlickrLogos-32_SDK\FlickrLogos-32_SDK-1.0.4\scripts>
+python fl_plot_classification_results.py --flickrlogos=h:\datasets\FlickrLogos\FlickrLogos\ --classification="../testdata/classification/bow_tfidf-sqrt-trainval_root-sift_k=1000000_knn=5_classification.txt" --output-prefix="../testdata/classification/bow_tfidf-sqrt-trainval_root-sift_k=1000000_knn=5_classification.txt."
+
+OUTPUT:
+Figures...

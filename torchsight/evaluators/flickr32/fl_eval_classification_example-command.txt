@@ -1,0 +1,76 @@
+
+COMMAND:
+F:\research\FlickrLogos-32_SDK\FlickrLogos-32_SDK-1.0.4\scripts>python fl_eval_classification.py --flickrlogos=h:\datasets\FlickrLogos\FlickrLogos --classification="../testdata/classification/bow_tfidf-sqrt-trainval_root-sift_k=1000000_knn=5_classification.txt"
+---------------------------------------------------------------------------
+ RESULTS
+---------------------------------------------------------------------------
+Ground truth:
+  Ground truth file: 'h:\datasets\FlickrLogos\FlickrLogos\all.txt'
+  Total number of images...............................:    3960
+
+Input
+  Result file: '..\testdata\classification\bow_tfidf-sqrt-trainval_root-sift_k=1000000_knn=5_classification.txt'
+  Result file: Results for logo images ................:     960
+  Result file: Results for non-logo images.............:    3000
+  Bad images (excluded from computing scores)..........:       0
+
+Recognition: ("If a logo is present of which class is it?")
+  recognition_precision................................:   0.991
+  recognition_recall...................................:   0.784
+  recognition_accuracy.................................:   0.941
+---------------------------------------------------------------------------
+
+
+COMMAND:
+F:\research\FlickrLogos-32_SDK\FlickrLogos-32_SDK-1.0.4\scripts>python fl_eval_classification.py --verbose --flickrlogos=h:\datasets\FlickrLogos\FlickrLogos --classification="../testdata/classification/bow_tfidf-sqrt-trainval_root-sift_k=1000000_knn=5_classification.txt"
+fl_eval_classification.py
+$Id: fl_eval_classification_example-command.txt 7692 2013-12-19 08:54:21Z romberg $
+-------------------------------------------------------------------------------
+ARGS:
+FlickrLogos root dir (--flickrlogos):
+  > 'h:\datasets\FlickrLogos\FlickrLogos'
+Result file (--classification):
+  > '../testdata/classification/bow_tfidf-sqrt-trainval_root-sift_k=1000000_knn=5_classification.txt'
+Output file ( --output):
+  > '-'
+-------------------------------------------------------------------------------
+---------------------------------------------------------------------------
+ RESULTS
+---------------------------------------------------------------------------
+Ground truth:
+  Ground truth file: 'h:\datasets\FlickrLogos\FlickrLogos\all.txt'
+  Total number of images...............................:    3960
+
+Input
+  Result file: '..\testdata\classification\bow_tfidf-sqrt-trainval_root-sift_k=1000000_knn=5_classification.txt'
+  Result file: Results for logo images ................:     960
+  Result file: Results for non-logo images.............:    3000
+  Bad images (excluded from computing scores)..........:       0
+
+Detection: ("Is a logo present: Yes/No?")
+  Bad images (excluded from computing scores)..........:       0
+
+  TP = count_classified_logo_as_logo...................:     760
+  TN = count_classified_nonlogo_as_nonlogo.............:    2973
+  FP = count_classified_nonlogo_as_logo................:      27
+  FN = count_classified_logo_as_nonlogo................:     200
+
+  detection_precision..................................:   0.966
+  detection_recall.....................................:   0.792
+  detection_specificity................................:   0.991
+  detection_accuracy...................................:   0.943
+
+  True positive rate  = Recall ........................:   0.792
+  True negative rate  = Specificity ...................:   0.991
+  False positive rate = FP / (FP + TN) ................:   0.009
+  False negative rate = FN / (TP + FN) ................:   0.208
+
+Recognition: ("If a logo is present of which class is it?")
+  recognition_precision................................:   0.991
+  recognition_recall...................................:   0.784
+  recognition_accuracy.................................:   0.941
+
+Date/Time: Thu Dec 19 09:38:47 2013
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+Done

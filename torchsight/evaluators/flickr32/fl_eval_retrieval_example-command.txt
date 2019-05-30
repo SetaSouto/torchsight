@@ -1,0 +1,31 @@
+
+
+COMMAND:
+F:\research\FlickrLogos-32_SDK\FlickrLogos-32_SDK-1.0.4\scripts>
+python fl_eval_retrieval.py --verbose --flickrlogos=h:\datasets\FlickrLogos\FlickrLogos\ --indir="../testdata/retrieval/bow_tfidf-sqrt-trainval_root-sift_k=1000000"
+
+OUTPUT:
+fl_eval_retrieval.py Version: $Rev: 7692 $$Date: 2013-12-19 09:54:21 +0100 (Do, 19 Dez 2013) $
+
+-------------------------------------------------------------------------------
+FlickrLogos root dir:
+ --flickrlogos: 'h:\datasets\FlickrLogos\FlickrLogos\'
+Directory with result files:
+ --indir:        'F:\research\FlickrLogos-32_SDK\FlickrLogos-32_SDK-1.0\testdata\retrieval\bow_tfidf-sqrt-trainval_root-sift_k=1000000'
+-------------------------------------------------------------------------------
+Processing retrieval result file 960/960 ...
+-------------------------------------------------------------------------------
+ indir: 'F:\research\FlickrLogos-32_SDK\FlickrLogos-32_SDK-1.0\testdata\retrieval\bow_tfidf-sqrt-trainval_root-sift_k=1000000'
+
+ Results
+
+ #queries:            960
+ #empty result lists: 0
+
+ ==> mean average precision (mAP): 0.5449   (stddev: 0.3392)
+ ==> Avg. top 4 score (4*P@4):     3.1615   (stddev: 1.4354)
+ ==> mean precision (mP):          0.0122   (stddev: 0.0063)
+ ==> mean recall (mR):             0.9109   (stddev: 0.1891)
+ ==> response ratio (RR):          0.7635   (stddev: 0.2122)
+-------------------------------------------------------------------------------
+Done.
