@@ -38,7 +38,7 @@ class DirectionalClassification(nn.Module):
     _Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval._
     [Paper in Arxiv](https://arxiv.org/abs/1802.09662)
 
-    But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+    But there is a problem: If we use only this approach we use a thing similar to a softmax but over the
     cosine similarity of the embedding with each class' mean, as the softmax always gives a winner
     this won't allow us to identify correctly a background embedding, i.e., a non interesting object
     for the model.
@@ -47,22 +47,6 @@ class DirectionalClassification(nn.Module):
     the cosine similarity and the sigmoid function it could be impossible to have a precision of 1
     (because sigmoid(maximum cosine similarity = 1) = 0.7311).
     So we must add a weight and a bias to modify the sigmoid and get coherent values.
-
-    Where x is the cosine similarity between the embedding and a class' mean, k is the concentration
-    parameter and b is the shift parameter. The division is to fit the max value possible to one, and
-    as we'll use the shift more near 1 than -1 the minimum is always a number very very near 0.
-
-    # How does it work
-
-    Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
-    with size d for images of C classes. Assuming that y is the correct label for the image x,
-    the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
-    parameters of the CNN, means are the mean vectors for each class, k is the concentration
-    of the modified sigmoid function and b is the shift.
-
-    The distribution is like a gaussian but projected to an hypersphere.
-
-    It updates the mean vector of each class based on the embeddings that pass through the network.
 
     How can it update the means?
     Because every time that the embeddings pass through the network we must provide the real annotations
@@ -102,13 +86,14 @@ class DirectionalClassification(nn.Module):
         self.register_buffer('means', torch.zeros(classes, embedding_size))
         self.weight = nn.Parameter(torch.Tensor(classes))
         self.bias = nn.Parameter(torch.Tensor(classes))
-        nn.init.constant_(self.weight, 15)
-        nn.init.constant_(self.bias, -0.7)
+        # A start weight of 4 to get values between [0, 1] in the range [-1, 1] for the cosine similarity
+        nn.init.constant_(self.weight, 4)
+        nn.init.constant_(self.bias, 0)
 
         # We need to keep track of embeddings for each class to update the means. How? The mean could be
         # calculated by the average of the embeddings of the same class normalized. So it's the sum of
         # embeddings that passes through the network and that result normalized to have unit norm.
-        self.register_buffer('embeddings_sums', torch.zeros_like(self.means))
+        self.embeddings_sums = torch.zeros_like(self.means)
 
         # Create the encoder
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
@@ -386,6 +371,5 @@ class DLDENetWithTrackedMeans(RetinaNet):
                     assignation_thresholds=params['assignation_thresholds'],
                     pretrained=params['pretrained'])
         model.load_state_dict(checkpoint['model'])
-        model.classification.embeddings_sums = torch.zeros_like(model.classification.embeddings_sums)
 
         return model

@@ -6,8 +6,8 @@ from matplotlib import pyplot as plt
 def main():
     step = 0.01
     similarities = torch.arange(start=-1, end=(1 + step), step=step)
-    weights = torch.arange(start=10, end=25, step=2)
-    biases = torch.arange(start=-0.8, end=-0.7, step=0.1)
+    weights = torch.arange(start=0, end=25, step=1)
+    biases = torch.arange(start=-0.8, end=0.4, step=0.4)
     sigmoid = torch.nn.Sigmoid()
 
     for w in weights:
