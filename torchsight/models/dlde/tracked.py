@@ -95,6 +95,7 @@ class DirectionalClassification(nn.Module):
 
         self.assignation_thresholds = assignation_thresholds
         self.embedding_size = embedding_size
+        self.sigmoid = nn.Sigmoid()
 
         # Start the means for the distributions as zero vectors
         # We can get the mean for the i-th class with self.means[i]
@@ -200,7 +201,7 @@ class DirectionalClassification(nn.Module):
                     (batch size, total embeddings, number of classes)
         """
         similarity = torch.matmul(embeddings, self.means.permute(1, 0))
-        return self.modified_sigmoid(self.weight * (similarity + self.bias))
+        return self.sigmoid(self.weight * (similarity + self.bias))
 
     def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
         """Update means and get the probabilities for each embedding to belong to each class.

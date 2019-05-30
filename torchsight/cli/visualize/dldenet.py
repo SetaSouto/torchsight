@@ -6,7 +6,7 @@ import torch
 import torchvision
 
 from torchsight.datasets import CocoDataset, Logo32plusDataset
-from torchsight.models import DLDENet
+from torchsight.models import DLDENet, DLDENetWithTrackedMeans
 from torchsight.trainers import DLDENetTrainer
 from torchsight.transforms.detection import Normalize
 from torchsight.utils import visualize_boxes
@@ -21,12 +21,18 @@ from torchsight.utils import visualize_boxes
 @click.option('--device', help='The device to use to run the model. Default to cuda:0 if cuda is available.')
 @click.option('--threshold', default=0.5, show_default=True, help='The confidence threshold for the predictions.')
 @click.option('--iou-threshold', default=0.3, show_default=True, help='The threshold for Non Maximum Supresion.')
-def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device, threshold, iou_threshold):
+@click.option('--tracked-means', is_flag=True)
+def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device, threshold, iou_threshold, tracked_means):
     """Visualize the predictions of the DLDENet model loaded from CHECKPOINT with the indicated
     dataset that contains its data in DATASET-ROOT."""
     device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
     checkpoint = torch.load(checkpoint, map_location=device)
-    model = DLDENet.from_checkpoint(checkpoint)
+
+    if tracked_means:
+        model = DLDENetWithTrackedMeans.from_checkpoint(checkpoint)
+    else:
+        model = DLDENet.from_checkpoint(checkpoint)
+
     hyperparameters = checkpoint['hyperparameters']
 
     transform = DLDENetTrainer.get_transform(hyperparameters['transforms'])

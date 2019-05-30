@@ -154,8 +154,8 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         loss = classification_loss + regression_loss
 
         # Log the classification and regression loss too:
-        self.current_log['Class.'] = float(classification_loss)
-        self.current_log['Regr.'] = float(regression_loss)
+        self.current_log['Class.'] = '{:.5f}'.format(float(classification_loss))
+        self.current_log['Regr.'] = '{:.5f}'.format(float(regression_loss))
 
         return loss
 
@@ -182,7 +182,7 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
                     self.model(images.to(self.device), annotations.to(self.device), initializing=True)
                     print('[Initializing] [Batch {}/{}] [Batch {:.3f} s] [Total {:.3f} s]'.format(
                         batch_index + 1, n_batches, time.time() - batch_start, time.time() - start))
-                self.model.update_means()
+                self.model.classification.update_means()
                 print('[Initializing] Means updated.')
             # Save the means as checkpoint in the epoch 0
             self.save(0)
