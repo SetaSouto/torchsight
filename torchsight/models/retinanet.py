@@ -502,7 +502,7 @@ class RetinaNet(nn.Module):
 
         # If there aren't detections return empty
         if boxes.shape[0] == 0:
-            return torch.zeros(0).cuda()
+            return torch.zeros(0).to(self.device)
 
         # Get the numpy version
         # was_cuda = detections.is_cuda
@@ -541,8 +541,8 @@ class RetinaNet(nn.Module):
             yy2 = torch.min(y2[actual], y2[indexes[:-1]])
 
             # Compute width and height to compute the intersection over union
-            w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
-            h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+            w = torch.max(torch.Tensor([0]).to(self.device), xx2 - xx1 + 1)
+            h = torch.max(torch.Tensor([0]).to(self.device), yy2 - yy1 + 1)
             del xx1, yy1, xx2, yy2
             intersection = (w * h)
             del h, w
