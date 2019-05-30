@@ -56,8 +56,8 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, classes, optimi
 
 
 @click.command()
-@click.argument('dataset-root', type=click.Path(exists=True))
-@click.argument('checkpoint', type=click.Path(exists=True))
+@click.option('-c', '--checkpoint', type=click.Path(exists=True), required=True)
+@click.option('-dr', '--dataset-root', type=click.Path(exists=True), required=True)
 @click.option('-b', '--batch-size', default=8, show_default=True, type=click.INT)
 @click.option('--logs-dir', default='./logs', show_default=True, type=click.Path(exists=True),
               help='Where to store the checkpoints and descriptions.')
@@ -70,7 +70,12 @@ def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, devi
 
     You can only change things that will not affect the coherence of the training.
     """
-    new_params = {'datasets': {'root': dataset_root}}
+    new_params = {
+        'datasets': {
+            'coco': {'root': dataset_root},
+            'logo32plus': {'root': dataset_root}
+        }
+    }
 
     if batch_size is not None:
         new_params['dataloaders'] = {'batch_size': batch_size}
