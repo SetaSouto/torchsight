@@ -6,7 +6,8 @@ import click
 @click.argument('dataset-root')
 @click.option('--dataset', default='training', type=click.Choice(['training', 'validation', 'both']))
 @click.option('--no-shuffle', is_flag=True, help='Show the images in order and not randomly.')
-def logo32plus(dataset_root, dataset, no_shuffle):
+@click.option('--classes', help='Visualize only this classes. Ex: "google esso"')
+def logo32plus(dataset_root, dataset, no_shuffle, classes):
     """Visualize the images and annotations of the Logo32plus dataset that has its root directory
     at DATASET-ROOT."""
     import random
@@ -16,10 +17,11 @@ def logo32plus(dataset_root, dataset, no_shuffle):
 
     dataset = Logo32plusDataset(dataset_root, dataset, transform=Compose([
         Resize(min_side=384, max_side=512)
-    ]))
+    ]), classes=classes)
 
     length = len(dataset)
     print('Dataset length: {}'.format(length))
+    print('Classes: {}'.format(list(dataset.class_to_label.keys())))
     indexes = list(range(length))
 
     if not no_shuffle:

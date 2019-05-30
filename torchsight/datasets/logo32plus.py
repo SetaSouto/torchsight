@@ -27,7 +27,7 @@ class Logo32plusDataset(torch.utils.data.Dataset):
     """
 
     def __init__(self, root, dataset='training', transform=None, annot_file='groundtruth.mat',
-                 split_file='train_valid.json'):
+                 classes=None, split_file='train_valid.json'):
         """Initialize the dataset.
 
         Arguments:
@@ -36,10 +36,14 @@ class Logo32plusDataset(torch.utils.data.Dataset):
             transform (callable, optional): A callable to transform the image and its bounding boxes
                 before return them.
             annot_file (str, optional): The file that contains the annotations for the images.
+            classes (list of str, optional): Only load this classes (identified by its name).
+            split_file (str, optional): The file that contains the split between training and validation
+                sets.
         """
         self.root = self.validate_root(root)
         self.dataset = self.validate_dataset(dataset)
         self.annot_file = annot_file
+        self.classes = classes
         self.split = self.get_split(split_file)
         self.annotations = self.get_annotations()
         self.label_to_class, self.class_to_label = self.generate_classes()
@@ -96,17 +100,23 @@ class Logo32plusDataset(torch.utils.data.Dataset):
             return json.loads(file.read())
 
     def get_annotations(self):
-        """Load and parse the annotations of the images."""
+        """Load and parse the annotations of the images.
+
+        Returns:
+            list of tuples: like (image: str, boxes: tensor, name: str)
+        """
         annotations = loadmat(os.path.join(self.root, self.annot_file))['groundtruth'][0]
         result = []
         for annot in annotations:
-            image = annot[0][0].replace('\\', '/')
+            name = annot[2][0]
+            if self.classes is not None and name not in self.classes:
+                continue
 
+            image = annot[0][0].replace('\\', '/')
             if self.dataset != 'both' and getattr(self, 'split', None) is not None and image not in self.split[self.dataset]:
                 continue
 
             boxes = self.transform_boxes(annot[1])
-            name = annot[2][0]
             result.append((image, boxes, name))
 
         return result
