@@ -94,9 +94,8 @@ class DirectionalClassification(nn.Module):
         self.register_buffer('means', torch.zeros(classes, embedding_size))
         self.weight = nn.Parameter(torch.Tensor(classes))
         self.bias = nn.Parameter(torch.Tensor(classes))
-        # A start weight of 4 to get values between [0, 1] in the range [-1, 1] for the cosine similarity
-        nn.init.constant_(self.weight, 4)
-        nn.init.constant_(self.bias, 0)
+        nn.init.constant_(self.weight, 7)
+        nn.init.constant_(self.bias, -0.5)
 
         # We need to keep track of embeddings for each class to update the means. How? The mean could be
         # calculated by the average of the embeddings of the same class normalized. So it's the sum of
@@ -216,7 +215,8 @@ class DirectionalClassification(nn.Module):
                     (batch size, total embeddings, number of classes)
         """
         similarity = torch.matmul(embeddings, self.means.permute(1, 0))
-        return self.sigmoid(self.weight * (similarity + self.bias))
+        max_val = self.sigmoid(self.weight * (1 + self.bias))
+        return self.sigmoid(self.weight * (similarity + self.bias)) / max_val
 
     def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
         """Update means and get the probabilities for each embedding to belong to each class.
