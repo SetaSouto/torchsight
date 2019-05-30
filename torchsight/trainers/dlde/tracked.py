@@ -51,7 +51,8 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
                 'validation': 'val2017'
             },
             'logo32plus': {
-                'root': './datasets/logo32plus'
+                'root': './datasets/logo32plus',
+                'classes': None  # All classes
             }
         },
         'dataloaders': {
@@ -74,7 +75,7 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         'scheduler': {
             'factor': 0.1,
             'patience': 4,
-            'threshold': 0.1
+            'threshold': 0.01
         },
         'transforms': {
             'resize': {
