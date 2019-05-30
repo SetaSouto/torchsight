@@ -134,8 +134,9 @@ class RetinaNetTrainer(Trainer):
 
         if dataset == 'logo32plus':
             params = params['logo32plus']
+            num_classes = len(params['classes']) if params['classes'] is not None else 32
 
-            self.hyperparameters['model']['classes'] = 32
+            self.hyperparameters['model']['classes'] = num_classes
 
             return (Logo32plusDataset(**params, dataset='training', transform=transform),
                     Logo32plusDataset(**params, dataset='validation', transform=transform))

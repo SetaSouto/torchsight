@@ -31,9 +31,9 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
     checkpoint = torch.load(checkpoint, map_location=device)
 
     if tracked_means:
-        model = DLDENetWithTrackedMeans.from_checkpoint(checkpoint)
+        model = DLDENetWithTrackedMeans.from_checkpoint(checkpoint, device=device)
     else:
-        model = DLDENet.from_checkpoint(checkpoint)
+        model = DLDENet.from_checkpoint(checkpoint, device=device)
 
     hyperparameters = checkpoint['hyperparameters']
 
@@ -54,6 +54,7 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
         label_to_name = dataset.classes['names']
     elif dataset == 'logo32plus':
         params['dataset'] = 'training' if training_set else 'validation'
+        params['classes'] = hyperparameters['datasets']['logo32plus']['classes']
         dataset = Logo32plusDataset(**params, transform=transform)
         dataset_human = Logo32plusDataset(**params, transform=transform_visible)
         label_to_name = dataset.label_to_class

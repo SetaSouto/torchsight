@@ -76,7 +76,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         'scheduler': {
             'factor': 0.1,
             'patience': 2,
-            'threshold': 0.1
+            'threshold': 0.01
         },
         'transforms': {
             'resize': {
