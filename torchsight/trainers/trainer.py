@@ -52,9 +52,13 @@ class Trainer():
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         # Get the modules for the training
+        print('Loading datasets ...')
         self.dataset, self.valid_dataset = self.get_datasets()
+        print('Loading dataloaders ...')
         self.dataloader, self.valid_dataloader = self.get_dataloaders()
+        print('Loading model ...')
         self.model = self.get_model()
+        print('Loading criterion, optimizer and scheduler ...')
         self.criterion = self.get_criterion()
         self.optimizer = self.get_optimizer()
         self.scheduler = self.get_scheduler()

@@ -93,7 +93,7 @@ class DirectionalClassification(nn.Module):
         # We need to keep track of embeddings for each class to update the means. How? The mean could be
         # calculated by the average of the embeddings of the same class normalized. So it's the sum of
         # embeddings that passes through the network and that result normalized to have unit norm.
-        self.embeddings_sums = torch.zeros_like(self.means)
+        self.register_buffer('embeddings_sums', torch.zeros_like(self.means))
 
         # Create the encoder
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
@@ -371,5 +371,6 @@ class DLDENetWithTrackedMeans(RetinaNet):
                     assignation_thresholds=params['assignation_thresholds'],
                     pretrained=params['pretrained'])
         model.load_state_dict(checkpoint['model'])
+        model.classification.embeddings_sums = torch.zeros_like(model.classification.means).to(device)
 
         return model

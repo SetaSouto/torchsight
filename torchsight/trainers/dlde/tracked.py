@@ -148,14 +148,17 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         del anchors, regressions, classifications, annotations
 
         weights = self.hyperparameters['criterion']['weights']
-        classification_loss *= weights['classification']
-        regression_loss *= weights['regression']
+        classification_loss = classification_loss * weights['classification']
+        regression_loss = regression_loss * weights['regression']
 
         loss = classification_loss + regression_loss
 
         # Log the classification and regression loss too:
-        self.current_log['Class.'] = '{:.5f}'.format(float(classification_loss))
-        self.current_log['Regr.'] = '{:.5f}'.format(float(regression_loss))
+        self.current_log['Class.'] = '{:.3f}'.format(float(classification_loss))
+        self.current_log['Regr.'] = '{:.3f}'.format(float(regression_loss))
+        # Also the mean of the weights and bias in the classification module:
+        self.current_log['Cl. w'] = '{:.3f}'.format(float(self.model.classification.weight.mean()))
+        self.current_log['Cl. b'] = '{:.3f}'.format(float(self.model.classification.bias.mean()))
 
         return loss
 
@@ -180,10 +183,17 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
                 for batch_index, (images, annotations, *_) in enumerate(self.dataloader):
                     batch_start = time.time()
                     self.model(images.to(self.device), annotations.to(self.device), initializing=True)
-                    print('[Initializing] [Batch {}/{}] [Batch {:.3f} s] [Total {:.3f} s]'.format(
-                        batch_index + 1, n_batches, time.time() - batch_start, time.time() - start))
+                    self.logger.log({
+                        'Initializing': None,
+                        'Batch': '{}/{}'.format(batch_index + 1, n_batches),
+                        'Time': '{:.3f} s'.format(time.time() - batch_start),
+                        'Total': '{:.3f} s'.format(time.time() - start)
+                    })
                 self.model.classification.update_means()
-                print('[Initializing] Means updated.')
+                self.logger.log({
+                    'Initializing': None,
+                    'Means updated': None
+                })
             # Save the means as checkpoint in the epoch 0
             self.save(0)
 
@@ -195,5 +205,9 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         Arguments:
             epoch (int): The number of the epoch.
         """
-        print("[Training] [Epoch {}] Updating the model's means.".format(epoch))
+        self.logger.log({
+            'Training': None,
+            'Epoch': '{}'.format(epoch),
+            'Updating the model\'s means.': None
+        })
         self.model.classification.update_means()
