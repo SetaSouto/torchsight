@@ -210,9 +210,10 @@ class DLDENetWithTrackedMeansTrainer(RetinaNetTrainer):
         Arguments:
             epoch (int): The number of the epoch.
         """
-        self.logger.log({
-            'Training': None,
-            'Epoch': '{}'.format(epoch),
-            'Updating the model\'s means.': None
-        })
-        self.model.classification.update_means()
+        if self.hyperparameters['model']['means_update'] == 'manual':
+            self.logger.log({
+                'Training': None,
+                'Epoch': '{}'.format(epoch),
+                'Updating the model\'s means.': None
+            })
+            self.model.classification.update_means()
