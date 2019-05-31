@@ -137,7 +137,8 @@ class Logo32plusDataset(torch.utils.data.Dataset):
 
     def generate_classes(self):
         """Generate the map dicts to assign a 0-indexed label to each one of the classes and viceversa."""
-        classes = {annot[2] for annot in self.annotations}
+        classes = list({annot[2] for annot in self.annotations})
+        classes.sort()
         label_to_class = {i: c for i, c in enumerate(classes)}
         class_to_label = {c: i for i, c in enumerate(classes)}
 
