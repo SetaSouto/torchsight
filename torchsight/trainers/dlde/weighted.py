@@ -188,5 +188,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.current_log['Class.'] = '{:.4f}'.format(float(classification))
         self.current_log['Regr.'] = '{:.4f}'.format(float(regression))
         self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
+        # Log the mean norm of the weights in the classification module
+        self.current_log['Cl. w'] = '{:.4f}'.format(float(self.model.classification.weights.norm(dim=0).mean()))
 
         return loss
