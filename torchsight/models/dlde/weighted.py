@@ -61,11 +61,13 @@ class ClassificationModule(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
+        self.bias = nn.Parameter(torch.Tensor(classes))
         self.reset_weights()
 
     def reset_weights(self):
         """Reset and initialize with kaiming normal the weights."""
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
+        nn.init.constant_(self.bias, 0)
 
     def encode(self, feature_map):
         """Generate the embeddings for the given feature map.
@@ -109,7 +111,7 @@ class ClassificationModule(nn.Module):
                 Shape:
                     (batch size, total embeddings, number of classes)
         """
-        return self.sigmoid(torch.matmul(embeddings, self.weights))
+        return self.sigmoid(torch.matmul(embeddings, self.weights) + self.bias)
 
     def forward(self, feature_maps):
         """Generate the embeddings based on the feature maps and get thr probability of each one

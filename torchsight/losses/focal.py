@@ -12,7 +12,7 @@ from ..models import Anchors
 class FocalLoss(nn.Module):
     """Loss to penalize the detection of objects."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=True, device=None):
         """Initialize the loss.
 
         Train as background (minimize all the probabilities of the classes) if the IoU is below the 'background'
@@ -24,6 +24,7 @@ class FocalLoss(nn.Module):
             gamma (float): Gamma parameter for the focal loss.
             sigma (float): Point that defines the change from L1 loss to L2 loss (smooth L1).
             iou_thresholds (dict): Indicates the thresholds to assign an anchor as background or object.
+            soft (bool, optional): Apply soft classification loss according to theirs IoU.
             device (str, optional): Indicates the device where to run the loss.
         """
         super(FocalLoss, self).__init__()
@@ -35,6 +36,7 @@ class FocalLoss(nn.Module):
             iou_thresholds = {'background': 0.4, 'object': 0.5}
         self.iou_background = iou_thresholds['background']
         self.iou_object = iou_thresholds['object']
+        self.soft = soft
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     def to(self, device):
@@ -108,7 +110,7 @@ class FocalLoss(nn.Module):
             assignations = Anchors.assign(anchors,
                                           annotations,
                                           thresholds={'object': self.iou_object, 'background': self.iou_background})
-            assigned_annotations, selected_anchors_objects, selected_anchors_backgrounds, *_ = assignations
+            assigned_annotations, selected_anchors_objects, selected_anchors_backgrounds, objects_iou = assignations
 
             # Compute classification loss
 
@@ -137,9 +139,13 @@ class FocalLoss(nn.Module):
             ignored_anchors = 1 - selected_anchors
             bce[ignored_anchors, :] = 0
             # Append to the classification losses
-            classification_losses.append((focal * bce).sum() / selected_anchors.sum().type(torch.float))
+            loss = focal * bce
+            if self.soft:
+                loss[selected_anchors_objects, :] *= objects_iou.unsqueeze(dim=1)
+            loss = loss.sum() / selected_anchors.sum()
+            classification_losses.append(loss)
             # Free memory
-            del alpha, focal, bce, ignored_anchors, classifications, selected_anchors_backgrounds
+            del alpha, focal, bce, ignored_anchors, classifications, selected_anchors_backgrounds, loss
 
             # Compute regression loss
 

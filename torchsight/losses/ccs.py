@@ -18,13 +18,22 @@ class CCSLoss(nn.Module):
     and normalizing by their norms.
 
     It will apply this loss term only to those embeddings that are assigned to an object.
+
+    As there could a be a lot of assigned anchors, it's a little naive to only have a threshold,
+    so this loss provide an option 'soft' to compute the similarity according to the IoU between the
+    anchor and the real annotation.
+    Suppose that your iou_threshold for the objects is 0.5, if you have an anchor with IoU 0.51 and
+    another with 0.99, both weight the same for the loss?
+    A soft version of the loss will decrease the weight of the anchor in the final loss according
+    to its IoU, so the final loss of an anchor is it's IoU * similarity.
     """
 
-    def __init__(self, iou_thresholds=None, device=None):
+    def __init__(self, iou_thresholds=None, soft=True, device=None):
         """Initialize the loss.
 
         Arguments:
             iou_thresholds (dict, optional): Indicates the thresholds to assign an anchor as background or object.
+            soft (bool, optional): Apply the soft version of the loss.
             device (str, optional): Indicates the device where to run the loss.
         """
         super().__init__()
@@ -32,6 +41,7 @@ class CCSLoss(nn.Module):
         if iou_thresholds is None:
             iou_thresholds = {'background': 0.4, 'object': 0.5}
         self.iou_thresholds = iou_thresholds
+        self.soft = soft
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     def forward(self, anchors, embeddings, weights, annotations):
@@ -87,8 +97,9 @@ class CCSLoss(nn.Module):
             # Get the assigned annotations (the i-th assigned annotation is the annotation assigned to the i-th
             # anchor)
             # Get the masks to select the anchors assigned to an object (IoU bigger than iou_object threshold)
+            # Also get the IoU value to weight their loss
             assignations = Anchors.assign(anchors, annotations, thresholds=self.iou_thresholds)
-            assigned_annotations, selected_anchors_objects, *_ = assignations
+            assigned_annotations, selected_anchors_objects, _, iou = assignations
 
             # Continue with the next image if there are no selected objects
             if selected_anchors_objects.sum() == 0:
@@ -115,6 +126,8 @@ class CCSLoss(nn.Module):
             loss = -1 * torch.matmul(embeddings, weights).view(-1)  # Shape (selected embeddings,)
             loss /= embeddings.squeeze(dim=1).norm(dim=1)  # Normalize by the embeddings' norms
             loss /= weights.squeeze(dim=2).norm(dim=1)  # Normalize by the weights' norms
+            if self.soft:
+                loss *= iou  # Weight each loss term according to its IoU
             # Add one to have a minimum loss of zero (because cosine similarity ranges from -1 to 1) and normalize
             # the value between 0 and 1 to have a more meaningfull loss
             loss = (loss + 1) / 2

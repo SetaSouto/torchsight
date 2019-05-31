@@ -335,13 +335,13 @@ class Anchors(nn.Module):
         """Assign the correspondent annotation to each anchor.
 
         We know that in a feature map we'll have A anchors per location (i.e. feature map's height * width * A total
-        anchors), where these A anchors has different sizes and aspect ratios.
+        anchors), where these A anchors have different sizes and aspect ratios.
         Each one of this anchors could have an 'assigned annotation', that is the annotation that has bigger
         Intersection over Union (IoU) with the anchor.
 
         So, all the anchors could have an assigned annotation, but, what we do with the anchors that are containing
         background and none object? That's the reason that we must provide some thresholds: one to keep only the
-        anchors that are containing objects and on threshold to decide if the anchor is background or not.
+        anchors that are containing objects and one threshold to decide if the anchor is background or not.
         The anchors that has IoU between those threshold are ignored.
 
         With this we can train anchors to fit the annotation and others to fit the background class. And obviously

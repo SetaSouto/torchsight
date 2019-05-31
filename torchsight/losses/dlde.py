@@ -9,7 +9,7 @@ from .focal import FocalLoss
 class DLDENetLoss(nn.Module):
     """Join the CCS and the Focal losses in one single module."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=True, device=None):
         """Initialize the losses.
 
         See their corresponding docs for more information.
@@ -19,6 +19,7 @@ class DLDENetLoss(nn.Module):
             gamma (float): Gamma parameter for the focal loss.
             sigma (float): Point that defines the change from L1 loss to L2 loss (smooth L1).
             iou_thresholds (dict): Indicates the thresholds to assign an anchor as background or object.
+            soft (bool, optional): Apply soft Focal and soft Cosine similarity losses.
             device (str, optional): Indicates the device where to run the loss.
         """
         super().__init__()
@@ -28,8 +29,8 @@ class DLDENetLoss(nn.Module):
 
         device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-        self.focal = FocalLoss(alpha, gamma, sigma, iou_thresholds, device)
-        self.ccs = CCSLoss(iou_thresholds, device)
+        self.focal = FocalLoss(alpha, gamma, sigma, iou_thresholds, soft, device)
+        self.ccs = CCSLoss(iou_thresholds, soft, device)
 
     def forward(self, anchors, regressions, classifications, annotations, model):
         """Compute the different losses for the batch.
