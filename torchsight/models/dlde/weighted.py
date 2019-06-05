@@ -38,7 +38,7 @@ class ClassificationModule(nn.Module):
     It has the parameters to perform the classification simply by doing cosine similarity and then applied a sigmoid.
     """
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False, bias=False):
         """Initialize the classification module.
 
         Arguments:
@@ -48,6 +48,7 @@ class ClassificationModule(nn.Module):
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
             normalize (bool, optional): Indicate that it must normalize the embeddings.
+            bias (bool, optional): If True it uses bias weights to perform the classification.
         """
         super().__init__()
 
@@ -61,13 +62,17 @@ class ClassificationModule(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
-        self.bias = nn.Parameter(torch.Tensor(classes))
+        self.use_bias = bias
+        if self.use_bias:
+            self.bias = nn.Parameter(torch.Tensor(classes))
         self.reset_weights()
 
     def reset_weights(self):
         """Reset and initialize with kaiming normal the weights."""
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
-        nn.init.constant_(self.bias, 0)
+
+        if self.use_bias:
+            nn.init.constant_(self.bias, 0)
 
     def encode(self, feature_map):
         """Generate the embeddings for the given feature map.
@@ -111,7 +116,12 @@ class ClassificationModule(nn.Module):
                 Shape:
                     (batch size, total embeddings, number of classes)
         """
-        return self.sigmoid(torch.matmul(embeddings, self.weights) + self.bias)
+        similarity = torch.matmul(embeddings, self.weights)
+
+        if self.use_bias:
+            similarity += self.bias
+
+        return self.sigmoid(similarity)
 
     def forward(self, feature_maps):
         """Generate the embeddings based on the feature maps and get thr probability of each one
@@ -141,7 +151,7 @@ class DLDENet(RetinaNet):
     """
 
     def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
-                 device=None):
+                 device=None, bias=False):
         """Initialize the network.
 
         Arguments:
@@ -156,9 +166,11 @@ class DLDENet(RetinaNet):
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
+            bias (bool, optional): Use bias weights in the classification module.
         """
         self.embedding_size = embedding_size
         self.normalize = normalize
+        self.use_bias = bias
         super().__init__(classes, resnet, features, anchors, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
@@ -176,7 +188,7 @@ class DLDENet(RetinaNet):
             ClassificationModule: The module for classification.
         """
         return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
-                                    features=features, classes=classes, normalize=self.normalize)
+                                    features=features, classes=classes, normalize=self.normalize, bias=self.use_bias)
 
     def classify(self, feature_maps):
         """Perform the classification of the feature maps.

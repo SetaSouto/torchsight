@@ -34,7 +34,8 @@ class DLDENetTrainer(RetinaNetTrainer):
             'embedding_size': 256,
             'normalize': True,
             'pretrained': True,
-            'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5}
+            'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
+            'bias': False,
         },
         'criterion': {
             'alpha': 0.25,
@@ -42,7 +43,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'sigma': 3.0,
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
             # Weight of each loss. See train method.
-            'weights': {'classification': 1e3, 'regression': 1, 'similarity': 1},
+            'weights': {'classification': 1e4, 'regression': 1, 'similarity': 1},
             'soft': True,  # Apply soft loss weighted by the IoU
         },
         'datasets': {
@@ -107,7 +108,8 @@ class DLDENetTrainer(RetinaNetTrainer):
             embedding_size=hyperparameters['embedding_size'],
             normalize=hyperparameters['normalize'],
             pretrained=hyperparameters['pretrained'],
-            device=self.device
+            device=self.device,
+            bias=hyperparameters['bias']
         )
 
     def get_optimizer(self):
@@ -192,6 +194,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
         # Log the mean norm of the weights in the classification module and their biases
         self.current_log['w-norm'] = '{:.4f}'.format(float(self.model.classification.weights.norm(dim=0).mean()))
-        self.current_log['bias'] = '{:.4f}'.format(float(self.model.classification.bias.mean()))
+        if self.model.classification.use_bias:
+            self.current_log['bias'] = '{:.4f}'.format(float(self.model.classification.bias.mean()))
 
         return loss
