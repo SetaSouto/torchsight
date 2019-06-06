@@ -20,7 +20,6 @@ class DLDENetTrainer(RetinaNetTrainer):
     # Base hyperparameters, can be replaced in the initialization of the trainer
     hyperparameters = {
         'model': {
-            'classes': 80,
             'resnet': 18,
             'features': {
                 'pyramid': 256,
@@ -38,7 +37,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
             'weighted_bias': False,
             'fixed_bias': -0.5,
-            'increase_norm_by': 8.5
+            'increase_norm_by': None
         },
         'criterion': {
             'alpha': 0.25,
@@ -78,7 +77,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'use': 'sgd',  # Which optimizer the trainer must use
             'adabound': {
                 'lr': 1e-3,  # Learning rate
-                'final_lr': 0.1  # When the optimizer must change from Adam to SGD
+                'final_lr': 1  # When the optimizer change from Adam to SGD
             },
             'sgd': {
                 'lr': 1e-2,
