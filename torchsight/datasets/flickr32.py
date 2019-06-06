@@ -24,7 +24,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
     and the `.txt` files with the split of the data (training, validation and test sets). 
     """
 
-    def __init__(self, root, dataset='training', transform=None, classes=None):
+    def __init__(self, root, dataset='training', transform=None, classes=None, only_boxes=False):
         """Initialize the dataset.
 
         Arguments:
@@ -35,11 +35,15 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                 bounding boxes.
             classes (list, optional): A list with the classes to load.
                 If None is provided it will load all the classes.
+            only_boxes (bool, optional): If True, it will load images that only contains bounding boxes.
+                This is an option because in the validation and test set there are images without logos,
+                but for training we probably don't want to train with that images.
         """
         self.root = self.validate_root(root)
         self.dataset = self.validate_dataset(dataset)
         self.transform = transform
         self.classes = classes
+        self.only_boxes = only_boxes
         self.paths = self.get_paths()
         self.label_to_class, self.class_to_label = self.generate_labels()
 
@@ -111,8 +115,12 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                     continue
 
                 image = image.replace('\n', '')
-                boxes = os.path.join(self.root, 'classes/masks/{}/{}.bboxes.txt'.format(brand, image))
+                boxes = os.path.join(
+                    self.root, 'classes/masks/{}/{}.bboxes.txt'.format(brand if brand != 'HP' else 'hp', image))
                 image = os.path.join(self.root, 'classes/jpg/{}/{}'.format(brand, image))
+
+                if not os.path.exists(boxes) and self.only_boxes:
+                    continue
 
                 tuples.append((brand, image, boxes))
 
@@ -191,9 +199,4 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
 
                 return torch.stack(boxes)
         except FileNotFoundError:
-            file = file.replace('HP', 'hp')
-
-            if os.path.exists(file):
-                return self.get_boxes(file, brand)
-
             return torch.Tensor([])
