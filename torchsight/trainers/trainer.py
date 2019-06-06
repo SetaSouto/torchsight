@@ -58,7 +58,7 @@ class Trainer():
 
         # Flag to save only the best model
         self.save_only_best = save_only_best
-        self.best_loss = 1e100
+        self.best_loss = 1e10
 
         # Get the modules for the training
         print('Loading datasets ...')
