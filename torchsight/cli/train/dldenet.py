@@ -5,7 +5,7 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
 
 
 @click.command()
-@click.option('-d', '--dataset', default='coco', show_default=True, type=click.Choice(['coco', 'logo32plus']))
+@click.option('-d', '--dataset', default='coco', show_default=True, type=click.Choice(['coco', 'logo32plus', 'flickr32']))
 @click.option('-dr', '--dataset-root', type=click.Path(exists=True), required=True)
 @click.option('-b', '--batch-size', default=8, show_default=True)
 @click.option('--resnet', default=50, show_default=True, help='The resnet backbone that the model must use.')
@@ -40,7 +40,8 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, classes, optimi
         'datasets': {
             'use': dataset,
             'coco': {'root': dataset_root, 'class_names': classes},
-            'logo32plus': {'root': dataset_root, 'classes': classes if classes else None}
+            'logo32plus': {'root': dataset_root, 'classes': classes if classes else None},
+            'flickr32': {'root': dataset_root, 'classes': classes if classes else None}
         },
         'dataloaders': {'batch_size': batch_size},
         'logger': {'dir': logs_dir},
