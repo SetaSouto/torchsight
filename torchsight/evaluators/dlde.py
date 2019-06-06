@@ -8,13 +8,15 @@ from torchvision import transforms
 
 from torchsight.datasets import CocoDataset
 from torchsight.models import DLDENet, DLDENetWithTrackedMeans
+from torchsight.trainers import DLDENetTrainer
 from torchsight.transforms.detection import Normalize, Resize, ToTensor
 from torchsight.utils import merge_dicts
 
 from .evaluator import Evaluator
+from .flickr32 import Flickr32Evaluator
 
 
-class DLDENetEvaluator(Evaluator):
+class DLDENetCOCOEvaluator(Evaluator):
     """An evaluator for the DLDENet.
 
     It will evaluate the model computing the mAP over the coco valid dataset.
@@ -66,7 +68,7 @@ class DLDENetEvaluator(Evaluator):
         Returns:
             torchvision.transforms.Compose: A composition of the transformations to apply.
         """
-        params = torch.load(self.checkpoint)['hyperparameters']['transforms']
+        params = self.checkpoint['hyperparameters']['transforms']
         params = merge_dicts(params, self.params['transforms'], verbose=True)
 
         return transforms.Compose([Resize(**params['resize']),
@@ -84,9 +86,8 @@ class DLDENetEvaluator(Evaluator):
         class_names = params['class_names']
 
         if params['class_names_from_checkpoint']:
-            checkpoint = torch.load(self.checkpoint)
-            if 'hyperparameters' in checkpoint:
-                class_names = checkpoint['hyperparameters']['datasets']['class_names']
+            if 'hyperparameters' in self.checkpoint:
+                class_names = self.checkpoint['hyperparameters']['datasets']['class_names']
             else:
                 print("Couldn't load the class_names from the checkpoint, it doesn't have the hyperparameters.")
 
@@ -141,7 +142,7 @@ class DLDENetEvaluator(Evaluator):
         """
         if self.params['model']['with_tracked_means']:
             params = {**self.params['model']['tracked'], 'device': self.device}
-            state_dict = torch.load(self.checkpoint, map_location=self.device)['DLDENet']
+            state_dict = self.checkpoint['model']
             return DLDENetWithTrackedMeans(**params).load_state_dict(state_dict)
 
         return DLDENet.from_checkpoint(self.checkpoint, self.device)
@@ -150,7 +151,7 @@ class DLDENetEvaluator(Evaluator):
     ###         METHODS         ###
     ###############################
 
-    def eval(self):
+    def eval_mode(self):
         """Put the model in evaluation mode and set the threshold for the detection."""
         params = self.params['model']['evaluation']
         self.model.eval(threshold=params['threshold'], iou_threshold=params['iou_threshold'])
@@ -229,3 +230,38 @@ class DLDENetEvaluator(Evaluator):
             file.write(json.dumps(self.predictions))
 
         self.dataset.compute_map(file_path)
+
+
+class DLDENetFlickr32Evaluator(Flickr32Evaluator):
+    """Extend the Flickr32Evaluator class to perform an evaluation over the dataset using the evaluation kit
+    provided with it."""
+
+    @staticmethod
+    def get_base_params():
+        """Add the thresholds to the base parameters."""
+        return merge_dicts(
+            super(DLDENetFlickr32Evaluator, DLDENetFlickr32Evaluator).get_base_params(),
+            {
+                'thresholds': {
+                    'detection': 0.1,
+                    'iou': 0.1
+                }
+            }
+        )
+
+    def eval_mode(self):
+        """Put the model in evaluation mode and set the threshold for the detection."""
+        params = self.params['thresholds']
+        self.model.eval(threshold=params['detection'], iou_threshold=params['iou'])
+
+    def get_transform(self):
+        """Get the transformation to applies to the dataset according to the model."""
+        return DLDENetTrainer.get_transform(self.checkpoint['hyperparameters']['transforms'])
+
+    def get_model(self):
+        """Get the model to use to make the predictions.
+
+        Returns:
+            DLDENet: The model loaded from the checkpoint.
+        """
+        return DLDENet.from_checkpoint(self.checkpoint, self.device)

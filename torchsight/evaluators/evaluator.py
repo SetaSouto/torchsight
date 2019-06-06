@@ -4,10 +4,10 @@ import time
 import torch
 
 from torchsight.loggers import PrintLogger
-from torchsight.utils import merge_dicts
+from torchsight.utils import PrintMixin, merge_dicts
 
 
-class Evaluator():
+class Evaluator(PrintMixin):
     """An evaluator base class.
 
     The evaluator is an interface to evaluate different models. You can override the methods to get the dataset,
@@ -17,7 +17,6 @@ class Evaluator():
     This class is intended to avoid boilerplate code and only focus on compute the metric or evaluation that you
     want to have.
     """
-    params = {}
 
     def __init__(self, checkpoint, params=None, device=None):
         """Initialize the evaluator, get the dataset and the model to evaluate.
@@ -27,16 +26,32 @@ class Evaluator():
             params (dict): A dict to replace the base params of the evaluator.
             device (str, optional): The device to use for the evaluation.
         """
-        self.params = merge_dicts(self.params, params, verbose=True)
+        self.params = merge_dicts(self.get_base_params(), params, verbose=True)
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
-        self.checkpoint = checkpoint
+        self.print('Using device "{}"'.format(self.device))
+
+        self.checkpoint_path = checkpoint
+        self.print('Loading checkpoint ...')
+        self.checkpoint = torch.load(checkpoint, map_location=self.device)
+
+        self.print('Loading dataset ...')
         self.dataset = self.get_dataset()
+        self.print('Loading dataloader ...')
         self.dataloader = self.get_dataloader()
+        self.print('Loading model ...')
         self.model = self.get_model()
         self.logger = self.get_logger()
 
         # Keep a dict with the key-value pairs to log after each batch
         self.current_log = {}
+
+        # Avoid memory leaks by removing the loaded checkpoint but keep the path to it
+        self.checkpoint = None
+
+    @staticmethod
+    def get_base_params():
+        """Get the base parameters of the evaluator."""
+        return {}
 
     ###############################
     ###         GETTERS         ###
@@ -80,7 +95,7 @@ class Evaluator():
     ###         METHODS         ###
     ###############################
 
-    def eval(self):
+    def eval_mode(self):
         """Put the model in evaluation mode.
 
         You can override this method to pass arguments to the eval() method of the model
@@ -90,8 +105,9 @@ class Evaluator():
 
     def evaluate(self):
         """Run the model over the entire dataset and compute the evaluation metric."""
+        self.print('Starting evaluation ...')
         self.model.to(self.device)
-        self.eval()
+        self.eval_mode()
 
         # The number of batches that the dataset has
         n_batches = len(self.dataloader)
@@ -109,6 +125,7 @@ class Evaluator():
                 last_endtime = time.time()
 
                 self.logger.log(merge_dicts({
+                    self.__class__.__name__: None,
                     'Batch': '{}/{}'.format(batch + 1, n_batches),
                     'Time': '{:.3f} s'.format(batch_time),
                     'Total': '{:.1f} s'.format(total_time)

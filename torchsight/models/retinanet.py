@@ -20,8 +20,8 @@ https://github.com/yhenon/pytorch-retinanet
 import torch
 from torch import nn
 
-from .resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from .anchors import Anchors
+from .resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 
 
 class FeaturePyramid(nn.Module):
@@ -375,36 +375,6 @@ class RetinaNet(nn.Module):
 
         return super(RetinaNet, self).eval()
 
-    def transform(self, images, anchors, regressions, classifications):
-        """Transform, clip and apply NMS to the predictions.
-
-        Arguments:
-            images (torch.Tensor): The images that passed through the network. Useful for clipping
-                the predicted bounding boxes.
-                Shape:
-                    (batch size, channels, height, width)
-            anchors (torch.Tensor): The base anchors generated for the images.
-                Shape:
-                    (batch size, amount of anchors, 4)
-            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
-                Shape:
-                    (batch size, amount of anchors, 4)
-            classifications (torch.Tensor): The probabilities for each class for each anchor.
-                Shape:
-                    (batch size, amount of anchors, amount of classes)
-
-        Returns:
-            sequence: A sequence of (bounding boxes, classifications) for each image.
-                Bounding boxes: Tensor with shape (total predictions, 4).
-                Classifications: Tensor with shape (total predictions, classes).
-        """
-        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
-        del regressions
-        # Clip the boxes to fit in the image
-        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
-        # Generate a sequence of (bounding_boxes, classifications) for each image
-        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
-
     def classify(self, feature_maps):
         """Perform the classification of the feature maps.
 
@@ -470,6 +440,60 @@ class RetinaNet(nn.Module):
 
         anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
         return self.transform(images, anchors, regressions, classifications)
+
+    def transform(self, images, anchors, regressions, classifications):
+        """Transform, clip and apply NMS to the predictions.
+
+        Arguments:
+            images (torch.Tensor): The images that passed through the network. Useful for clipping
+                the predicted bounding boxes.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors generated for the images.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            classifications (torch.Tensor): The probabilities for each class for each anchor.
+                Shape:
+                    (batch size, amount of anchors, amount of classes)
+
+        Returns:
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        """
+        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+        # Generate a sequence of (bounding_boxes, classifications) for each image
+        return [self.make_predictions(*self.nms(bounding_boxes[index], classifications[index]))
+                for index in range(images.shape[0])]
+
+    @staticmethod
+    def make_predictions(boxes, classifications):
+        """Join the boxes and the classification probabilities and make a single predictions per bounding box.
+
+        Arguments:
+            boxes (torch.Tensor): The bounding boxes generated for the image.
+                Shape: `(num of boxes, 4)`.
+            classifications (torch.Tensor): The probability for each class.
+                Shape: `(num of boxes, num of classes)`.
+
+        Returns:
+            torch.Tensor: A single tensor with the label and the probability for each predicted bounding box.
+        """
+        detections = torch.zeros(boxes.shape[0], 6)
+
+        if boxes.shape[0] > 0:
+            detections[:, :4] = boxes
+            probs, labels = classifications.max(dim=1)
+            detections[:, 4] = labels
+            detections[:, 5] = probs
+
+        return detections
 
     def nms(self, boxes, classifications):
         """Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting

@@ -24,7 +24,7 @@ __author__  = "Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de"
 import sys, time
 from os.path import exists, isdir, normpath
 
-from flickrlogos import fl_read_groundtruth2, fl_read_csv, Tee
+from .flickrlogos import fl_read_groundtruth2, fl_read_csv, Tee
 
 #==============================================================================
 #

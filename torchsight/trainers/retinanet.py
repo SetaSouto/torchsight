@@ -1,8 +1,9 @@
 """RetinaNet Trainer."""
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.data import DataLoader
 from torchvision import transforms
+
+from torchsight import utils
 
 from ..datasets import CocoDataset, Flickr32Dataset, Logo32plusDataset
 from ..losses import FocalLoss
@@ -171,57 +172,7 @@ class RetinaNetTrainer(Trainer):
             torch.utils.data.Dataloaders: The dataloader for the training dataset.
             torch.utils.data.Dataloaders: The dataloader for the validation dataset.
         """
-        def collate(data):
-            """Custom collate function to join the different images with its different annotations.
-
-            Why is this important?
-            Because as each image could contain different amounts of annotated objects the tensor
-            for the batch could not be created, so we need to "fill" the annotations tensors with -1
-            to give them the same shapes and stack them.
-            Why -1?
-            Because the FocalLoss could interpret that label and ingore it for the loss.
-
-            Also it pads the images so all has the same size.
-
-            Arguments:
-                data (sequence): Sequence of tuples as (image, annotations, *_).
-
-            Returns:
-                torch.Tensor: The images.
-                    Shape:
-                        (batch size, channels, height, width)
-                torch.Tensor: The annotations.
-                    Shape:
-                        (batch size, biggest amount of annotations, 5)
-            """
-            images = [image for image, *_ in data]
-            max_width = max([image.shape[-1] for image in images])
-            max_height = max([image.shape[-2] for image in images])
-
-            def pad_image(image):
-                aux = torch.zeros((image.shape[0], max_height, max_width))
-                aux[:, :image.shape[1], :image.shape[2]] = image
-                return aux
-
-            images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
-
-            max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
-
-            def fill_annotations(annotations):
-                aux = torch.ones((max_annotations, 5))
-                aux *= -1
-                aux[:annotations.shape[0], :] = annotations
-                return aux
-
-            annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
-            return images, annotations
-
-        hyperparameters = {**self.hyperparameters['dataloaders'], 'collate_fn': collate}
-
-        return (
-            DataLoader(dataset=self.dataset, **hyperparameters),
-            DataLoader(dataset=self.valid_dataset, **hyperparameters)
-        )
+        return utils.get_dataloaders(self.hyperparameters['dataloaders'], self.dataset, self.valid_dataset)
 
     def get_model(self):
         """Initialize and get the RetinaNet.
