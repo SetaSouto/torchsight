@@ -74,7 +74,8 @@ def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, devi
     new_params = {
         'datasets': {
             'coco': {'root': dataset_root},
-            'logo32plus': {'root': dataset_root}
+            'logo32plus': {'root': dataset_root},
+            'flickr32': {'root': dataset_root}
         }
     }
 

@@ -330,6 +330,7 @@ class Trainer():
             print('[Epoch {}] Saving checkpoint to: {}'.format(epoch, path))
 
         checkpoint = {'epoch': epoch,
+                      'best_loss': self.best_loss,
                       'model': self.model.state_dict(),
                       'optimizer': self.optimizer.state_dict(),
                       'hyperparameters': self.hyperparameters}
@@ -375,6 +376,8 @@ class Trainer():
             # The scheduler could not be mapped to gpu, it raises errors
             checkpoint = torch.load(checkpoint_path)
             self.scheduler.load_state_dict(checkpoint['scheduler'])
+
+        self.best_loss = checkpoint['best_loss']
 
         return {'epoch': checkpoint['epoch']}
 
