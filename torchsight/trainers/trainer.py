@@ -330,7 +330,8 @@ class Trainer():
         if verbose:
             print('Loading checkpoint from {}'.format(checkpoint))
 
-        checkpoint = torch.load(checkpoint, map_location=self.device)
+        checkpoint_path = checkpoint
+        checkpoint = torch.load(checkpoint_path, map_location=self.device)
 
         self.model.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -340,6 +341,8 @@ class Trainer():
                     state[k] = val.to(self.device)
 
         if 'scheduler' in checkpoint:
+            # The scheduler could not be mapped to gpu, it raises errors
+            checkpoint = torch.load(checkpoint_path)
             self.scheduler.load_state_dict(checkpoint['scheduler'])
 
         return {'epoch': checkpoint['epoch']}
