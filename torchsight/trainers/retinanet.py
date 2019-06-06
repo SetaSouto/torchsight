@@ -4,7 +4,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
-from ..datasets import CocoDataset, Logo32plusDataset
+from ..datasets import CocoDataset, Flickr32Dataset, Logo32plusDataset
 from ..losses import FocalLoss
 from ..models import RetinaNet
 from ..transforms.detection import Normalize, Resize, ToTensor
@@ -53,7 +53,14 @@ class RetinaNetTrainer(Trainer):
                 'validation': 'val2017'
             },
             'logo32plus': {
-                'root': './datasets/logo32plus'
+                'root': './datasets/logo32plus',
+                'classes': None,
+            },
+            'flickr32': {
+                'root': './datasets/flickr32',
+                'classes': None,
+                'training': 'training',  # The name of the dataset to use for training
+                'validation': 'validation'  # The name of the dataset to use for validation
             }
         },
         'dataloaders': {
@@ -140,6 +147,15 @@ class RetinaNetTrainer(Trainer):
 
             return (Logo32plusDataset(**params, dataset='training', transform=transform),
                     Logo32plusDataset(**params, dataset='validation', transform=transform))
+
+        if dataset == 'flickr32':
+            params = params['flickr32']
+            num_classes = len(params['classes']) if params['classes'] is not None else 32
+
+            self.hyperparameters['model']['classes'] = num_classes
+
+            return (Flickr32Dataset(**params, dataset=params['training'], transform=transform, only_boxes=True),
+                    Flickr32Dataset(**params, dataset=params['validation'], transform=transform))
 
     def get_dataloaders(self):
         """Initialize and get the dataloaders for the datasets.
