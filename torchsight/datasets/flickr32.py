@@ -1,0 +1,199 @@
+"""A dataset interface for the Flickr32 dataset.
+
+Original web page for more information:
+http://www.multimedia-computing.de/flickrlogos/
+"""
+import os
+
+import torch
+from PIL import Image
+
+from .mixins import VisualizeMixin
+
+
+class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
+    """Dataset to get the images and annotations of the Flickr32 dataset.
+
+    Download the dataset:
+    - Request the dataset zip file in the original web page:
+      http://www.multimedia-computing.de/flickrlogos/
+    - Unzip the dataset in any directory.
+    - Provide the path to the root* directory of the dataset in the initialization.
+
+    *: The root directory is the one that contains the 'classes' and 'scripts' directories
+    and the `.txt` files with the split of the data (training, validation and test sets). 
+    """
+
+    def __init__(self, root, dataset='training', transform=None, classes=None):
+        """Initialize the dataset.
+
+        Arguments:
+            root (str): The path to the root directory that contains the data.
+            dataset (str, optional): The dataset that you want to load.
+                Options available: 'training', 'validation', 'test', 'trainval'.
+            transform (callable, optional): A callable to transform the images and
+                bounding boxes.
+            classes (list, optional): A list with the classes to load.
+                If None is provided it will load all the classes.
+        """
+        self.root = self.validate_root(root)
+        self.dataset = self.validate_dataset(dataset)
+        self.transform = transform
+        self.classes = classes
+        self.paths = self.get_paths()
+        self.label_to_class, self.class_to_label = self.generate_labels()
+
+    @staticmethod
+    def validate_root(path):
+        """Validate that the given path exists and return it.
+
+        Arguments:
+            path (str): The path to validate that exists.
+
+        Returns:
+            str: The given path if its valid.
+
+        Raises:
+            ValueError: if the given path does not exists.
+        """
+        if not os.path.exists(path):
+            raise ValueError('"{}" does not exists.'.format(path))
+
+        return path
+
+    @staticmethod
+    def validate_dataset(name):
+        """Check that the given name of the dataset is a correct one.
+
+        Arguments:
+            name (str): The name of the dataset to check.
+
+        Returns:
+            str: The name if its valid.
+
+        Raises:
+            ValueError: if the given name is not a valid one.
+        """
+        if name not in ['training', 'validation', 'test', 'trainval']:
+            raise ValueError('"{}" is not a valid dataset name.'.format(name))
+
+        return name
+
+    def get_paths(self):
+        """Load the absolute paths to the files that are in the dataset.
+
+        Returns:
+            list of tuples of str: Each tuple containing the class' name, the
+                path to the image and the path to its bounding boxes.
+                Example:
+                ('google',
+                 '/datasets/flickr32/classes/jpg/google/2240784196.jpg',
+                 '/datasets/flickr32/classes/masks/google/2240784196.jpg.bboxes.txt')
+        """
+        if self.dataset == 'training':
+            file = 'trainset.txt'
+        if self.dataset == 'validation':
+            file = 'valset.txt'
+        if self.dataset == 'test':
+            file = 'testset.txt'
+        if self.dataset == 'trainval':
+            file = 'trainvalset.txt'
+
+        file = os.path.join(self.root, file)
+
+        with open(file, 'r') as file:
+            tuples = []
+
+            for line in file.readlines():
+                brand, image = line.split(',')
+
+                if self.classes is not None and brand not in self.classes:
+                    continue
+
+                image = image.replace('\n', '')
+                boxes = os.path.join(self.root, 'classes/masks/{}/{}.bboxes.txt'.format(brand, image))
+                image = os.path.join(self.root, 'classes/jpg/{}/{}'.format(brand, image))
+
+                tuples.append((brand, image, boxes))
+
+            return tuples
+
+    def generate_labels(self):
+        """Generate the labels for the classes.
+
+        Returns:
+            dict: A dict with the label (int) -> brand (str) map.
+            dict: A dict with the brand (str) -> label (int) map.
+        """
+        brands = list({brand for brand, *_ in self.paths})
+        brands.sort()
+
+        return (
+            {i: brand for i, brand in enumerate(brands)},
+            {brand: i for i, brand in enumerate(brands)}
+        )
+
+    def __len__(self):
+        """Returns the length of the dataset.
+
+        Returns:
+            int: The length of the dataset.
+        """
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        """Get the image and bounding boxes at the given index.
+
+        Arguments:
+            i (int): The index of the element that you want to get.
+
+        Returns:
+            any: The transformed image.
+            torch.Tensor: The bounding boxes with x1, y1, x2, y2, label.
+                Shape: `(num of boxes, 5)`
+            dict: A dict with more info about the item like the brand name and the
+                path to the image.
+        """
+        brand, image, boxes = self.paths[i]
+
+        info = {'brand': brand, 'image': image}
+
+        image = Image.open(image)
+        boxes = self.get_boxes(boxes, brand)
+
+        if self.transform is not None:
+            image, boxes, info = self.transform((image, boxes, info))
+
+        return image, boxes, info
+
+    def get_boxes(self, file, brand):
+        """Get the boxes from the given file.
+
+        Arguments:
+            file (str): The path to the file that contains the annotations.
+            brand (str): The name of the brand for the boxes.
+
+        Returns:
+            torch.Tensor: The bounding boxes for the given image.
+                Shape: `(num of boxes, 5)`
+        """
+        label = self.class_to_label[brand]
+
+        try:
+            with open(file, 'r') as file:
+                boxes = []
+
+                for line in file.readlines()[1:]:  # The first line contains "x y width height"
+                    x, y, w, h = (int(val) for val in line.split())
+                    x1, y1 = x - 1, y - 1
+                    x2, y2 = x1 + w, y1 + h
+                    boxes.append(torch.Tensor([x1, y1, x2, y2, label]))
+
+                return torch.stack(boxes)
+        except FileNotFoundError:
+            file = file.replace('HP', 'hp')
+
+            if os.path.exists(file):
+                return self.get_boxes(file, brand)
+
+            return torch.Tensor([])

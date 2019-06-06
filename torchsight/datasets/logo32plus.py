@@ -12,10 +12,10 @@ import torch
 from PIL import Image
 from scipy.io import loadmat
 
-from torchsight.utils import visualize_boxes
+from .mixins import VisualizeMixin
 
 
-class Logo32plusDataset(torch.utils.data.Dataset):
+class Logo32plusDataset(torch.utils.data.Dataset, VisualizeMixin):
     """Dataset to get the images and annotations of the Logo32plus dataset.
 
     Instructions:
@@ -179,27 +179,6 @@ class Logo32plusDataset(torch.utils.data.Dataset):
             image, boxes, info = self.transform((image, boxes, info))
 
         return image, boxes, info
-
-    def visualize(self, *args):
-        """Visualize the annotations for the item in the given index.
-
-        Arguments:
-            index (int): The index of the item to visualize.
-
-            Or
-
-            image (torch.Tensor): The image to visualize.
-            boxes (torch.Tensor): The bounding boxes of the given image.
-        """
-        if len(args) == 1 and isinstance(args[0], int):
-            index, *_ = args
-            image, boxes, _ = self[index]
-        elif len(args) == 2:
-            image, boxes = args
-        else:
-            raise ValueError('Please provide inly the index or the only the image and the bounding boxes.')
-
-        visualize_boxes(image, boxes, self.label_to_class)
 
     def generate_split(self, annotations, proportion=0.8, split_file='train_valid.json'):
         """Create the validation and training datasets with the given proportion.

@@ -4,9 +4,9 @@ The recomendation is to compose the transforms in the order that are written:
 Resize(), ToTensor(), Normalize().
 """
 import numpy as np
+import skimage
 import torch
 from PIL.Image import Image
-import skimage
 from torchvision.transforms.functional import normalize, to_tensor
 
 
@@ -62,7 +62,8 @@ class Resize():
         final = np.zeros((new_height + padding_height, new_width + padding_width, channels))
         final[:height, :width, :] = image
 
-        bounding_boxes[:, :4] *= scale
+        if bounding_boxes.shape[0] > 0:
+            bounding_boxes[:, :4] *= scale
         info['resize_scale'] = scale
 
         return final, bounding_boxes, info
