@@ -377,7 +377,7 @@ class Trainer():
             checkpoint = torch.load(checkpoint_path)
             self.scheduler.load_state_dict(checkpoint['scheduler'])
 
-        self.best_loss = checkpoint['best_loss']
+        self.best_loss = checkpoint.get('best_loss', 1e10)
 
         return {'epoch': checkpoint['epoch']}
 
