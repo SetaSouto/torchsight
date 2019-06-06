@@ -321,6 +321,8 @@ class Trainer():
         if self.save_only_best and current_loss > self.best_loss:
             return
 
+        self.best_loss = current_loss
+
         params = self.hyperparameters['checkpoint']
         path = os.path.join(params['dir'], self.get_checkpoint_name(epoch))
 
