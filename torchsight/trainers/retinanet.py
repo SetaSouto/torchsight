@@ -155,8 +155,14 @@ class RetinaNetTrainer(Trainer):
 
             self.hyperparameters['model']['classes'] = num_classes
 
-            return (Flickr32Dataset(**params, dataset=params['training'], transform=transform),
-                    Flickr32Dataset(**params, dataset=params['validation'], transform=transform))
+            kwargs = {
+                'root': params['root'],
+                'classes': params['classes'],
+                'only_boxes': params['only_boxes'],
+            }
+
+            return (Flickr32Dataset(**kwargs, dataset=params['training'], transform=transform),
+                    Flickr32Dataset(**kwargs, dataset=params['validation'], transform=transform))
 
     def get_dataloaders(self):
         """Initialize and get the dataloaders for the datasets.

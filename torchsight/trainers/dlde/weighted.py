@@ -3,9 +3,10 @@ import time
 
 import torch
 
+from torchsight.losses import DLDENetLoss
 from torchsight.models import DLDENet
 from torchsight.optimizers import AdaBound
-from torchsight.losses import DLDENetLoss
+
 from ..retinanet import RetinaNetTrainer
 
 
@@ -35,7 +36,9 @@ class DLDENetTrainer(RetinaNetTrainer):
             'normalize': True,
             'pretrained': True,
             'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
-            'bias': False,
+            'weighted_bias': False,
+            'fixed_bias': -0.5,
+            'increase_norm_by': 8.5
         },
         'criterion': {
             'alpha': 0.25,
@@ -55,7 +58,15 @@ class DLDENetTrainer(RetinaNetTrainer):
                 'validation': 'val2017'
             },
             'logo32plus': {
-                'root': './datasets/logo32plus'
+                'root': './datasets/logo32plus',
+                'classes': None,
+            },
+            'flickr32': {
+                'root': './datasets/flickr32',
+                'classes': None,
+                'only_boxes': True,
+                'training': 'trainval',  # The name of the dataset to use for training
+                'validation': 'test'  # The name of the dataset to use for validation
             }
         },
         'dataloaders': {
@@ -77,7 +88,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         },
         'scheduler': {
             'factor': 0.1,
-            'patience': 3,
+            'patience': 5,
             'threshold': 0.01
         },
         'transforms': {
@@ -109,7 +120,9 @@ class DLDENetTrainer(RetinaNetTrainer):
             normalize=hyperparameters['normalize'],
             pretrained=hyperparameters['pretrained'],
             device=self.device,
-            bias=hyperparameters['bias']
+            weighted_bias=hyperparameters['weighted_bias'],
+            fixed_bias=hyperparameters['fixed_bias'],
+            increase_norm_by=hyperparameters['increase_norm_by'],
         )
 
     def get_optimizer(self):
@@ -194,7 +207,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
         # Log the mean norm of the weights in the classification module and their biases
         self.current_log['w-norm'] = '{:.4f}'.format(float(self.model.classification.weights.norm(dim=0).mean()))
-        if self.model.classification.use_bias:
+        if self.model.classification.weighted_bias:
             self.current_log['bias'] = '{:.4f}'.format(float(self.model.classification.bias.mean()))
 
         return loss

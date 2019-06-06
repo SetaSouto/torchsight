@@ -38,7 +38,8 @@ class ClassificationModule(nn.Module):
     It has the parameters to perform the classification simply by doing cosine similarity and then applied a sigmoid.
     """
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False, bias=False):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False,
+                 weighted_bias=False, fixed_bias=None, increase_norm_by=None):
         """Initialize the classification module.
 
         Arguments:
@@ -48,7 +49,10 @@ class ClassificationModule(nn.Module):
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
             normalize (bool, optional): Indicate that it must normalize the embeddings.
-            bias (bool, optional): If True it uses bias weights to perform the classification.
+            weighted_bias (bool, optional): If True it uses bias weights to perform the classification.
+            fixed_bias (float, optional): Use a bias for the classification as an hyperparameter.
+            increase_norm_by (float, optional): Increase the norm of the classification vectors during
+                the classification by this value.
         """
         super().__init__()
 
@@ -62,16 +66,25 @@ class ClassificationModule(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
-        self.use_bias = bias
-        if self.use_bias:
+
+        self.weighted_bias = weighted_bias
+        if self.weighted_bias:
             self.bias = nn.Parameter(torch.Tensor(classes))
+
+        self.fixed_bias = fixed_bias
+
+        if self.fixed_bias is not None and self.weighted_bias:
+            print('WARN: Using weighted and fixed bias in the classification module, '
+                  'this could lead to inconsistent results.')
+
+        self.norm_increaser = increase_norm_by
         self.reset_weights()
 
     def reset_weights(self):
         """Reset and initialize with kaiming normal the weights."""
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
 
-        if self.use_bias:
+        if self.weighted_bias:
             nn.init.constant_(self.bias, 0)
 
     def encode(self, feature_map):
@@ -118,8 +131,14 @@ class ClassificationModule(nn.Module):
         """
         similarity = torch.matmul(embeddings, self.weights)
 
-        if self.use_bias:
+        if self.norm_increaser is not None:
+            similarity *= self.norm_increaser
+
+        if self.weighted_bias:
             similarity += self.bias
+
+        if self.fixed_bias is not None:
+            similarity += self.fixed_bias
 
         return self.sigmoid(similarity)
 
@@ -151,7 +170,7 @@ class DLDENet(RetinaNet):
     """
 
     def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
-                 device=None, bias=False):
+                 device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None):
         """Initialize the network.
 
         Arguments:
@@ -166,11 +185,16 @@ class DLDENet(RetinaNet):
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
-            bias (bool, optional): Use bias weights in the classification module.
+            weighted_bias (bool, optional): Use bias weights in the classification module.
+            fixed_bias (float, optional): A bias to use as a fixed hyperparameter.
+            increase_norm_by (float, optional): Increase the norm of the classification vectors by this value while
+                performing the classification step.
         """
         self.embedding_size = embedding_size
         self.normalize = normalize
-        self.use_bias = bias
+        self.weighted_bias = weighted_bias
+        self.fixed_bias = fixed_bias
+        self.increase_norm_by = increase_norm_by
         super().__init__(classes, resnet, features, anchors, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
@@ -188,7 +212,9 @@ class DLDENet(RetinaNet):
             ClassificationModule: The module for classification.
         """
         return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
-                                    features=features, classes=classes, normalize=self.normalize, bias=self.use_bias)
+                                    features=features, classes=classes, normalize=self.normalize,
+                                    weighted_bias=self.weighted_bias, fixed_bias=self.fixed_bias,
+                                    increase_norm_by=self.increase_norm_by)
 
     def classify(self, feature_maps):
         """Perform the classification of the feature maps.
