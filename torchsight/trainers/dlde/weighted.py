@@ -1,6 +1,4 @@
 """DLDENet trainer for the weighted version."""
-import time
-
 import torch
 
 from torchsight.losses import DLDENetLoss
@@ -36,7 +34,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'pretrained': True,
             'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
             'weighted_bias': False,
-            'fixed_bias': -0.5,
+            'fixed_bias': 0,
             'increase_norm_by': None
         },
         'criterion': {

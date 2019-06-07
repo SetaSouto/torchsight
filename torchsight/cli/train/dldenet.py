@@ -9,6 +9,7 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
 @click.option('-dr', '--dataset-root', type=click.Path(exists=True), required=True)
 @click.option('-b', '--batch-size', default=8, show_default=True)
 @click.option('--resnet', default=50, show_default=True, help='The resnet backbone that the model must use.')
+@click.option('--fixed-bias', default=-0.5, show_default=True, help='The fixed bias for the classification module.')
 @click.option('--logs-dir', default='./logs', type=click.Path(exists=True), show_default=True,
               help='Where to store the checkpoints and descriptions.')
 @click.option('--classes', default='',
@@ -24,7 +25,7 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
               help='Update type for the means in the tracked version. See DirectionalClassification module for more info.')
 @click.option('--means-lr', default=0.1, show_default=True, help='The learning rate for the "batch" means update method.')
 @click.option('--epochs', default=100, show_default=True)
-def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, classes, optimizer, not_normalize,
+def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, classes, optimizer, not_normalize,
             device, tracked_means, epochs, means_update, means_lr):
     """Train the DLDENet with weighted classification vectors using the indicated dataset that
     contains is data in DATASET_ROOT directory.
@@ -36,6 +37,7 @@ def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, classes, optimi
             'normalize': not not_normalize,
             'means_update': means_update,
             'means_lr': means_lr,
+            'fixed_bias': fixed_bias,
         },
         'datasets': {
             'use': dataset,
