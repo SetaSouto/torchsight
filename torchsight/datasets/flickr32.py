@@ -133,13 +133,16 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             dict: A dict with the label (int) -> brand (str) map.
             dict: A dict with the brand (str) -> label (int) map.
         """
-        brands = list({brand for brand, *_ in self.paths})
+        brands = list({brand for brand, *_ in self.paths if brand != 'no-logo'})
         brands.sort()
 
-        return (
-            {i: brand for i, brand in enumerate(brands)},
-            {brand: i for i, brand in enumerate(brands)}
-        )
+        label_to_class = {i: brand for i, brand in enumerate(brands)}
+        class_to_label = {brand: i for i, brand in enumerate(brands)}
+
+        label_to_class[-1] = 'no-logo'
+        class_to_label['no-logo'] = -1
+
+        return label_to_class, class_to_label
 
     def __len__(self):
         """Returns the length of the dataset.
