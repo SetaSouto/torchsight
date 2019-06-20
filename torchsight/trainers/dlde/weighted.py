@@ -1,9 +1,6 @@
 """DLDENet trainer for the weighted version."""
-import torch
-
 from torchsight.losses import DLDENetLoss
 from torchsight.models import DLDENet
-from torchsight.optimizers import AdaBound
 
 from ..retinanet import RetinaNetTrainer
 
