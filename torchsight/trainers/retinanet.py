@@ -72,7 +72,7 @@ class RetinaNetTrainer(Trainer):
             'num_workers': 1
         },
         'optimizer': {
-            'use': 'adabound',  # Which optimizer the trainer must use
+            'use': 'sgd',  # Which optimizer the trainer must use
             'adabound': {
                 'lr': 1e-3,  # Learning rate
                 'final_lr': 1  # When the optimizer change from Adam to SGD
