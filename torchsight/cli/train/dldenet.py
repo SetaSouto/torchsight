@@ -26,6 +26,7 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
               help='Hoy many epochs without relative improvement the scheduler must wait.')
 @click.option('--scheduler-threshold', default=0.01, show_default=True,
               help='The relative threshold that indicates an improvement for the scheduler.')
+@click.option('--anchors-sizes', default='20 40 80 160 320', show_default=True)
 @click.option('--not-normalize', is_flag=True,
               help='Avoid normalization of the embeddings in the classification module. Only available without tracked means.')
 @click.option('--device', default=None, help='The device that the model must use.')
@@ -37,6 +38,7 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
 @click.option('--epochs', default=100, show_default=True)
 def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, classes, optimizer,
             adabound_lr, adabound_final_lr, scheduler_factor, scheduler_patience, scheduler_threshold,
+            anchors_sizes,
             not_normalize, device, tracked_means, soft_criterion, epochs, means_update, means_lr):
     """Train the DLDENet with weighted classification vectors using the indicated dataset that
     contains is data in DATASET_ROOT directory.
@@ -49,6 +51,9 @@ def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, cla
             'means_update': means_update,
             'means_lr': means_lr,
             'fixed_bias': fixed_bias,
+            'anchors': {
+                'sizes': [int(size) for size in anchors_sizes.split()],
+            },
         },
         'criterion': {
             'soft': soft_criterion
