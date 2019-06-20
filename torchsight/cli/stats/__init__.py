@@ -3,6 +3,7 @@ import click
 
 from .dlde import dlde
 from .print import printlogger
+from .sizes import sizes
 
 
 @click.group()
@@ -12,3 +13,4 @@ def stats():
 
 stats.add_command(dlde)
 stats.add_command(printlogger)
+stats.add_command(sizes)
