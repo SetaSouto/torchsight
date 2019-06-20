@@ -4,6 +4,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import transforms
 
 from torchsight import utils
+from torchsight.optimizers import AdaBound
 
 from ..datasets import CocoDataset, Flickr32Dataset, Logo32plusDataset
 from ..losses import FocalLoss
@@ -43,7 +44,7 @@ class RetinaNetTrainer(Trainer):
                 'object': 0.5
             },
             # Weight of each loss. See train method.
-            'weights': {'classification': 1e5, 'regression': 1}
+            'weights': {'classification': 1e4, 'regression': 1}
         },
         'datasets': {
             'use': 'coco',
@@ -71,19 +72,26 @@ class RetinaNetTrainer(Trainer):
             'num_workers': 1
         },
         'optimizer': {
-            'learning_rate': 1e-2,
-            'momentum': 0.9,
-            'weight_decay': 1e-4
+            'use': 'adabound',  # Which optimizer the trainer must use
+            'adabound': {
+                'lr': 1e-3,  # Learning rate
+                'final_lr': 1  # When the optimizer change from Adam to SGD
+            },
+            'sgd': {
+                'lr': 1e-2,
+                'momentum': 0.9,
+                'weight_decay': 1e-4
+            }
         },
         'scheduler': {
             'factor': 0.1,
-            'patience': 2,
-            'threshold': 0.1
+            'patience': 5,
+            'threshold': 0.01
         },
         'transforms': {
             'resize': {
-                'min_side': 640,
-                'max_side': 1024,
+                'min_side': 384,
+                'max_side': 512,
                 'stride': 128
             },
             'normalize': {
@@ -206,22 +214,34 @@ class RetinaNetTrainer(Trainer):
         )
 
     def get_optimizer(self):
-        """Returns the optimizer of the training.
+        """Returns the optimizer for the training.
 
-        Stochastic Gradient Descent:
-        https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html
+        It has the classic SGD optimizer, but this trainer also
+        includes the [AdaBound optimizer](https://github.com/Luolc/AdaBound) that it's
+        supposed to be as fast as Adam and as good as SGD.
+
+        You can provide the optimizer that you want to use in the 'optimizer' hyperparameter
+        changing the 'use' parameter and providing the name of the one that
+        you want to use.
 
         Returns:
-            optimizer (torch.optim.Optimizer): The optimizer of the training.
-                For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+            AdaBound: The adabound optimizer for the training.
         """
-        hyperparameters = self.hyperparameters['optimizer']
-        return torch.optim.SGD(
-            self.model.parameters(),
-            lr=hyperparameters['learning_rate'],
-            momentum=hyperparameters['momentum'],
-            weight_decay=hyperparameters['weight_decay']
-        )
+        params = self.hyperparameters['optimizer']
+        optimizer = params['use'].lower()
+
+        if optimizer == 'adabound':
+            params = params['adabound']
+            return AdaBound(self.model.parameters(), lr=params['lr'], final_lr=params['final_lr'])
+
+        if optimizer == 'sgd':
+            params = params['sgd']
+            return torch.optim.SGD(self.model.parameters(),
+                                   lr=params['lr'],
+                                   momentum=params['momentum'],
+                                   weight_decay=params['weight_decay'])
+
+        raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
 
     def get_scheduler(self):
         """Get the learning rate scheduler.
@@ -265,8 +285,8 @@ class RetinaNetTrainer(Trainer):
         loss = classification_loss + regression_loss
 
         # Log the classification and regression loss too:
-        self.current_log['Class.'] = float(classification_loss)
-        self.current_log['Regr.'] = float(regression_loss)
+        self.current_log['Class.'] = '{:.5f}'.format(float(classification_loss))
+        self.current_log['Regr.'] = '{:.5f}'.format(float(regression_loss))
 
         return loss
 
