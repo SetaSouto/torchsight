@@ -21,12 +21,13 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
               help='Avoid normalization of the embeddings in the classification module. Only available without tracked means.')
 @click.option('--device', default=None, help='The device that the model must use.')
 @click.option('--tracked-means', is_flag=True, help='Use the version that tracks the means.')
+@click.option('--soft-criterion', is_flag=True, help='Use soft assignment in the Loss.')
 @click.option('--means-update', default='batch', type=click.Choice(['batch', 'manual']), show_default=True,
               help='Update type for the means in the tracked version. See DirectionalClassification module for more info.')
 @click.option('--means-lr', default=0.1, show_default=True, help='The learning rate for the "batch" means update method.')
 @click.option('--epochs', default=100, show_default=True)
 def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, classes, optimizer, not_normalize,
-            device, tracked_means, epochs, means_update, means_lr):
+            device, tracked_means, soft_criterion, epochs, means_update, means_lr):
     """Train the DLDENet with weighted classification vectors using the indicated dataset that
     contains is data in DATASET_ROOT directory.
     """
@@ -38,6 +39,9 @@ def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, cla
             'means_update': means_update,
             'means_lr': means_lr,
             'fixed_bias': fixed_bias,
+        },
+        'criterion': {
+            'soft': soft_criterion
         },
         'datasets': {
             'use': dataset,

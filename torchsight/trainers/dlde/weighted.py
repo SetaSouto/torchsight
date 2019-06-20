@@ -44,7 +44,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
             # Weight of each loss. See train method.
             'weights': {'classification': 1e4, 'regression': 1, 'similarity': 1},
-            'soft': True,  # Apply soft loss weighted by the IoU
+            'soft': False,  # Apply soft loss weighted by the IoU
         },
         'datasets': {
             'use': 'coco',
