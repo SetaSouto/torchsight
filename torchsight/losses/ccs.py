@@ -28,7 +28,7 @@ class CCSLoss(nn.Module):
     to its IoU, so the final loss of an anchor is it's IoU * similarity.
     """
 
-    def __init__(self, iou_thresholds=None, soft=True, device=None):
+    def __init__(self, iou_thresholds=None, soft=False, device=None):
         """Initialize the loss.
 
         Arguments:

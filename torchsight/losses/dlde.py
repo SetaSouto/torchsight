@@ -9,7 +9,7 @@ from .focal import FocalLoss
 class DLDENetLoss(nn.Module):
     """Join the CCS and the Focal losses in one single module."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=True, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=False, device=None):
         """Initialize the losses.
 
         See their corresponding docs for more information.

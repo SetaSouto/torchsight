@@ -12,7 +12,7 @@ from ..models import Anchors
 class FocalLoss(nn.Module):
     """Loss to penalize the detection of objects."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=True, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=False, device=None):
         """Initialize the loss.
 
         Train as background (minimize all the probabilities of the classes) if the IoU is below the 'background'
