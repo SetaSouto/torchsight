@@ -17,6 +17,15 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
               'If no class is provided the trainer will use all the classes. Example: --classes "bear sheep airplane"')
 @click.option('--optimizer', default='adabound', type=click.Choice(['adabound', 'sgd']), show_default=True,
               help='Set the optimizer that the trainer must use to train the model.')
+@click.option('--adabound-lr', default=1e-3, show_default=True, help='The learning rate for the starting in Adabound.')
+@click.option('--adabound-final-lr', default=1, show_default=True,
+              help='The final learning rate when Adabound transform to SGD.')
+@click.option('--scheduler-factor', default=0.1, show_default=True,
+              help='The factor to scale the LR.')
+@click.option('--scheduler-patience', default=5, show_default=True,
+              help='Hoy many epochs without relative improvement the scheduler must wait.')
+@click.option('--scheduler-threshold', default=0.01, show_default=True,
+              help='The relative threshold that indicates an improvement for the scheduler.')
 @click.option('--not-normalize', is_flag=True,
               help='Avoid normalization of the embeddings in the classification module. Only available without tracked means.')
 @click.option('--device', default=None, help='The device that the model must use.')
@@ -26,8 +35,9 @@ from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
               help='Update type for the means in the tracked version. See DirectionalClassification module for more info.')
 @click.option('--means-lr', default=0.1, show_default=True, help='The learning rate for the "batch" means update method.')
 @click.option('--epochs', default=100, show_default=True)
-def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, classes, optimizer, not_normalize,
-            device, tracked_means, soft_criterion, epochs, means_update, means_lr):
+def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, classes, optimizer,
+            adabound_lr, adabound_final_lr, scheduler_factor, scheduler_patience, scheduler_threshold,
+            not_normalize, device, tracked_means, soft_criterion, epochs, means_update, means_lr):
     """Train the DLDENet with weighted classification vectors using the indicated dataset that
     contains is data in DATASET_ROOT directory.
     """
@@ -52,7 +62,18 @@ def dldenet(dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, cla
         'dataloaders': {'batch_size': batch_size},
         'logger': {'dir': logs_dir},
         'checkpoint': {'dir': logs_dir},
-        'optimizer': {'use': optimizer}
+        'scheduler': {
+            'factor': scheduler_factor,
+            'patience': scheduler_patience,
+            'threshold': scheduler_threshold,
+        },
+        'optimizer': {
+            'use': optimizer,
+            'adabound': {
+                'lr': adabound_lr,
+                'final_lr': adabound_final_lr,
+            },
+        },
     }
     params = {'hyperparameters': hyperparameters, 'device': device}
 
