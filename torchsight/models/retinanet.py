@@ -45,7 +45,7 @@ class FeaturePyramid(nn.Module):
 
     strides = [8, 16, 32, 64, 128]  # The stride applied to obtain each output
 
-    def __init__(self, resnet=18, features=256, pretrained=True):
+    def __init__(self, resnet=18, features=256, levels=None, pretrained=True):
         """Initialize the network.
 
         It init a ResNet with the given depth and use 'features' as the number of
@@ -55,9 +55,17 @@ class FeaturePyramid(nn.Module):
             resnet (int): Indicates the depth of the resnet backbone.
             features (int): Indicates the depth (number of channels) of each feature map
                 of the pyramid.
+            levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won't return that feature map level of the pyramid.
             pretrained (bool): Indicates if the backbone must be pretrained.
         """
         super(FeaturePyramid, self).__init__()
+
+        if levels is None:
+            levels = [3, 4, 5, 6, 7]
+
+        self.levels = levels
 
         if resnet == 18:
             self.backbone = resnet18(pretrained)
@@ -135,12 +143,18 @@ class FeaturePyramid(nn.Module):
         p3 = p3 + p4_upsampled
         p3 = self.p3_conv2(p3)
 
-        p6 = self.p6_conv(c5)
+        features = {3: p3, 4: p4, 5: p5}
 
-        p7 = self.p7_relu(p6)
-        p7 = self.p7_conv(p7)
+        if 6 in self.levels:
+            p6 = self.p6_conv(c5)
+            features[6] = p6
 
-        return p3, p4, p5, p6, p7
+        if 7 in self.levels:
+            p7 = self.p7_relu(p6)
+            p7 = self.p7_conv(p7)
+            features[7] = p7
+
+        return [features[i] for i in self.levels]
 
 
 class SubModule(nn.Module):
@@ -280,7 +294,7 @@ class RetinaNet(nn.Module):
     (N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class' label.
     """
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, pretrained=True, device=None):
         """Initialize the network.
 
         Arguments:
@@ -289,6 +303,9 @@ class RetinaNet(nn.Module):
             features (dict, optional): The dict that indicates the features for each module of the network.
             anchors (dict, optional): The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
                 the Anchors module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won't return that feature map level of the pyramid.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
@@ -305,7 +322,9 @@ class RetinaNet(nn.Module):
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         # Modules
-        self.fpn = FeaturePyramid(resnet=resnet, features=features['pyramid'], pretrained=pretrained)
+        self.fpn = FeaturePyramid(
+            resnet=resnet, features=features['pyramid'], levels=fpn_levels, pretrained=pretrained
+        )
 
         if len(anchors['sizes']) != 5:
             raise ValueError('anchors_size must have length 5 to work with the FPN')

@@ -169,7 +169,8 @@ class DLDENet(RetinaNet):
     Based on the RetinaNet implementation of this package, for more information please see its docs.
     """
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
+                 normalize=False, pretrained=True,
                  device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None):
         """Initialize the network.
 
@@ -180,6 +181,9 @@ class DLDENet(RetinaNet):
                 For the default dict please see RetinaNet module.
             anchors (dict, optional): The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won't return that feature map level of the pyramid.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
             normalize (bool, optional): Indicates if the embeddings must be normalized.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
@@ -195,7 +199,7 @@ class DLDENet(RetinaNet):
         self.weighted_bias = weighted_bias
         self.fixed_bias = fixed_bias
         self.increase_norm_by = increase_norm_by
-        super().__init__(classes, resnet, features, anchors, pretrained, device)
+        super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         """Get the classification module according to this implementation.

@@ -270,7 +270,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
     Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
     """
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512,
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
                  assignation_thresholds=None, means_update='batch', means_lr=0.1, pretrained=True, device=None):
         """Initialize the network.
 
@@ -281,6 +281,9 @@ class DLDENetWithTrackedMeans(RetinaNet):
                 For the default dict please see RetinaNet module.
             anchors (dict, optional): The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won't return that feature map level of the pyramid.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys 'object' and 'background' with float values.
@@ -300,7 +303,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         else:
             self.assignation_thresholds = {'object': 0.5, 'background': 0.4}
 
-        super().__init__(classes, resnet, features, anchors, pretrained, device)
+        super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         """Get the directional classification module.

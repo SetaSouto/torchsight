@@ -26,6 +26,7 @@ class DLDENetTrainer(RetinaNetTrainer):
                 'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
                 'ratios': [0.5, 1, 2]
             },
+            'fpn_levels': [3, 4, 5, 6, 7],
             'embedding_size': 256,
             'normalize': True,
             'pretrained': True,
@@ -110,6 +111,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             resnet=hyperparameters['resnet'],
             features=hyperparameters['features'],
             anchors=hyperparameters['anchors'],
+            fpn_levels=hyperparameters['fpn_levels'],
             embedding_size=hyperparameters['embedding_size'],
             normalize=hyperparameters['normalize'],
             pretrained=hyperparameters['pretrained'],
