@@ -8,6 +8,8 @@ import os
 import torch
 from PIL import Image
 
+from torchsight.utils import describe_boxes
+
 from .mixins import VisualizeMixin
 
 
@@ -203,3 +205,18 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                 return torch.stack(boxes)
         except FileNotFoundError:
             return torch.Tensor([])
+
+    def describe_boxes(self):
+        """Describe the boxes of the dataset.
+
+        See torchsight.utils.describe_boxes docs for more information.
+        """
+        if self.transform is not None:
+            boxes = []
+            for i, (_, bxs, *_) in enumerate(self):
+                print('Loading boxes ... ({}/{})'.format(i + 1, len(self)))
+                boxes.append(bxs)
+        else:
+            boxes = [self.get_boxes(boxes, brand) for brand, _, boxes in self.paths]
+
+        return describe_boxes(torch.cat(boxes, dim=0))
