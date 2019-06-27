@@ -21,7 +21,9 @@ class ImagesDataset(Dataset):
         """
         self.root = root
         self.transform = transform
-        self.extensions = extensions if isinstance(extensions, (list, tuple)) else [extensions]
+        self.extensions = extensions
+        if extensions is not None:
+            self.extensions = extensions if isinstance(extensions, (list, tuple)) else [extensions]
         self.images = self.get_images_paths()
 
     def __len__(self):
@@ -40,7 +42,7 @@ class ImagesDataset(Dataset):
         image = Image.open(path)
 
         if self.transform is not None:
-            return self.transform(image)
+            image = self.transform(image)
 
         return image, path
 
@@ -64,7 +66,7 @@ class ImagesDataset(Dataset):
         Arguments:
             file (str): The file's name to check.
         """
-        if not self.extensions:
+        if self.extensions is None:
             return True
 
         return any((file.endswith(ext) for ext in self.extensions))
@@ -80,7 +82,15 @@ class ImagesDataset(Dataset):
             paths = [item[1] for item in items]
 
             if torch.is_tensor(images[0]):
-                images = torch.stack(images, dim=0)
+                max_width = max([image.shape[2] for image in images])
+                max_height = max([image.shape[1] for image in images])
+
+                def pad_image(image):
+                    aux = torch.zeros((image.shape[0], max_height, max_width))
+                    aux[:, :image.shape[1], :image.shape[2]] = image
+                    return aux
+
+                images = torch.stack([pad_image(image) for image in images], dim=0)
 
             return images, paths
 

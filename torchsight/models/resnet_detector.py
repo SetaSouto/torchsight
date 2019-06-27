@@ -28,6 +28,8 @@ class ResnetDetector(torch.nn.Module):
             pool (str, optional): The pool strategy to use. Options: 'avg' or 'max'.
             kernels (list of int, optional): The size of the kernels to use.
         """
+        super().__init__()
+
         if resnet == 18:
             self.resnet = resnet18(pretrained=True)
         elif resnet == 34:
@@ -76,39 +78,39 @@ class ResnetDetector(torch.nn.Module):
         height, width = height / 32, width / 32
 
         # Generate feature map using the resnet
-        features = self.resnet(images)
+        features = self.resnet(images)[0]  # (b, f, h, w)
 
         # Reduce the length of the features by pooling them
         if self.dim != features.shape[1]:
-            features = features.view(batch_size, self.dim, -1, height, width)
+            features = features.view(batch_size, self.dim, -1, height, width)  # (b, d, f-d, h, w)
             if self.pool == 'avg':
-                features = features.mean(dim=2)
+                features = features.mean(dim=2)  # (b, d, h, w)
             else:
-                features = features.max(dim=2)
+                features = features.max(dim=2)  # (b, d, h, w)
 
-        # Apply the pooling with kernels and get embeddings with shape (batch size, dim, *)
+        # Apply the pooling with kernels and get embeddings
         pooled = []
-        for i, pool in self.pools:
+        for i, pool in enumerate(self.pools):
             kernel = self.kernels[i]
-            embeddings = pool(features)
-            boxes = self.get_boxes(embeddings, stride=32*kernel)
-            embeddings = embeddings.view(batch_size, self.dim, -1)
+            embeddings = pool(features)  # (b, d, h/k, w/k)
+            boxes = self.get_boxes(embeddings, stride=32*kernel, batch_size=batch_size)  # (b, h/k*w/k, 4)
+            embeddings = embeddings.view(batch_size, self.dim, -1)  # (b, d, *)
             pooled.append([embeddings, boxes])
 
         # Transform the feature map to embeddings with shape (batch size, dim, *)
-        boxes = self.get_boxes(features, stride=32)
-        embeddings = features.view(batch_size, self.dim, -1)
+        boxes = self.get_boxes(features, stride=32, batch_size=batch_size)
+        embeddings = features.view(batch_size, self.dim, -1)  # (b, d, *)
 
         # Concatenate all the embeddings
         embeddings = torch.cat([embeddings, *[p[0] for p in pooled]], dim=2)
         boxes = torch.cat([boxes, *[p[1] for p in pooled]], dim=1)
 
         # Transpose the dimensions to get the embeddings with shape (batch size, num of embeddings, dim)
-        embeddings = embeddings.transpose(0, 2, 1)
+        embeddings = embeddings.permute(0, 2, 1)
 
         return embeddings, boxes
 
-    def get_boxes(self, feature_map, stride):
+    def get_boxes(self, feature_map, stride, batch_size):
         """Get boxes for the given feature map that was got from applying the given stride to the image.
 
         Arguments:
@@ -117,7 +119,7 @@ class ResnetDetector(torch.nn.Module):
 
         Returns:
             torch.Tensor: with the boxes as x1, y1, x2, y2 for top-left corner and bottom-right corner.
-                Shape: `(h * w, 4)` where `h` and `w` are the height and width of the feature map.
+                Shape: `(batch size, h * w, 4)` where `h` and `w` are the height and width of the feature map.
         """
         height, width = feature_map.shape[2:]
         boxes = feature_map.new_zeros(height, width, 4)
@@ -129,4 +131,4 @@ class ResnetDetector(torch.nn.Module):
                 boxes[i, j, 2] = stride * (i+1)
                 boxes[i, j, 3] = stride * (j+1)
 
-        return boxes.view(-1, 4)
+        return boxes.view(-1, 4).unsqueeze(dim=0).repeat((batch_size, 1, 1))

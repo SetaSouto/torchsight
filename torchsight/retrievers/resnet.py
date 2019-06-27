@@ -11,17 +11,17 @@ from .slow import SlowInstanceRetriver
 class ResnetRetriever(SlowInstanceRetriver):
     """A retriever that uses the dummy Resnet object detector."""
 
-    def __init__(self, params, *args, **kwargs):
+    def __init__(self, *args, params=None, **kwargs):
         """Initialize the retriver.
 
         Arguments:
             params (JsonObject or dict, optional): The parameters for the model and the transforms.
 
-            The rest of the arguments are the same as the InstanceRetriver,
-            only the index is always 'IndexFlatL2'.
+            The rest of the arguments are the same as the SlowInstanceRetriever, only the distance
+            is fixed to 'l2'.
         """
         self.params = self.get_params().merge(params)
-        super().__init__(*args, **kwargs, index='IndexFlatL2')
+        super().__init__(*args, **kwargs, distance='l2')
 
     @staticmethod
     def get_params():
@@ -30,7 +30,7 @@ class ResnetRetriever(SlowInstanceRetriver):
         Returns:
             JsonObject: with the parameters for the model.
         """
-        JsonObject({
+        return JsonObject({
             'model': {
                 'resnet': 18,
                 'dim': 512,
@@ -52,7 +52,7 @@ class ResnetRetriever(SlowInstanceRetriver):
 
     def _get_model(self):
         """Get the ResnetDetector."""
-        return ResnetDetector(**self.params)
+        return ResnetDetector(**self.params.model)
 
     def _get_transforms(self):
         """Get the transformations to apply to the images in the dataset and in the queries.
@@ -62,16 +62,19 @@ class ResnetRetriever(SlowInstanceRetriver):
             callable: a transformation for images and bounding boxes (the query images with their
                 bounding boxes indicating the instances to search).
         """
+        params = self.params.transforms
+
         image_transform = transforms.Compose([
-            detection.Resize(**self.params.resize),
+            detection.Resize(**params.resize),
             transforms.ToTensor(),
-            transforms.Normalize(**self.params.normalize)
+            lambda x: x.float(),
+            transforms.Normalize(**params.normalize)
         ])
 
         with_boxes_transform = transforms.Compose([
-            detection.Resize(**self.params.resize),
+            detection.Resize(**params.resize),
             detection.ToTensor(),
-            detection.Normalize(**self.params.normalize)
+            detection.Normalize(**params.normalize)
         ])
 
         return image_transform, with_boxes_transform

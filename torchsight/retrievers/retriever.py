@@ -27,11 +27,11 @@ class InstanceRetriever():
         self.batch_size = batch_size
         self.verbose = verbose
         self._print('Loading model ...')
-        self.model = self.get_model()
+        self.model = self._get_model()
         self._print('Generating dataset ...')
         # Tuple with transforms: The first is only for images, the second images + boxes
         self.image_transform, self.with_boxes_transform = self._get_transforms()
-        self.dataset = ImagesDataset(root=root, extensions=extensions, transform=self.image_transforms)
+        self.dataset = ImagesDataset(root=root, extensions=extensions, transform=self.image_transform)
         self.dataloader = self.dataset.get_dataloader(batch_size, num_workers)
         self.logger = PrintLogger()
 
@@ -161,7 +161,7 @@ class InstanceRetriever():
         # Transform the items
         for i, image in enumerate(images):
             image_boxes = boxes[i]
-            image, image_boxes = self.with_boxes_transform((image, boxes))
+            image, image_boxes = self.with_boxes_transform((image, image_boxes))
             images[i] = image
             boxes[i] = image_boxes
 
@@ -182,22 +182,34 @@ class InstanceRetriever():
                 embedding by doing `belongs_to[i]`.
         """
         num_images = len(images)
-        images = torch.stack(images, dim=0)
 
+        # Make that the images have the same shape
+        max_width = max([image.shape[2] for image in images])
+        max_height = max([image.shape[1] for image in images])
+
+        def pad_image(image):
+            aux = torch.zeros((image.shape[0], max_height, max_width))
+            aux[:, :image.shape[1], :image.shape[2]] = image
+            return aux
+
+        images = torch.stack([pad_image(image) for image in images], dim=0)
+
+        # Process the images with the model
         if num_images <= self.batch_size:
             with torch.no_grad():
                 batch_embeddings, batch_pred_boxes = self.model(images)  # (batch, *, dim), (batch, *, 4)
         else:
             raise NotImplementedError()
 
+        # Get the correct embedding for each query object
         result = []
         belongs_to = []
         for i, embeddings in enumerate(batch_embeddings):
-            pred_boxes = batch_pred_boxes[i]
-            iou = compute_iou(boxes, pred_boxes)  # (number of boxes, number of pred boxes)
+            pred_boxes = batch_pred_boxes[i]         # (n pred, 4)
+            iou = compute_iou(boxes[i], pred_boxes)  # (n ground, n pred)
 
             if strategy == 'max_iou':
-                iou_argmax = iou.max(dim=1)  # (number of boxes)
+                _, iou_argmax = iou.max(dim=1)       # (n ground)
                 for embedding in embeddings[iou_argmax]:
                     result.append(embedding)
                     belongs_to.append(i)

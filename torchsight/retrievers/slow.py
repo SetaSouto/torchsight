@@ -40,15 +40,15 @@ class SlowInstanceRetriver(InstanceRetriever):
 
         Arguments:
             queries (torch.Tensor): with shape `(q, dim)`.
-            embeddings (torch.Tensor): with shape `(e, dim)`.
+            embeddings (torch.Tensor): with shape `(b, e, dim)`.
 
         Returns:
-            torch.Tensor: with the distances with shape `(q, e)`.
+            torch.Tensor: with the distances with shape `(q, b, e)`.
         """
-        queries = queries.unsqueeze(dim=1)  # (q, 1, dim)
-        embeddings = embeddings.unsqueeze(dim=0)  # (1, e, dim)
+        queries = queries.unsqueeze(dim=1).unsqueeze(dim=2)  # (q, 1, 1, dim)
+        embeddings = embeddings.unsqueeze(dim=0)  # (1, b, e, dim)
 
-        return ((queries - embeddings) ** 2).sum(dim=2).sqrt()  # (q, e)
+        return ((queries - embeddings) ** 2).sum(dim=3).sqrt()  # (q, b, e)
 
     @staticmethod
     def _cos_distance(queries, embeddings):
@@ -56,11 +56,12 @@ class SlowInstanceRetriver(InstanceRetriever):
 
         Arguments:
             queries (torch.Tensor): with shape `(q, dim)`.
-            embeddings (torch.Tensor): with shape `(e, dim)`.
+            embeddings (torch.Tensor): with shape `(b, e, dim)`.
 
         Returns:
-            torch.Tensor: with the distances with shape `(q, e)`.
+            torch.Tensor: with the distances with shape `(q, b, e)`.
         """
+        # TODO: Fix this, the sizes are incorrect
         queries_norm = queries.norm(dim=1).unsqueeze(dim=1)                           # (q, 1)
         embeddings_norm = embeddings.norm(dim=1).unsqueeze(dim=0)                     # (1, e)
         norms = queries_norm * embeddings_norm                                        # (q, e)
@@ -91,7 +92,7 @@ class SlowInstanceRetriver(InstanceRetriever):
                 of the `i` embedding you can do `results_paths[i][k]`.
         """
         num_queries = queries.shape[0]
-        distances = -1 * queries.new_ones(num_queries, k)
+        distances = 1e8 * queries.new_ones(num_queries, k)
         boxes = queries.new_zeros(num_queries, k, 4)
         paths = [[None for _ in range(k)] for _ in range(num_queries)]
 
@@ -100,22 +101,26 @@ class SlowInstanceRetriver(InstanceRetriever):
         init = time.time()
 
         with torch.no_grad():
-            for i, (images, paths) in enumerate(self.dataloader):
+            for i, (images, batch_paths) in enumerate(self.dataloader):
                 batch_size = images.shape[0]
-                embeddings, boxes = self.model(images)
-                actual_distances = self._distance(queries, embeddings)  # (q, e)
+                embeddings, batch_boxes = self.model(images)  # (b, e, d), (b, e, 4)
+                num_embeddings = embeddings.shape[1]
+                actual_distances = self._distance(queries, embeddings)  # (q, b, e)
 
-                for q, in range(num_queries):
-                    for e in range(batch_size):
-                        dis = actual_distances[q, e]
-                        # Get the index of the first occurrence where the distance
-                        # is bigger than the actual distance
-                        index = (1 - (distances[q] > dis)).sum() - 1
-                        if index >= k:
-                            continue
-                        distances[q, index] = dis
-                        paths[q][index] = paths[e]
-                        boxes[q, index, :] = boxes[e]
+                # Iterate over the queries
+                for q in range(num_queries):
+                    # Iterate over the batch items
+                    for b in range(batch_size):
+                        # Iterate over the embeddings of a given batch item
+                        for e in range(num_embeddings):
+                            dis = actual_distances[q, b, e]
+                            # Get the index by counting how many distances are below this one
+                            index = (distances[q] < dis).sum()
+                            if index >= k:
+                                continue
+                            distances[q, index] = dis
+                            paths[q][index] = batch_paths[b]
+                            boxes[q, index, :] = batch_boxes[b, e]
 
                 # Show some stats about the progress
                 total_imgs += images.shape[0]
