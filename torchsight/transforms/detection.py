@@ -76,14 +76,18 @@ class Resize():
             image, _ = self.resize_image(data)
             return image
 
-        image, bounding_boxes, info = data
+        image, bounding_boxes, *rest = data
         image, scale = self.resize_image(image)
 
         if bounding_boxes.shape[0] > 0:
             bounding_boxes[:, :4] *= scale
-        info['resize_scale'] = scale
 
-        return image, bounding_boxes, info
+        if rest and isinstance(rest[0], dict):
+            info = rest[0]
+            info['resize_scale'] = scale
+            return image, bounding_boxes, info
+
+        return image, bounding_boxes
 
 
 class ToTensor():

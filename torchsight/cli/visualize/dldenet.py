@@ -15,8 +15,10 @@ import click
 @click.option('--device', help='The device to use to run the model. Default to cuda:0 if cuda is available.')
 @click.option('--threshold', default=0.5, show_default=True, help='The confidence threshold for the predictions.')
 @click.option('--iou-threshold', default=0.3, show_default=True, help='The threshold for Non Maximum Supresion.')
+@click.option('--only-logos', is_flag=True, help='Show only images with logos in the Flickr32 dataset.')
 @click.option('--tracked-means', is_flag=True)
-def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device, threshold, iou_threshold, tracked_means):
+def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device, threshold, iou_threshold, tracked_means,
+            only_logos):
     """Visualize the predictions of the DLDENet model loaded from CHECKPOINT with the indicated
     dataset that contains its data in DATASET-ROOT."""
     import torch
@@ -66,7 +68,7 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
         except KeyError:
             print('WARN: Model was not trained using flickr32 dataset.')
             params['classes'] = None
-        dataset = Flickr32Dataset(**params, transform=transform)
+        dataset = Flickr32Dataset(**params, transform=transform, only_boxes=only_logos)
         dataset_human = Flickr32Dataset(**params, transform=transform_visible)
         label_to_name = dataset.label_to_class
     else:
