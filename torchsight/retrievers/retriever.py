@@ -1,9 +1,11 @@
 """Instance retriver."""
 import numpy as np
 import torch
+from PIL import Image
 
 from torchsight.loggers import PrintLogger
 from torchsight.metrics import iou as compute_iou
+from torchsight.utils import visualize_boxes
 
 from .datasets import ImagesDataset
 
@@ -239,3 +241,36 @@ class InstanceRetriever():
                 of the `i` embedding you can do `results_paths[i][k]`.
         """
         raise NotImplementedError()
+
+    def visualize(self, query_image, distances, boxes, paths, query_box=None):
+        """Show the query image and its results.
+
+        Arguments:
+            query_image (PIL Image or str): the path or the image that generates the query.
+            distances (np.ndarray): The result distances for the query object.
+                Shape: `(num results)`.
+            boxes (np.ndarray): The boxes for the result embeddings.
+                Shape: `(num results, 4)`.
+            paths (list of str): The path to the result images.
+            query_box (np.ndarray, optional): the bounding box of the query object.
+        """
+        if isinstance(query_image, str):
+            query_image = Image.open(query_image)
+
+        if query_box is None:
+            query_box = []
+
+        print('Query:')
+        visualize_boxes(query_image, query_box)
+
+        print('Results:')
+        num_results = distances.shape[0]
+        boxes_with_dist = torch.zeros(num_results, 5)       # (n, 5)
+        boxes_with_dist[:, :4] = torch.Tensor(boxes)        # (n, 4)
+        boxes_with_dist[:, 4] = torch.Tensor(distances)     # (n,)
+        boxes_with_dist = boxes_with_dist.unsqueeze(dim=1)  # (n, 1, 5)
+        for i, path in enumerate(paths):
+            image = Image.open(path)
+            image_box = boxes_with_dist[i]
+            image, image_box = self.with_boxes_transform((image, image_box))
+            visualize_boxes(image, image_box)
