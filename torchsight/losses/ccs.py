@@ -28,13 +28,12 @@ class CCSLoss(nn.Module):
     to its IoU, so the final loss of an anchor is it's IoU * similarity.
     """
 
-    def __init__(self, iou_thresholds=None, soft=False, device=None):
+    def __init__(self, iou_thresholds=None, soft=False):
         """Initialize the loss.
 
         Arguments:
             iou_thresholds (dict, optional): Indicates the thresholds to assign an anchor as background or object.
             soft (bool, optional): Apply the soft version of the loss.
-            device (str, optional): Indicates the device where to run the loss.
         """
         super().__init__()
 
@@ -42,7 +41,6 @@ class CCSLoss(nn.Module):
             iou_thresholds = {'background': 0.4, 'object': 0.5}
         self.iou_thresholds = iou_thresholds
         self.soft = soft
-        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     def forward(self, anchors, embeddings, weights, annotations):
         """Get the mean CCS loss.
@@ -90,7 +88,7 @@ class CCSLoss(nn.Module):
 
             # Zero loss for this image if it does not have any annotation
             if annotations.shape[0] == 0:
-                losses.append(torch.zeros(1).mean().to(self.device))
+                losses.append(embeddings.new_zeros(1).mean())
                 continue
 
             # Get assignations of the annotations to the anchors
@@ -103,7 +101,7 @@ class CCSLoss(nn.Module):
 
             # Continue with the next image if there are no selected objects
             if selected_anchors_objects.sum() == 0:
-                losses.append(torch.zeros(1).mean().to(self.device))
+                losses.append(embeddings.new_zeros(1).mean())
                 continue
 
             # We must compute the cosine similarity between each embedding and its corresponding weight vector of its
