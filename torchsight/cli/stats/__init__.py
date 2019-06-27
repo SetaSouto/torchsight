@@ -9,7 +9,7 @@ from .sizes import sizes
 
 @click.group()
 def stats():
-    """Extract stats from the logs."""
+    """Commands to compute statistics or metrics"""
 
 
 stats.add_command(describe_boxes)

@@ -30,7 +30,7 @@ class DLDENetLoss(nn.Module):
         device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         self.focal = FocalLoss(alpha, gamma, sigma, iou_thresholds, soft, device)
-        self.ccs = CCSLoss(iou_thresholds, soft, device)
+        self.ccs = CCSLoss(iou_thresholds, soft)
 
     def forward(self, anchors, regressions, classifications, annotations, model):
         """Compute the different losses for the batch.
