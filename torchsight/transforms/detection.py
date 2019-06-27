@@ -26,14 +26,15 @@ class Resize():
         self.max_side = max_side
         self.stride = stride
 
-    def __call__(self, data):
-        """Resize the image and scale the bounding boxes.
+    def resize_image(self, image):
+        """Resize the given image.
 
-        Args:
-            data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
+        Arguments:
+            image (PIL Image or np.array): the image to resize.
+
+        Returns:
+            np.array: The resized image.
         """
-        image, bounding_boxes, info = data
-
         if isinstance(image, Image):
             image = np.array(image)
 
@@ -62,11 +63,27 @@ class Resize():
         final = np.zeros((new_height + padding_height, new_width + padding_width, channels))
         final[:height, :width, :] = image
 
+        return final, scale
+
+    def __call__(self, data):
+        """Resize the image and scale the bounding boxes.
+
+        Args:
+            data (PIL Image or tuple): The image to resize or a tuple with a PIL image and
+                the bounding boxes as numpy arrays.
+        """
+        if isinstance(data, Image):
+            image, _ = self.resize_image(data)
+            return image
+
+        image, bounding_boxes, info = data
+        image, scale = self.resize_image(image)
+
         if bounding_boxes.shape[0] > 0:
             bounding_boxes[:, :4] *= scale
         info['resize_scale'] = scale
 
-        return final, bounding_boxes, info
+        return image, bounding_boxes, info
 
 
 class ToTensor():

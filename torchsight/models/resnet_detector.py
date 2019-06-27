@@ -79,11 +79,12 @@ class ResnetDetector(torch.nn.Module):
         features = self.resnet(images)
 
         # Reduce the length of the features by pooling them
-        features = features.view(batch_size, self.dim, -1, height, width)
-        if self.pool == 'avg':
-            features = features.mean(dim=2)
-        else:
-            features = features.max(dim=2)
+        if self.dim != features.shape[1]:
+            features = features.view(batch_size, self.dim, -1, height, width)
+            if self.pool == 'avg':
+                features = features.mean(dim=2)
+            else:
+                features = features.max(dim=2)
 
         # Apply the pooling with kernels and get embeddings with shape (batch size, dim, *)
         pooled = []
