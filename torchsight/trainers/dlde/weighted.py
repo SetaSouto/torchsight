@@ -170,7 +170,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         # Log the classification and regression loss too:
         self.current_log['Class.'] = '{:.4f}'.format(float(classification))
         self.current_log['Pos'] = '{:.4f}'.format(float(self.criterion.focal.pos_loss))
-        self.current_log['Neg'] = '{:.4f}'.format(float(self.criterion.focal.ned_loss))
+        self.current_log['Neg'] = '{:.4f}'.format(float(self.criterion.focal.neg_loss))
         self.current_log['Regr.'] = '{:.4f}'.format(float(regression))
         self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
         # Log the mean norm of the weights in the classification module and their biases

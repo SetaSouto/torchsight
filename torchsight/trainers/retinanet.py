@@ -287,8 +287,8 @@ class RetinaNetTrainer(Trainer):
         # Log the classification and regression loss too:
         self.current_log['Class.'] = '{:.5f}'.format(float(classification_loss))
         self.current_log['Regr.'] = '{:.5f}'.format(float(regression_loss))
-        self.current_log['Pos'] = '{:.4f}'.format(float(self.criterion.focal.pos_loss))
-        self.current_log['Neg'] = '{:.4f}'.format(float(self.criterion.focal.ned_loss))
+        self.current_log['Pos'] = '{:.4f}'.format(float(self.criterion.pos_loss))
+        self.current_log['Neg'] = '{:.4f}'.format(float(self.criterion.neg_loss))
 
         return loss
 
