@@ -3,6 +3,8 @@ import click
 
 
 @click.command()
+@click.option('--config', type=click.Path(exists=True), help='An optional configuration file with the hyperparameters. '
+              'It will block all the other options, only --device and --checkpoint will work.')
 @click.option('-d', '--dataset', default='coco', show_default=True, type=click.Choice(['coco', 'flickr32', 'logo32plus']))
 @click.option('-dr', '--dataset-root', type=click.Path(exists=True))
 @click.option('-b', '--batch-size', default=8, show_default=True)
@@ -14,15 +16,14 @@ import click
               help='Indicate which classes (identified by its string label) must be used for the training. '
               'If no class is provided the trainer will use all the classes. Example: --classes "bear sheep airplane"')
 @click.option('--device', default=None, help='The device that the model must use.')
-def retinanet(dataset, dataset_root, batch_size, resnet, logs_dir, checkpoint, classes, device):
+def retinanet(config, dataset, dataset_root, batch_size, resnet, logs_dir, checkpoint, classes, device):
     """Train a RetinaNet instance with the indicated dataset that contains its data in the
     DATASET_ROOT directory."""
     from torchsight.trainers import RetinaNetTrainer
 
-    classes = classes.split() if classes is not None else None
-
-    RetinaNetTrainer(
-        hyperparameters={
+    if config is None:
+        classes = classes.split() if classes is not None else None
+        hyperparameters = {
             'datasets': {
                 'use': dataset,
                 'coco': {
@@ -50,7 +51,14 @@ def retinanet(dataset, dataset_root, batch_size, resnet, logs_dir, checkpoint, c
             'checkpoint': {
                 'dir': logs_dir
             }
-        },
+        }
+    else:
+        import json
+        with open(config, 'r') as file:
+            hyperparameters = json.loads(file.read())
+
+    RetinaNetTrainer(
+        hyperparameters=hyperparameters,
         checkpoint=checkpoint,
         device=device
     ).train()
