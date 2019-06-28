@@ -9,7 +9,7 @@ from .focal import FocalLoss
 class DLDENetLoss(nn.Module):
     """Join the CCS and the Focal losses in one single module."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=False, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, increase_foreground_by=1, soft=False, device=None):
         """Initialize the losses.
 
         See their corresponding docs for more information.
@@ -29,7 +29,7 @@ class DLDENetLoss(nn.Module):
 
         device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-        self.focal = FocalLoss(alpha, gamma, sigma, iou_thresholds, soft, device)
+        self.focal = FocalLoss(alpha, gamma, sigma, iou_thresholds, increase_foreground_by, soft, device)
         self.ccs = CCSLoss(iou_thresholds, soft)
 
     def forward(self, anchors, regressions, classifications, annotations, model):

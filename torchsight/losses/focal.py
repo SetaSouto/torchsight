@@ -12,7 +12,7 @@ from ..models import Anchors
 class FocalLoss(nn.Module):
     """Loss to penalize the detection of objects."""
 
-    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, soft=False, device=None):
+    def __init__(self, alpha=0.25, gamma=2.0, sigma=3.0, iou_thresholds=None, increase_foreground_by=1, soft=False, device=None):
         """Initialize the loss.
 
         Train as background (minimize all the probabilities of the classes) if the IoU is below the 'background'
@@ -24,6 +24,9 @@ class FocalLoss(nn.Module):
             gamma (float): Gamma parameter for the focal loss.
             sigma (float): Point that defines the change from L1 loss to L2 loss (smooth L1).
             iou_thresholds (dict): Indicates the thresholds to assign an anchor as background or object.
+            increase_foreground_by (int, optional): Increase the loss of the anchors that are selected for
+                foreground. This could help to avoid the class imbalance between the background and foreground
+                objects.
             soft (bool, optional): Apply soft classification loss according to theirs IoU.
             device (str, optional): Indicates the device where to run the loss.
         """
@@ -40,6 +43,7 @@ class FocalLoss(nn.Module):
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.pos_loss = None  # The last computed loss for the target == 1
         self.neg_loss = None  # The last computed loss for the target == 0
+        self.increase_foreground_by = increase_foreground_by
 
     def to(self, device):
         """Move the module and its attributes to the given device.
@@ -145,6 +149,9 @@ class FocalLoss(nn.Module):
             bce[ignored_anchors, :] = 0
             # Append to the classification losses
             loss = focal * bce
+
+            # TODO: DELETE THIS
+            loss[selected_anchors_objects] *= self.increase_foreground_by
 
             # Update the *_loss losses
             pos_loss = torch.where(targets == 1, loss, loss.new_tensor(0))

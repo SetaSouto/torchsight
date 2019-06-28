@@ -40,6 +40,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             'gamma': 2.0,
             'sigma': 3.0,
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
+            'increase_foreground_by': 1000,
             # Weight of each loss. See train method.
             'weights': {'classification': 1e4, 'regression': 1, 'similarity': 1},
             'soft': False,  # Apply soft loss weighted by the IoU
@@ -134,6 +135,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             gamma=params['gamma'],
             sigma=params['sigma'],
             iou_thresholds=params['iou_thresholds'],
+            increase_foreground_by=params['increase_foreground_by'],
             soft=params['soft'],
             device=self.device
         )
