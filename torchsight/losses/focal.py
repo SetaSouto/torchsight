@@ -149,7 +149,7 @@ class FocalLoss(nn.Module):
             # Update the *_loss losses
             pos_loss = torch.where(targets == 1, loss, loss.new_tensor(0))
             pos_loss[ignored_anchors, :] = 0
-            self.poss_loss.append(pos_loss.mean())
+            self.pos_loss.append(pos_loss.mean())
             neg_loss = torch.where(targets != 1, loss, loss.new_tensor(0))
             neg_loss[ignored_anchors, :] = 0
             self.neg_loss.append(neg_loss.mean())
