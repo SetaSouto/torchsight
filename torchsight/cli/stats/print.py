@@ -6,10 +6,11 @@ from torchsight.loggers import PrintLogger
 
 @click.command()
 @click.argument('log_file')
-@click.option('-k', '--keys', default='Loss Class. Regr. Simil. w-norm LR', show_default=True)
+@click.option('-k', '--keys', default='Loss Class. Pos Neg Regr. Simil. w-norm LR', show_default=True)
+@click.option('-nv', '--no-valid', default='LR w-norm', show_default=True)
 @click.option('-ek', '--epoch-key', default='Epoch', help='The key in the logs that indicates the epoch.')
-@click.option('--just', default=12, show_default=True)
-def printlogger(log_file, keys, epoch_key, just):
+@click.option('--just', default=11, show_default=True)
+def printlogger(log_file, keys, no_valid, epoch_key, just):
     """Get the mean loss per epoch over the training dataset and validation dataset.
 
     This stats could be generated from the logs that generated the PrintLogger and were
@@ -64,7 +65,10 @@ def printlogger(log_file, keys, epoch_key, just):
 
     headers = ['Epoch']
     for key in keys:
-        headers += [key.center(just * 2 + 1)]
+        if key in no_valid:
+            headers += [key.center(just)]
+        else:
+            headers += [key.center(just * 2 + 1)]
 
     print(' | '.join(headers))
 
@@ -75,13 +79,26 @@ def printlogger(log_file, keys, epoch_key, just):
             if train[epoch][k]['count'] == 0:
                 train_value = '---'.rjust(just)
             else:
-                train_value = '{:.7f}'.format(train[epoch][k]['sum'] / train[epoch][k]['count']).rjust(just)
+                train_value = train[epoch][k]['sum'] / train[epoch][k]['count']
+                if train_value > 10:
+                    train_value = '{:.3f}'.format(train_value)
+                else:
+                    train_value = '{:.7f}'.format(train_value)
+                train_value = train_value.rjust(just)
 
-            if valid.get(epoch, None) is None or valid[epoch].get(k, None) is None or valid[epoch][k]['count'] == 0:
-                valid_value = '---'.rjust(just)
+            if k not in no_valid:
+                if valid.get(epoch, None) is None or valid[epoch].get(k, None) is None or valid[epoch][k]['count'] == 0:
+                    valid_value = '---'.rjust(just)
+                else:
+                    valid_value = valid[epoch][k]['sum'] / valid[epoch][k]['count']
+                    if valid_value > 10:
+                        valid_value = '{:.3f}'.format(valid_value)
+                    else:
+                        valid_value = '{:.7f}'.format(valid_value)
+                    valid_value = valid_value.rjust(just)
+
+                values.append('{} {}'.format(train_value, valid_value))
             else:
-                valid_value = '{:.7f}'.format(valid[epoch][k]['sum'] / valid[epoch][k]['count']).rjust(just)
-
-            values.append('{} {}'.format(train_value, valid_value))
+                values.append('{}'.format(train_value))
 
         print(' | '.join(values))

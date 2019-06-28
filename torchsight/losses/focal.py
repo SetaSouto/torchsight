@@ -38,6 +38,8 @@ class FocalLoss(nn.Module):
         self.iou_object = iou_thresholds['object']
         self.soft = soft
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.pos_loss = None  # The last computed loss for the target == 1
+        self.neg_loss = None  # The last computed loss for the target == 0
 
     def to(self, device):
         """Move the module and its attributes to the given device.
@@ -89,6 +91,11 @@ class FocalLoss(nn.Module):
         classification_losses = []
         regression_losses = []
 
+        # Keep the last losses separated by target == 1 and target != 1 to show them
+        # in the trainer (optional)
+        self.pos_loss = []
+        self.neg_loss = []
+
         for index in range(batch_size):
             anchors = batch_anchors[index]
             regressions = batch_regressions[index]
@@ -132,20 +139,29 @@ class FocalLoss(nn.Module):
             focal = alpha * (focal ** self.gamma)
             # Get the binary cross entropy
             bce = -(targets * torch.log(classifications) + (1. - targets) * torch.log(1 - classifications))
-            # Free memory
-            del targets
             # Remove the loss for the not assigned anchors (not background, not object)
             selected_anchors = selected_anchors_backgrounds + selected_anchors_objects
             ignored_anchors = 1 - selected_anchors
             bce[ignored_anchors, :] = 0
             # Append to the classification losses
             loss = focal * bce
+
+            # Update the *_loss losses
+            pos_loss = torch.where(targets == 1, loss, loss.new_tensor(0))
+            pos_loss[ignored_anchors, :] = 0
+            self.poss_loss.append(pos_loss.mean())
+            neg_loss = torch.where(targets != 1, loss, loss.new_tensor(0))
+            neg_loss[ignored_anchors, :] = 0
+            self.neg_loss.append(neg_loss.mean())
+
             if self.soft:
                 loss[selected_anchors_objects, :] *= objects_iou.unsqueeze(dim=1)
+
             loss = loss.sum() / selected_anchors.sum()
             classification_losses.append(loss)
+
             # Free memory
-            del alpha, focal, bce, ignored_anchors, classifications, selected_anchors_backgrounds, loss
+            del targets, alpha, focal, bce, ignored_anchors, classifications, selected_anchors_backgrounds, loss
 
             # Compute regression loss
 
@@ -193,6 +209,10 @@ class FocalLoss(nn.Module):
 
             # Append the squared error
             regression_losses.append(regression_loss.mean())
+
+        # Update the last losses
+        self.pos_loss = torch.stack(self.pos_loss).mean()
+        self.neg_loss = torch.stack(self.neg_loss).mean()
 
         # Return the mean classification loss and the mean regression loss
         return torch.stack(classification_losses).mean(), torch.stack(regression_losses).mean()
