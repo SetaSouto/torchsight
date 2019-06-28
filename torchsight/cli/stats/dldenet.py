@@ -26,7 +26,6 @@ def weights(checkpoint, device):
 
     if dataset == 'flickr32':
         from torchsight.datasets import Flickr32Dataset
-
         label_to_class = Flickr32Dataset(root=hp['datasets']['flickr32']['root']).label_to_class
         for label, name in label_to_class.items():
             print('{} - {}'.format(str(label).rjust(2), name))

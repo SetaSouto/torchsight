@@ -60,5 +60,6 @@ def dldenet(checkpoint, dataset, dataset_root, results_dir, coco_dataset, classe
                     'detection': threshold,
                     'iou': iou_threshold
                 }
-            }
+            },
+            device=device
         ).evaluate()
