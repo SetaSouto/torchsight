@@ -14,27 +14,36 @@ from torchsight.utils import JsonObject
 class AugmentDetection():
     """A custom pipeline to augment the data for a detection task."""
 
-    def __init__(self, params=None, normalize=True):
+    def __init__(self, params=None, evaluation=False, normalize=True):
         """Initialize the pipeline.
 
         Arguments:
             params (dict or JsonObject, optional): The params for the pipeline. See get_params().
+            evaluation (bool, optional): if True it will not augment the images, only apply the transforms
+                to match the sizes.
+            normalize (bool, optional): If False it will not apply normalization on evaluation mode.
+                Useful to get images without distortion for the human eye.
         """
         self.params = self.get_params().merge(params)
-        transforms = [
-            GaussNoise(**self.params.GaussNoise),
-            # GaussianBlur(**self.params.GaussianBlur),
-            RandomBrightnessContrast(**self.params.RandomBrightnessContrast),
-            Rotate(**self.params.Rotate),
-            LongestMaxSize(**self.params.LongestMaxSize),
-            PadIfNeeded(**self.params.PadIfNeeded),
-            RandomSizedBBoxSafeCrop(**self.params.RandomSizedBBoxSafeCrop)
-        ]
 
-        if normalize:
-            transforms.append(Normalize())
-
-        transforms.append(ToTensor())
+        if evaluation:
+            transforms = [
+                LongestMaxSize(**self.params.LongestMaxSize),
+                PadIfNeeded(**self.params.PadIfNeeded)
+            ]
+            transforms += [Normalize(), ToTensor()] if normalize else [ToTensor()]
+        else:
+            transforms = [
+                GaussNoise(**self.params.GaussNoise),
+                # GaussianBlur(**self.params.GaussianBlur),
+                RandomBrightnessContrast(**self.params.RandomBrightnessContrast),
+                Rotate(**self.params.Rotate),
+                LongestMaxSize(**self.params.LongestMaxSize),
+                PadIfNeeded(**self.params.PadIfNeeded),
+                RandomSizedBBoxSafeCrop(**self.params.RandomSizedBBoxSafeCrop),
+                Normalize(),
+                ToTensor()
+            ]
 
         self.transform = Compose(transforms, bbox_params=self.get_box_params())
 
