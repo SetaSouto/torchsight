@@ -115,11 +115,10 @@ class InstanceRetriever():
                 can do `belongs_to[i]`.
         """
         device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
         images, boxes = self._query_transform(images, boxes)
-
         queries, belongs_to = self._query_embeddings(images, boxes, strategy)  # (num of queries, embedding dim)
-
-        distances, boxes, results_paths = self._search(queries, k)  # Shape (num of queries, k)
+        distances, boxes, results_paths = self._search(queries, k)             # (num of queries, k)
 
         if torch.is_tensor(distances):
             distances = distances.numpy()
@@ -163,8 +162,10 @@ class InstanceRetriever():
         # Transform the items
         for i, image in enumerate(images):
             image_boxes = boxes[i]
-            image, image_boxes = self.with_boxes_transform((image, image_boxes))
+            print(image_boxes.shape)
+            image, image_boxes = self.with_boxes_transform({'image': image, 'boxes': image_boxes})
             images[i] = image
+            print(image_boxes.shape)
             boxes[i] = image_boxes
 
         return images, boxes
@@ -224,6 +225,11 @@ class InstanceRetriever():
         """Search in the dataset and get the tensor with the distances, bounding boxes and the paths
         of the images.
 
+        **IMPORTANT**:
+        Keep in mind that the bounding boxes are for the transformed images, not fot the original images.
+        So, if the transformation changes the size of the image the bounding boxes could not fit
+        in the original image.
+
         Arguments:
             queries (torch.Tensor): the embeddings generated for each query object.
                 Shape `(number of instances to search, embedding dim)`.
@@ -272,5 +278,5 @@ class InstanceRetriever():
         for i, path in enumerate(paths):
             image = Image.open(path)
             image_box = boxes_with_dist[i]
-            image, image_box = self.with_boxes_transform((image, image_box))
+            image = self.image_transform({'image': image})
             visualize_boxes(image, image_box)

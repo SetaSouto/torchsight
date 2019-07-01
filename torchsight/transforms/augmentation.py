@@ -46,6 +46,7 @@ class AugmentDetection():
             ]
 
         self.transform = Compose(transforms, bbox_params=self.get_box_params())
+        self.transform_no_boxes = Compose(transforms)
 
     @staticmethod
     def get_params():
@@ -106,24 +107,51 @@ class AugmentDetection():
         """Apply the transformations.
 
         Arguments:
-            image (PIL Image or np.ndarray): The image to transform.
-            boxes (np.ndarray or torch.Tensor): The bounding boxes of the image.
-        """
-        image, boxes = data['image'], data['boxes']
+            dict: with
+                image (PIL Image or np.ndarray): The image to transform.
+                boxes (np.ndarray or torch.Tensor, optional): The bounding boxes of the image with shape
+                    `(num boxes, 4 or 5)`.
+                    4 in the case that there aren't labels, and 5 in the case when the bounding boxes have labels.
 
+        Returns:
+            torch.Tensor: The transformed image.
+            torch.Tensor: The transformed bounding boxes if there is any.
+        """
+        image, boxes = data['image'], data.get('boxes', None)
+
+        # Transform image to np.ndarray
         if isinstance(image, Image):
             image = np.array(image)
 
+        # Apply the transformation to the image
+        if boxes is None:
+            return self.transform_no_boxes(image=image)['image']
+
+        # Transform to numpy the boxes if it were tensors
         was_tensor = False
         if torch.is_tensor(boxes):
             was_tensor = True
             boxes = boxes.numpy()
 
+        # Add a dummy label if the boxes does not have one
+        had_label = True
+        if boxes.shape[1] == 4:
+            had_label = False
+            num_boxes = boxes.shape[0]
+            boxes = np.concatenate([boxes, np.zeros((num_boxes, 1))], axis=1)
+
+        # Apply the transformation
         transformed = self.transform(image=image, bboxes=boxes)
+        image, boxes = transformed['image'], transformed.get('bboxes', None)
 
-        image, boxes = transformed['image'], transformed['bboxes']
+        # Remove the dummy label
+        if not had_label:
+            boxes = np.array(boxes)
+            boxes = boxes[:, :4]
 
+        # Transform to tensor
         if was_tensor:
             boxes = torch.Tensor(boxes)
 
+        # Return the transformed image and boxes
         return image, boxes

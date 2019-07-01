@@ -42,7 +42,7 @@ class ImagesDataset(Dataset):
         image = Image.open(path)
 
         if self.transform is not None:
-            image = self.transform(image)
+            image = self.transform({'image': image})
 
         return image, path
 

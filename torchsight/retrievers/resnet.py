@@ -1,8 +1,6 @@
 """A module for Resnet retrievers."""
-from torchvision import transforms
-
 from torchsight.models import ResnetDetector
-from torchsight.transforms import detection
+from torchsight.transforms.augmentation import AugmentDetection
 from torchsight.utils import JsonObject
 
 from .slow import SlowInstanceRetriver
@@ -37,15 +35,13 @@ class ResnetRetriever(SlowInstanceRetriver):
                 'pool': 'avg',
                 'kernels': [2, 4, 8, 16]
             },
-            'transforms': {
-                'resize': {
-                    'min_side': 384,
-                    'max_side': 512,
-                    'stride': 32
+            'transform': {
+                'LongestMaxSize': {
+                    'max_size': 512
                 },
-                'normalize': {
-                    'mean': [0.485, 0.456, 0.406],
-                    'std': [0.229, 0.224, 0.225]
+                'PadIfNeeded': {
+                    'min_height': 512,
+                    'min_width': 512
                 }
             }
         })
@@ -62,19 +58,6 @@ class ResnetRetriever(SlowInstanceRetriver):
             callable: a transformation for images and bounding boxes (the query images with their
                 bounding boxes indicating the instances to search).
         """
-        params = self.params.transforms
+        transform = AugmentDetection(self.params.transform, evaluation=True, normalize=True)
 
-        image_transform = transforms.Compose([
-            detection.Resize(**params.resize),
-            transforms.ToTensor(),
-            lambda x: x.float(),
-            transforms.Normalize(**params.normalize)
-        ])
-
-        with_boxes_transform = transforms.Compose([
-            detection.Resize(**params.resize),
-            detection.ToTensor(),
-            detection.Normalize(**params.normalize)
-        ])
-
-        return image_transform, with_boxes_transform
+        return transform, transform

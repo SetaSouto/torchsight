@@ -61,13 +61,12 @@ class SlowInstanceRetriver(InstanceRetriever):
         Returns:
             torch.Tensor: with the distances with shape `(q, b, e)`.
         """
-        # TODO: Fix this, the sizes are incorrect
-        queries_norm = queries.norm(dim=1).unsqueeze(dim=1)                           # (q, 1)
-        embeddings_norm = embeddings.norm(dim=1).unsqueeze(dim=0)                     # (1, e)
-        norms = queries_norm * embeddings_norm                                        # (q, e)
-        queries = queries.unsqueeze(dim=1).unsqueeze(dim=1)                           # (q, 1,   1, dim)
-        embeddings = embeddings.unsqueeze(dim=0).unsqueeze(dim=3)                     # (1, e, dim,   1)
-        similarity = torch.matmul(queries, embeddings).squeeze(dim=3).squeeze(dim=2)  # (q, e)
+        queries_norm = queries.norm(dim=1).unsqueeze(dim=1).unsqueeze(dim=2)          # (q, 1, 1)
+        embeddings_norm = embeddings.norm(dim=2).unsqueeze(dim=0)                     # (1, b, e)
+        norms = queries_norm * embeddings_norm                                        # (q, b, e)
+        queries = queries.unsqueeze(dim=1).unsqueeze(dim=2).unsqueeze(dim=3)          # (q, 1, 1,   1, dim)
+        embeddings = embeddings.unsqueeze(dim=0).unsqueeze(dim=3)                     # (1, b, e, dim,   1)
+        similarity = torch.matmul(queries, embeddings).squeeze(dim=4).squeeze(dim=3)  # (q, b, e)
 
         return similarity / norms
 
