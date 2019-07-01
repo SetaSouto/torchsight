@@ -87,15 +87,34 @@ class DLDENetTrainer(RetinaNetTrainer):
             'patience': 5,
             'threshold': 0.01
         },
-        'transforms': {
-            'resize': {
-                'min_side': 384,
-                'max_side': 512,
-                'stride': 128
+        'transform': {
+            'GaussNoise': {
+                'var_limit': (10, 50),
+                'p': 0.5
             },
-            'normalize': {
-                'mean': [0.485, 0.456, 0.406],
-                'std': [0.229, 0.224, 0.225]
+            'GaussianBlur': {
+                'blur_limit': 0.7,
+                'p': 0.5
+            },
+            'RandomBrightnessContrast': {
+                'brightness_limit': 0.2,
+                'contrast_limit': 0.2,
+                'p': 0.5
+            },
+            'Rotate': {
+                'limit': 45,
+                'p': 0.5
+            },
+            'LongestMaxSize': {
+                'max_size': 512
+            },
+            'PadIfNeeded': {
+                'min_height': 512,
+                'min_width': 512
+            },
+            'RandomSizedBBoxSafeCrop': {
+                'height': 512,
+                'width': 512
             }
         }
     }
