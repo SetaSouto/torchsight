@@ -8,7 +8,7 @@ import os
 import torch
 from PIL import Image
 
-from torchsight.utils import describe_boxes
+from torchsight.utils import describe_boxes, visualize_boxes
 
 from .mixins import VisualizeMixin
 
@@ -49,6 +49,43 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         self.paths = self.get_paths()
         self.label_to_class, self.class_to_label = self.generate_labels()
 
+    def __len__(self):
+        """Returns the length of the dataset.
+
+        Returns:
+            int: The length of the dataset.
+        """
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        """Get the image and bounding boxes at the given index.
+
+        Arguments:
+            i (int): The index of the element that you want to get.
+
+        Returns:
+            any: The transformed image.
+            torch.Tensor: The bounding boxes with x1, y1, x2, y2, label.
+                Shape: `(num of boxes, 5)`
+            dict: A dict with more info about the item like the brand name and the
+                path to the image.
+        """
+        brand, image, boxes = self.paths[i]
+
+        info = {'brand': brand, 'image': image}
+
+        image = Image.open(image)
+        boxes = self.get_boxes(boxes, brand)
+
+        if self.transform is not None:
+            image, boxes = self.transform({'image': image, 'boxes': boxes})
+
+        return image, boxes, info
+
+    ################################
+    ###        VALIDATION        ###
+    ################################
+
     @staticmethod
     def validate_root(path):
         """Validate that the given path exists and return it.
@@ -84,6 +121,10 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             raise ValueError('"{}" is not a valid dataset name.'.format(name))
 
         return name
+
+    ############################
+    ###       GETTERS        ###
+    ############################
 
     def get_paths(self):
         """Load the absolute paths to the files that are in the dataset.
@@ -146,39 +187,6 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
 
         return label_to_class, class_to_label
 
-    def __len__(self):
-        """Returns the length of the dataset.
-
-        Returns:
-            int: The length of the dataset.
-        """
-        return len(self.paths)
-
-    def __getitem__(self, i):
-        """Get the image and bounding boxes at the given index.
-
-        Arguments:
-            i (int): The index of the element that you want to get.
-
-        Returns:
-            any: The transformed image.
-            torch.Tensor: The bounding boxes with x1, y1, x2, y2, label.
-                Shape: `(num of boxes, 5)`
-            dict: A dict with more info about the item like the brand name and the
-                path to the image.
-        """
-        brand, image, boxes = self.paths[i]
-
-        info = {'brand': brand, 'image': image}
-
-        image = Image.open(image)
-        boxes = self.get_boxes(boxes, brand)
-
-        if self.transform is not None:
-            image, boxes, info = self.transform((image, boxes, info))
-
-        return image, boxes, info
-
     def get_boxes(self, file, brand):
         """Get the boxes from the given file.
 
@@ -205,6 +213,10 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                 return torch.stack(boxes)
         except FileNotFoundError:
             return torch.Tensor([])
+
+    ##########################
+    ###       STATS        ###
+    ##########################
 
     def describe_boxes(self):
         """Describe the boxes of the dataset.

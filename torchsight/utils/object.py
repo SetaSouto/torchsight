@@ -85,6 +85,9 @@ class JsonObject():
         Returns:
             JsonObject: The self instance.
         """
+        if data is None:
+            return self
+
         if isinstance(data, self.__class__):
             data = data.dict()
 
