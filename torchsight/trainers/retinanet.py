@@ -1,7 +1,6 @@
 """RetinaNet Trainer."""
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torchvision import transforms
 
 from torchsight import utils
 from torchsight.optimizers import AdaBound
@@ -9,7 +8,7 @@ from torchsight.optimizers import AdaBound
 from ..datasets import CocoDataset, Flickr32Dataset, Logo32plusDataset
 from ..losses import FocalLoss
 from ..models import RetinaNet
-from ..transforms.detection import Normalize, Resize, ToTensor
+from ..transforms.augmentation import AugmentDetection
 from .trainer import Trainer
 
 
@@ -88,15 +87,34 @@ class RetinaNetTrainer(Trainer):
             'patience': 5,
             'threshold': 0.01
         },
-        'transforms': {
-            'resize': {
-                'min_side': 384,
-                'max_side': 512,
-                'stride': 128
+        'transform': {
+            'GaussNoise': {
+                'var_limit': (10, 50),
+                'p': 0.5
             },
-            'normalize': {
-                'mean': [0.485, 0.456, 0.406],
-                'std': [0.229, 0.224, 0.225]
+            'GaussianBlur': {
+                'blur_limit': 0.7,
+                'p': 0.5
+            },
+            'RandomBrightnessContrast': {
+                'brightness_limit': 0.2,
+                'contrast_limit': 0.2,
+                'p': 0.5
+            },
+            'Rotate': {
+                'limit': 45,
+                'p': 0.5
+            },
+            'LongestMaxSize': {
+                'max_size': 512
+            },
+            'PadIfNeeded': {
+                'min_height': 512,
+                'min_width': 512
+            },
+            'RandomSizedBBoxSafeCrop': {
+                'height': 512,
+                'width': 512
             }
         }
     }
@@ -105,8 +123,7 @@ class RetinaNetTrainer(Trainer):
     ###           GETTERS            ###
     ####################################
 
-    @staticmethod
-    def get_transform(params):
+    def get_transform(self):
         """Initialize and get the transforms for the images.
 
         Arguments:
@@ -116,11 +133,7 @@ class RetinaNetTrainer(Trainer):
         Returns:
             torchvision.transform.Compose: The Compose of the transformations.
         """
-        return transforms.Compose([
-            Resize(**params['resize']),
-            ToTensor(),
-            Normalize(**params['normalize'])
-        ])
+        return AugmentDetection(params=self.hyperparameters['transform'])
 
     def get_datasets(self):
         """Initialize and get the Coco datasets for training and evaluation.
@@ -128,7 +141,7 @@ class RetinaNetTrainer(Trainer):
         Returns:
             tuple: A Tuple with the torch.utils.data.Datasets for training and validation.
         """
-        transform = self.get_transform(self.hyperparameters['transforms'])
+        transform = self.get_transform()
 
         params = self.hyperparameters['datasets']
         dataset = params['use']
@@ -168,10 +181,11 @@ class RetinaNetTrainer(Trainer):
                 'root': params['root'],
                 'classes': params['classes'],
                 'only_boxes': params['only_boxes'],
+                'transform': transform
             }
 
-            return (Flickr32Dataset(**kwargs, dataset=params['training'], transform=transform),
-                    Flickr32Dataset(**kwargs, dataset=params['validation'], transform=transform))
+            return (Flickr32Dataset(**kwargs, dataset=params['training']),
+                    Flickr32Dataset(**kwargs, dataset=params['validation']))
 
     def get_dataloaders(self):
         """Initialize and get the dataloaders for the datasets.
