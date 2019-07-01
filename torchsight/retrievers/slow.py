@@ -67,8 +67,9 @@ class SlowInstanceRetriver(InstanceRetriever):
         queries = queries.unsqueeze(dim=1).unsqueeze(dim=2).unsqueeze(dim=3)          # (q, 1, 1,   1, dim)
         embeddings = embeddings.unsqueeze(dim=0).unsqueeze(dim=3)                     # (1, b, e, dim,   1)
         similarity = torch.matmul(queries, embeddings).squeeze(dim=4).squeeze(dim=3)  # (q, b, e)
+        similarity /= norms
 
-        return similarity / norms
+        return 1 - similarity
 
     def _search(self, queries, k):
         """Search in the dataset and get the tensor with the distances, bounding boxes and the paths
