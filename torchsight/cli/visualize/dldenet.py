@@ -22,12 +22,10 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
     """Visualize the predictions of the DLDENet model loaded from CHECKPOINT with the indicated
     dataset that contains its data in DATASET-ROOT."""
     import torch
-    import torchvision
 
     from torchsight.datasets import CocoDataset, Logo32plusDataset, Flickr32Dataset
     from torchsight.models import DLDENet, DLDENetWithTrackedMeans
-    from torchsight.trainers import DLDENetTrainer
-    from torchsight.transforms.detection import Normalize
+    from torchsight.transforms.augmentation import AugmentDetection
     from torchsight.utils import visualize_boxes
 
     device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -40,9 +38,8 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
 
     hyperparameters = checkpoint['hyperparameters']
 
-    transform = DLDENetTrainer.get_transform(hyperparameters['transforms'])
-    transform_visible = torchvision.transforms.Compose(list(filter(lambda t: not isinstance(t, Normalize),
-                                                                   [t for t in transform.transforms])))
+    transform = AugmentDetection(params=hyperparameters['transforms'], evaluation=True)
+    transform_visible = AugmentDetection(params=hyperparameters['transforms'], evaluation=True, normalize=False)
     params = {'root': dataset_root}
 
     if dataset == 'coco':

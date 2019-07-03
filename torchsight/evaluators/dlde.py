@@ -8,7 +8,7 @@ from torchvision import transforms
 
 from torchsight.datasets import CocoDataset
 from torchsight.models import DLDENet, DLDENetWithTrackedMeans
-from torchsight.trainers import DLDENetTrainer
+from torchsight.transforms.augmentation import AugmentDetection
 from torchsight.transforms.detection import Normalize, Resize, ToTensor
 from torchsight.utils import merge_dicts
 
@@ -256,7 +256,7 @@ class DLDENetFlickr32Evaluator(Flickr32Evaluator):
 
     def get_transform(self):
         """Get the transformation to applies to the dataset according to the model."""
-        return DLDENetTrainer.get_transform(self.checkpoint['hyperparameters']['transforms'])
+        return AugmentDetection(params=self.checkpoint['hyperparameters']['transforms'], evaluation=True)
 
     def get_model(self):
         """Get the model to use to make the predictions.

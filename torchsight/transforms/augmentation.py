@@ -124,8 +124,13 @@ class AugmentDetection():
             image = np.array(image)
 
         # Apply the transformation to the image
-        if boxes is None:
-            return self.transform_no_boxes(image=image)['image']
+        if boxes is None or boxes.shape[0] == 0:
+            image = self.transform_no_boxes(image=image)['image']
+
+            if boxes is None:
+                return image
+
+            return image, boxes
 
         # Transform to numpy the boxes if it were tensors
         was_tensor = False

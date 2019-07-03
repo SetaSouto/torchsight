@@ -1,9 +1,5 @@
 """Evaluate the DLDENet models."""
 import click
-import torch
-
-from torchsight.evaluators import (DLDENetCOCOEvaluator,
-                                   DLDENetFlickr32Evaluator)
 
 
 @click.command()
@@ -25,6 +21,11 @@ def dldenet(checkpoint, dataset, dataset_root, results_dir, coco_dataset, classe
             batch_size, num_workers, width_tracked_means, device, threshold, iou_threshold):
     """Evaluate the DLDENet with the indicated dataset that contains its data in DATASET-ROOT with the
     model saved at CHECKPOINT."""
+    import torch
+
+    from torchsight.evaluators import (DLDENetCOCOEvaluator,
+                                       DLDENetFlickr32Evaluator)
+
     device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
     if dataset == 'coco':
