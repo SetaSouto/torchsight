@@ -38,8 +38,8 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
 
     hyperparameters = checkpoint['hyperparameters']
 
-    transform = AugmentDetection(params=hyperparameters['transforms'], evaluation=True)
-    transform_visible = AugmentDetection(params=hyperparameters['transforms'], evaluation=True, normalize=False)
+    transform = AugmentDetection(params=hyperparameters['transform'], evaluation=True)
+    transform_visible = AugmentDetection(params=hyperparameters['transform'], evaluation=True, normalize=False)
     params = {'root': dataset_root}
 
     if dataset == 'coco':

@@ -256,7 +256,7 @@ class DLDENetFlickr32Evaluator(Flickr32Evaluator):
 
     def get_transform(self):
         """Get the transformation to applies to the dataset according to the model."""
-        return AugmentDetection(params=self.checkpoint['hyperparameters']['transforms'], evaluation=True)
+        return AugmentDetection(params=self.checkpoint['hyperparameters']['transform'], evaluation=True)
 
     def get_model(self):
         """Get the model to use to make the predictions.
