@@ -1,35 +1,122 @@
-"""A sanity check of the instance retriever.
-
-We are going to look for an object of an image between 3 images (included itself!)
-so any decent model must get the real object.
-"""
-import os
-
+"""A module with an experiment for the retrievers using the Flickr32 dataset."""
 import torch
-from PIL import Image
 
-from torchsight.retrievers.resnet import ResnetRetriever
+from torchsight.datasets import Flickr32Dataset
+from torchsight.transforms.augmentation import AugmentDetection
+from torchsight.utils import JsonObject
 
-
-def main():
-    query_boxes = torch.Tensor([[[269, 160, 168, 251]],
-                                [[47, 53, 399, 249]]])  # (2, 1, 4)
-    x1, y1, w, h = query_boxes[:, :, 0], query_boxes[:, :, 1], query_boxes[:, :, 2], query_boxes[:, :, 3]
-    x2, y2 = x1 + w, y1 + h
-    query_boxes = torch.stack([x1, y1, x2, y2], dim=2)
-
-    root = '/home/souto/datasets/flickr32/sanity_check/'
-    images = [Image.open(os.path.join(root, image)) for image in ['apple.jpg', 'adidas.jpg']]
-    retriever = ResnetRetriever(root=root)
-    distances, boxes, paths, _ = retriever.query(images, query_boxes, k=5, device='cpu')
-
-    for i, query_image in enumerate(images):
-        query_image = retriever.image_transform({'image': query_image})
-        box_with_dist = torch.zeros((1, 5))
-        box_with_dist[:, :4] = torch.Tensor(query_boxes[i])
-        box_with_dist[:, 4] = 0
-        retriever.visualize(query_image, distances[i], boxes[i], paths[i], query_box=box_with_dist)
+from ..dldenet import DLDENetRetriever
 
 
-if __name__ == '__main__':
-    main()
+class Flickr32RetrieverExperiment():
+    """An experiment to measure the precision, recall and F1 metrics using different retrivers over
+    the Flickr32 dataset."""
+
+    def __init__(self, params=None, device=None):
+        """Initialize the experiment.
+
+        Arguments:
+            params (dict, optional): a dict to modify the base parameters.
+            device (str, optional): where to run the experiments. 
+        """
+        self.params = self.get_params().merge(params)
+        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self._print('Loading dataset ...')
+        self.dataset = self.get_dataset()
+        self._print('Loading retriever ...')
+        self.retriver = self.get_retriver()
+
+    def _print(self, msg):
+        """Print a namespaced message.
+
+        Arguments:
+            msg (str): The message to print.
+        """
+        print('[{}] {}'.format(self.__class__.__name__, msg))
+
+    ###########################
+    ###       GETTERS       ###
+    ###########################
+
+    @staticmethod
+    def get_params():
+        """Get the base parameters for the experiment.
+
+        Returns:
+            JsonObject: with the parameters.
+        """
+        return JsonObject({
+            'dataset': {
+                'root': None
+            },
+            'retriever': {
+                'use': 'dldenet',
+                'dldenet': {
+                    'checkpoint': None,
+                    'root': None,
+                    'paths': None,
+                    'extensions': None,
+                    'batch_size': 8,
+                    'num_workers': 8,
+                    'verbose': True,
+                    'params': {
+                        'transform': {
+                            'LongestMaxSize': {
+                                'max_size': 512
+                            },
+                            'PadIfNeeded': {
+                                'min_height': 512,
+                                'min_width': 512
+                            }
+                        }
+                    }
+                }
+            },
+            'transform': {}
+        })
+
+    def get_retriver(self):
+        """Initialize and return the retriver to use in the experiment.
+
+        Return:
+            InstanceRetriver: the retriever to use.
+        """
+        retriever = self.params.retriever.use
+
+        if retriever == 'dldenet':
+            params = self.params.retriever.dldenet
+
+            if params.checkpoint is None:
+                raise ValueError('Please provide a checkpoint for the DLDENet retriever.')
+            if params.root is None:
+                raise ValueError('Please provide a root directory to scan for images.')
+
+            params.checkpoint = torch.load(params.checkpoint, map_location=self.device)
+            self.params.transform = params.checkpoint['hyperparameters']['transform']
+
+            return DLDENetRetriever(**params)
+
+        raise NotImplementedError('There is no implementation for the "{}" retriever.'.format(retriever))
+
+    def get_dataset(self):
+        """Get the Flickr32 dataset.
+
+        Returns:
+            Flickr32Dataset: initialized and with its attributes.
+        """
+        transform = AugmentDetection(params=self.params.transform, evaluation=True)
+        return Flickr32Dataset(**self.params.dataset, dataset='test', transform=transform)
+
+    ############################
+    ###       METHODS        ###
+    ############################
+
+    def run(self):
+        """Run the experiment and compute the mean average precision over the entire test dataset.
+
+        # TODO:
+        - Load all the images that contains a logo and keep the first bounding box as the query.
+        - Get the paths of the retrieved images.
+        - Generate the results tensor for the average metric.
+        """
+        raise NotImplementedError()
