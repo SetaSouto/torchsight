@@ -78,6 +78,7 @@ class SlowInstanceRetriver(InstanceRetriever):
         Arguments:
             queries (torch.Tensor): the embeddings generated for each query object.
                 Shape `(number of instances to search, embedding dim)`.
+            k (int): The number of results to get.
 
         Returns:
             np.ndarray: The distances between the embedding queries and the found object in descendant order.
