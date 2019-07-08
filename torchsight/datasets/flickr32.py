@@ -136,6 +136,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                 ('google',
                  '/datasets/flickr32/classes/jpg/google/2240784196.jpg',
                  '/datasets/flickr32/classes/masks/google/2240784196.jpg.bboxes.txt')
+                If the image has no brand it set the brand as 'no-logo'.
         """
         if self.dataset == 'training':
             file = 'trainset.txt'

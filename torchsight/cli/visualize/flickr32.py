@@ -16,7 +16,7 @@ def flickr32(dataset_root, dataset, no_shuffle, classes, only_boxes):
     from torchsight.datasets import Flickr32Dataset
     from torchsight.transforms.augmentation import AugmentDetection
 
-    dataset = Flickr32Dataset(dataset_root, dataset, transform=AugmentDetection(),
+    dataset = Flickr32Dataset(dataset_root, dataset, transform=AugmentDetection(evaluation=True, normalize=False),
                               classes=classes, only_boxes=only_boxes)
 
     length = len(dataset)
