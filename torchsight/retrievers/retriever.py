@@ -13,12 +13,15 @@ from .datasets import ImagesDataset
 class InstanceRetriever():
     """An abstract retriver that looks for instance of objects in a set of images."""
 
-    def __init__(self, root, extensions=None, batch_size=8, num_workers=8, verbose=True):
+    def __init__(self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True):
         """Initialize the retriever.
+
+        You must provide the root directory of the images where to search of the paths of them.
 
         Arguments:
             root (str): The path to the root directory that contains the images
                 where we want to search.
+            paths (list of str): The paths of the images where to look for.
             extensions (list of str): If given it will load only files with the
                 given extensions.
             batch_size (int, optional): The batch_size to use when processing the images with the model.
@@ -33,7 +36,7 @@ class InstanceRetriever():
         self._print('Generating dataset ...')
         # Tuple with transforms: The first is only for images, the second images + boxes
         self.image_transform, self.with_boxes_transform = self._get_transforms()
-        self.dataset = ImagesDataset(root=root, extensions=extensions, transform=self.image_transform)
+        self.dataset = ImagesDataset(root=root, paths=paths, extensions=extensions, transform=self.image_transform)
         self.dataloader = self.dataset.get_dataloader(batch_size, num_workers)
         self.logger = PrintLogger()
 
