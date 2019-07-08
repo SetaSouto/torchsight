@@ -261,6 +261,7 @@ class DLDENet(RetinaNet):
                     anchors=params['anchors'],
                     embedding_size=params['embedding_size'],
                     normalize=params['normalize'],
+                    weighted_bias=params['weighted_bias'],
                     pretrained=params['pretrained'],
                     device=device)
         model.load_state_dict(checkpoint['model'])
