@@ -9,22 +9,28 @@ from torch.utils.data import DataLoader, Dataset
 class ImagesDataset(Dataset):
     """A dataset to load the images."""
 
-    def __init__(self, root, transform=None, extensions=None):
+    def __init__(self, root=None, paths=None, transform=None, extensions=None):
         """Initialize the dataset.
+
+        You must provide the root of the directory that contains the images or the paths of the images.
 
         Arguments:
             root (str): The path to the root directory that contains the images
                 to generate the database.
+            paths (list of str): The list with the path of images where to search.
             transform (callable, optional): The transform to apply to the image.
             extensions (list of str): If given it will load only files with the
                 given extensions.
         """
+        if root is None and paths is None:
+            raise ValueError('You must provide the "root" directory of the images or the "paths" of the images.')
+
         self.root = root
         self.transform = transform
         self.extensions = extensions
         if extensions is not None:
             self.extensions = extensions if isinstance(extensions, (list, tuple)) else [extensions]
-        self.images = self.get_images_paths()
+        self.images = paths if paths is not None else self.get_images_paths()
 
     def __len__(self):
         return len(self.images)
