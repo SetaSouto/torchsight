@@ -48,6 +48,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         self.only_boxes = only_boxes
         self.paths = self.get_paths()
         self.label_to_class, self.class_to_label = self.generate_labels()
+        self.brands = list(self.class_to_label.keys())
 
     def __len__(self):
         """Returns the length of the dataset.

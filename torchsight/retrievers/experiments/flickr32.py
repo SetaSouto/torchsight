@@ -1,5 +1,9 @@
 """A module with an experiment for the retrievers using the Flickr32 dataset."""
+import os
+import random
+
 import torch
+from PIL import Image
 
 from torchsight.datasets import Flickr32Dataset
 from torchsight.transforms.augmentation import AugmentDetection
@@ -49,6 +53,7 @@ class Flickr32RetrieverExperiment():
             'dataset': {
                 'root': None
             },
+            'queries_file': './flickr32_queries.csv',
             'retriever': {
                 'use': 'dldenet',
                 'dldenet': {
@@ -106,6 +111,47 @@ class Flickr32RetrieverExperiment():
         """
         transform = AugmentDetection(params=self.params.transform, evaluation=True)
         return Flickr32Dataset(**self.params.dataset, dataset='test', transform=transform)
+
+    def generate_queries(self):
+        """Generate a file with a random path to an image for each brand.
+
+        It will store the file in the self.params.queries_file path.
+        """
+        results = []
+        for brand in self.dataset.brands:
+            # Each path tuple contains (brand, image path, boxes path)
+            results.append(random.choice([path for path in self.dataset.paths if path[0] == brand]))
+
+        with open(self.params.queries_file, 'w') as file:
+            file.write('\n'.join(','.join(line) for line in results))
+
+    def load_queries(self):
+        """Load the images and their bounding boxes to use as queries.
+
+        It knows which images to use using the self.params.queries_file, if no one exists it generates a new one.
+
+        Returns:
+            list of str: with the brand of each image.
+            list of PIL Image: with the images.
+            list of torch.Tensor: with the first bounding box only to query. Shape `(1, 4)` with the
+                x1, y1 for the top-left corner and the x2, y2 for the bottom-right corner.
+        """
+        if not os.path.exists(self.params.queries_file):
+            self.generate_queries()
+
+        brands, images, boxes = [], [], []
+        with open(self.params.queries_file, 'r') as file:
+            for brand, image, annot in [line.split(',') for line in file.readlines()]:
+                brands.append(brand)
+                images.append(Image.open(image))
+                with open(annot, 'r') as file:
+                    line = file.readlines()[1]  # The first line contains "x y width height"
+                    x, y, w, h = (int(val) for val in line.split())
+                    x1, y1 = x - 1, y - 1
+                    x2, y2 = x1 + w, y1 + h
+                    boxes.append(torch.Tensor([x1, y1, x2, y2]))
+
+        return brands, images, boxes
 
     ############################
     ###       METHODS        ###
