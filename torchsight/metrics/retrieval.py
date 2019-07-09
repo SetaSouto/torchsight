@@ -3,15 +3,17 @@ import torch
 
 
 class AveragePrecision():
-    """Computes the average precision in a retrieval task."""
+    """Computes the average precision in a retrieval task.
+
+    What's the difference with the mAP of an object detection task? Because here we use a different formula,
+    we use the one indicated here:
+    https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Average_precision
+    """
 
     averages = []    # List of Average Precisions computed by this metric
 
     def __call__(self, results):
         """Compute the Average Precision for each query.
-
-        The average precision is computed as indicated here:
-        https://en.wikipedia.org/wiki/Evaluation_measures_(information_retrieval)#Average_precision
 
         The results tensor must have shape `(q, r)` where `q` is the number of queries
         and `r` is the number of results per query. The results must be labeled with a `1`
