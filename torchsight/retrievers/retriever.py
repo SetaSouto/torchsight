@@ -1,4 +1,6 @@
 """Instance retriver."""
+import math
+
 import numpy as np
 import torch
 from PIL import Image
@@ -13,7 +15,7 @@ from .datasets import ImagesDataset
 class InstanceRetriever():
     """An abstract retriver that looks for instance of objects in a set of images."""
 
-    def __init__(self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True):
+    def __init__(self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True, device=None):
         """Initialize the retriever.
 
         You must provide the root directory of the images where to search of the paths of them.
@@ -28,9 +30,11 @@ class InstanceRetriever():
             num_workers (inr, optional): The number of workers to use to load the images and generate
                 the batches.
             verbose (bool, optional): If True it will print some info messages while processing.
+            device (str, optional): the device where to run the model. Default to cuda:0 if cuda is available.
         """
         self.batch_size = batch_size
         self.verbose = verbose
+        self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self._print('Loading model ...')
         self.model = self._get_model()
         self._print('Generating dataset ...')
@@ -82,7 +86,7 @@ class InstanceRetriever():
     ###         SEARCH        ###
     #############################
 
-    def query(self, images, boxes=None, strategy='max_iou', k=100, device=None):
+    def query(self, images, boxes=None, strategy='max_iou', k=100):
         """Make a query for the given images where are instances of objects indicated with the boxes argument.
 
         If None is given for an image or for all, the retriver will set the bounding box as the image size,
@@ -99,8 +103,6 @@ class InstanceRetriever():
                 IoU that generates the model. If 'avg' it will create an embedding with the weighted average of
                 the embeddings with IoU above 0.5.
             k (int, optional): The number of results to get for each one of the object.
-            device (str, optional): The device to use to compute the embeddings. Default to 'cuda:0' if it's
-                available.
 
         Returns:
             np.ndarray: The distances between the embedding queries and the found object in descendant order.
@@ -117,8 +119,6 @@ class InstanceRetriever():
                 image of that embedding. To know the image from where is the embedding `i` you
                 can do `belongs_to[i]`.
         """
-        device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
-
         images, boxes = self._query_transform(images, boxes)
         queries, belongs_to = self._query_embeddings(images, boxes, strategy)  # (num of queries, embedding dim)
         distances, boxes, results_paths = self._search(queries, k)             # (num of queries, k)
@@ -146,7 +146,6 @@ class InstanceRetriever():
             list of torch.Tensor: The images transformed.
             list of torch.Tensor: The boxes transformed.
         """
-
         images = [np.array(img) for img in images]
 
         # If there is no bounding box for any image
@@ -165,10 +164,8 @@ class InstanceRetriever():
         # Transform the items
         for i, image in enumerate(images):
             image_boxes = boxes[i]
-            print(image_boxes.shape)
             image, image_boxes = self.with_boxes_transform({'image': image, 'boxes': image_boxes})
             images[i] = image
-            print(image_boxes.shape)
             boxes[i] = image_boxes
 
         return images, boxes
@@ -201,11 +198,21 @@ class InstanceRetriever():
         images = torch.stack([pad_image(image) for image in images], dim=0)
 
         # Process the images with the model
-        if num_images <= self.batch_size:
-            with torch.no_grad():
-                batch_embeddings, batch_pred_boxes = self.model(images)  # (batch, *, dim), (batch, *, 4)
-        else:
-            raise NotImplementedError()
+        with torch.no_grad():
+            self.model.to(self.device)
+            if num_images <= self.batch_size:
+                images = images.to(self.device)
+                batch_embeddings, batch_pred_boxes = self.model(images)     # (num images, *, dim), (num images, *, 4)
+            else:
+                batches = math.ceil(num_images / self.batch_size)
+                batch_embeddings, batch_pred_boxes = [], []
+                for i in range(batches):
+                    batch = images[i * self.batch_size: (i + 1) * self.batch_size]
+                    embeddings, pred_boxes = self.model(batch)
+                    batch_embeddings.append(embeddings)
+                    batch_pred_boxes.append(batch_pred_boxes)
+                batch_embeddings = torch.cat(batch_embeddings, dim=0)       # (num images, *, dim)
+                batch_pred_boxes = torch.cat(batch_pred_boxes, dim=0)       # (num images, *, 4)
 
         # Get the correct embedding for each query object
         result = []
