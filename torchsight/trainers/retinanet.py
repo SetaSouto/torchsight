@@ -173,7 +173,7 @@ class RetinaNetTrainer(Trainer):
 
         if dataset == 'flickr32':
             params = params['flickr32']
-            num_classes = len(params['classes']) if params['classes'] is not None else 32
+            num_classes = len(params['brands']) if params['brands'] is not None else 32
 
             self.hyperparameters['model']['classes'] = num_classes
 

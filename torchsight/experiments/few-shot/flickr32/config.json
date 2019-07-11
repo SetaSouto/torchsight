@@ -1,6 +1,6 @@
 {
   "model": {
-    "resnet": 50,
+    "resnet": 18,
     "features": {
       "pyramid": 256,
       "regression": 256,
@@ -91,7 +91,7 @@
     }
   },
   "dataloaders": {
-    "batch_size": 10,
+    "batch_size": 7,
     "shuffle": true,
     "num_workers": 8
   },
