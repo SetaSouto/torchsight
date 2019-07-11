@@ -59,7 +59,7 @@ class RetinaNetTrainer(Trainer):
             },
             'flickr32': {
                 'root': './datasets/flickr32',
-                'classes': None,
+                'brands': None,
                 'only_boxes': True,
                 'training': 'trainval',  # The name of the dataset to use for training
                 'validation': 'test'  # The name of the dataset to use for validation
@@ -179,7 +179,7 @@ class RetinaNetTrainer(Trainer):
 
             kwargs = {
                 'root': params['root'],
-                'classes': params['classes'],
+                'brands': params['brands'],
                 'only_boxes': params['only_boxes'],
                 'transform': transform
             }

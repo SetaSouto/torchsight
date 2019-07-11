@@ -59,7 +59,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             },
             'flickr32': {
                 'root': './datasets/flickr32',
-                'classes': None,
+                'brands': None,
                 'only_boxes': True,
                 'training': 'trainval',  # The name of the dataset to use for training
                 'validation': 'test'  # The name of the dataset to use for validation

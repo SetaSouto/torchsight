@@ -2,6 +2,7 @@
 import click
 
 from .evaluate import evaluate
+from .experiments import experiments
 from .stats import stats
 from .train import train
 from .visualize import visualize
@@ -14,6 +15,7 @@ def cli():
 
 # COMMANDS OF THE CLI
 cli.add_command(evaluate)
+cli.add_command(experiments)
 cli.add_command(stats)
 cli.add_command(train)
 cli.add_command(visualize)

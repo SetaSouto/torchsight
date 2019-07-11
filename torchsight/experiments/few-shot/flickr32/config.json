@@ -1,0 +1,155 @@
+{
+  "model": {
+    "resnet": 50,
+    "features": {
+      "pyramid": 256,
+      "regression": 256,
+      "classification": 256
+    },
+    "anchors": {
+      "sizes": [
+        32,
+        64,
+        128,
+        256,
+        512
+      ],
+      "scales": [
+        1,
+        1.2599210498948732,
+        1.5874010519681994
+      ],
+      "ratios": [
+        0.5,
+        1,
+        2
+      ]
+    },
+    "embedding_size": 256,
+    "normalize": true,
+    "pretrained": true,
+    "evaluation": {
+      "threshold": 0.5,
+      "iou_threshold": 0.5
+    },
+    "weighted_bias": false,
+    "fixed_bias": -0.5,
+    "increase_norm_by": null
+  },
+  "criterion": {
+    "alpha": 0.25,
+    "gamma": 2.0,
+    "sigma": 3.0,
+    "iou_thresholds": {
+      "background": 0.4,
+      "object": 0.5
+    },
+    "increase_foreground_by": 100,
+    "weights": {
+      "classification": 100,
+      "regression": 1,
+      "similarity": 1
+    },
+    "soft": false
+  },
+  "datasets": {
+    "use": "flickr32",
+    "flickr32": {
+      "root": "/home/fasouto/data/flickr32/",
+      "only_boxes": true,
+      "training": "trainval",
+      "validation": "test",
+      "brands": [
+        "starbucks",
+        "google",
+        "ferrari",
+        "tsingtao",
+        "esso",
+        "singha",
+        "aldi",
+        "erdinger",
+        "fosters",
+        "fedex",
+        "paulaner",
+        "HP",
+        "becks",
+        "heineken",
+        "adidas",
+        "guiness",
+        "stellaartois",
+        "cocacola",
+        "shell",
+        "pepsi",
+        "nvidia",
+        "rittersport",
+        "chimay",
+        "dhl",
+        "ups",
+        "carlsberg",
+        "texaco"
+      ]
+    }
+  },
+  "dataloaders": {
+    "batch_size": 10,
+    "shuffle": true,
+    "num_workers": 8
+  },
+  "optimizer": {
+    "use": "adabound",
+    "adabound": {
+      "lr": 0.001,
+      "final_lr": 1
+    },
+    "sgd": {
+      "lr": 0.01,
+      "momentum": 0.9,
+      "weight_decay": 0.0001
+    }
+  },
+  "scheduler": {
+    "factor": 0.1,
+    "patience": 5,
+    "threshold": 0.01
+  },
+  "transform": {
+    "GaussNoise": {
+      "var_limit": [
+        10,
+        50
+      ],
+      "p": 0.5
+    },
+    "GaussianBlur": {
+      "blur_limit": 0.7,
+      "p": 0.5
+    },
+    "RandomBrightnessContrast": {
+      "brightness_limit": 0.2,
+      "contrast_limit": 0.2,
+      "p": 0.5
+    },
+    "Rotate": {
+      "limit": 45,
+      "p": 0.5
+    },
+    "LongestMaxSize": {
+      "max_size": 512
+    },
+    "PadIfNeeded": {
+      "min_height": 512,
+      "min_width": 512
+    },
+    "RandomSizedBBoxSafeCrop": {
+      "height": 512,
+      "width": 512
+    }
+  },
+  "checkpoint": {
+    "dir": "/home/fasouto/data/logs/flickr32/dldenet",
+    "verbose": true
+  },
+  "logger": {
+    "dir": "/home/fasouto/data/logs/flickr32/dldenet"
+  }
+}
