@@ -26,7 +26,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
     and the `.txt` files with the split of the data (training, validation and test sets). 
     """
 
-    def __init__(self, root, dataset='training', transform=None, classes=None, only_boxes=False):
+    def __init__(self, root, dataset='training', transform=None, brands=None, only_boxes=False):
         """Initialize the dataset.
 
         Arguments:
@@ -35,8 +35,8 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                 Options available: 'training', 'validation', 'test', 'trainval'.
             transform (callable, optional): A callable to transform the images and
                 bounding boxes.
-            classes (list, optional): A list with the classes to load.
-                If None is provided it will load all the classes.
+            brands (list, optional): A list with the brands to load. If None is provided it will load
+                all the classes.
             only_boxes (bool, optional): If True, it will load images that only contains bounding boxes.
                 This is an option because in the validation and test set there are images without logos,
                 but for training we probably don't want to train with that images.
@@ -44,11 +44,13 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         self.root = self.validate_root(root)
         self.dataset = self.validate_dataset(dataset)
         self.transform = transform
-        self.classes = classes
+        self.brands = brands
         self.only_boxes = only_boxes
         self.paths = self.get_paths()
         self.label_to_class, self.class_to_label = self.generate_labels()
-        self.brands = list(self.class_to_label.keys())
+
+        if self.brands is None:
+            self.brands = list(self.class_to_label.keys())
 
     def __len__(self):
         """Returns the length of the dataset.
@@ -156,7 +158,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             for line in file.readlines():
                 brand, image = line.split(',')
 
-                if self.classes is not None and brand not in self.classes:
+                if self.brands is not None and brand not in self.brands:
                     continue
 
                 image = image.replace('\n', '')
