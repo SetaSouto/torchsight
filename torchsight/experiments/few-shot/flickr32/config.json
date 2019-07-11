@@ -55,7 +55,7 @@
   "datasets": {
     "use": "flickr32",
     "flickr32": {
-      "root": "/home/fasouto/data/flickr32/",
+      "root": "/home/souto/datasets/flickr32/",
       "only_boxes": true,
       "training": "trainval",
       "validation": "test",
@@ -146,10 +146,10 @@
     }
   },
   "checkpoint": {
-    "dir": "/home/fasouto/data/logs/flickr32/dldenet",
+    "dir": "/home/souto/repos/pytorch/torchsight/torchsight/experiments/few-shot/flickr32/",
     "verbose": true
   },
   "logger": {
-    "dir": "/home/fasouto/data/logs/flickr32/dldenet"
+    "dir": "/home/souto/repos/pytorch/torchsight/torchsight/experiments/few-shot/flickr32/"
   }
 }
