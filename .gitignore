@@ -5,3 +5,5 @@ logs/*
 torchsight.*
 checkpoint*
 evaluations/*
+torchsight/experiments/**/logs.txt
+torchsight/experiments/**/description.txt
