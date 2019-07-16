@@ -26,34 +26,64 @@
 <pre><code class="python">&#34;&#34;&#34;CLI to train the RetinaNet model.&#34;&#34;&#34;
 import click
 
-from torchsight.trainers import RetinaNetTrainer
-
 
 @click.command()
-@click.argument(&#39;dataset-root&#39;, type=click.Path(exists=True))
-# Currently we only have the COCO dataset for training
-@click.option(&#39;--dataset&#39;, default=&#39;COCO&#39;, show_default=True, type=click.Choice([&#39;COCO&#39;]))
+@click.option(&#39;--config&#39;, type=click.Path(exists=True), help=&#39;An optional configuration file with the hyperparameters. &#39;
+              &#39;It will block all the other options, only --device and --checkpoint will work.&#39;)
+@click.option(&#39;-d&#39;, &#39;--dataset&#39;, default=&#39;coco&#39;, show_default=True, type=click.Choice([&#39;coco&#39;, &#39;flickr32&#39;, &#39;logo32plus&#39;]))
+@click.option(&#39;-dr&#39;, &#39;--dataset-root&#39;, type=click.Path(exists=True))
 @click.option(&#39;-b&#39;, &#39;--batch-size&#39;, default=8, show_default=True)
 @click.option(&#39;--resnet&#39;, default=50, show_default=True, help=&#39;The resnet backbone that the model must use.&#39;)
-@click.option(&#39;--logs-dir&#39;, default=&#39;./logs&#39;, type=click.Path(exists=True), show_default=True,
+@click.option(&#39;--logs-dir&#39;, default=&#39;.&#39;, type=click.Path(), show_default=True,
               help=&#39;Where to store the checkpoints and descriptions.&#39;)
 @click.option(&#39;-c&#39;, &#39;--checkpoint&#39;, type=click.Path(exists=True), help=&#39;A checkpoint to resume the training from it.&#39;)
-@click.option(&#39;--classes&#39;, default=&#39;&#39;,
+@click.option(&#39;--classes&#39;, default=None,
               help=&#39;Indicate which classes (identified by its string label) must be used for the training. &#39;
               &#39;If no class is provided the trainer will use all the classes. Example: --classes &#34;bear sheep airplane&#34;&#39;)
 @click.option(&#39;--device&#39;, default=None, help=&#39;The device that the model must use.&#39;)
-def retinanet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, classes, device):
+def retinanet(config, dataset, dataset_root, batch_size, resnet, logs_dir, checkpoint, classes, device):
     &#34;&#34;&#34;Train a RetinaNet instance with the indicated dataset that contains its data in the
     DATASET_ROOT directory.&#34;&#34;&#34;
-    classes = classes.split()
-    n_classes = len(classes) if classes else 80
+    from torchsight.trainers import RetinaNetTrainer
+
+    if config is None:
+        classes = classes.split() if classes is not None else None
+        hyperparameters = {
+            &#39;datasets&#39;: {
+                &#39;use&#39;: dataset,
+                &#39;coco&#39;: {
+                    &#39;root&#39;: dataset_root,
+                    &#39;class_names&#39;: classes,
+                },
+                &#39;logo32plus&#39;: {
+                    &#39;root&#39;: dataset_root,
+                    &#39;classes&#39;: classes,
+                },
+                &#39;flickr32&#39;: {
+                    &#39;root&#39;: dataset_root,
+                    &#39;classes&#39;: classes,
+                }
+            },
+            &#39;dataloaders&#39;: {
+                &#39;batch_size&#39;: batch_size
+            },
+            &#39;model&#39;: {
+                &#39;resnet&#39;: resnet,
+            },
+            &#39;logger&#39;: {
+                &#39;dir&#39;: logs_dir
+            },
+            &#39;checkpoint&#39;: {
+                &#39;dir&#39;: logs_dir
+            }
+        }
+    else:
+        import json
+        with open(config, &#39;r&#39;) as file:
+            hyperparameters = json.loads(file.read())
 
     RetinaNetTrainer(
-        hyperparameters={&#39;datasets&#39;: {&#39;root&#39;: dataset_root, &#39;class_names&#39;: classes},
-                         &#39;dataloaders&#39;: {&#39;batch_size&#39;: batch_size},
-                         &#39;model&#39;: {&#39;resnet&#39;: resnet, &#39;classes&#39;: n_classes},
-                         &#39;logger&#39;: {&#39;dir&#39;: logs_dir},
-                         &#39;checkpoint&#39;: {&#39;dir&#39;: logs_dir}},
+        hyperparameters=hyperparameters,
         checkpoint=checkpoint,
         device=device
     ).train()</code></pre>

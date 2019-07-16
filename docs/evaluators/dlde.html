@@ -33,13 +33,15 @@ from torchvision import transforms
 
 from torchsight.datasets import CocoDataset
 from torchsight.models import DLDENet, DLDENetWithTrackedMeans
+from torchsight.transforms.augmentation import AugmentDetection
 from torchsight.transforms.detection import Normalize, Resize, ToTensor
 from torchsight.utils import merge_dicts
 
 from .evaluator import Evaluator
+from .flickr32 import Flickr32Evaluator
 
 
-class DLDENetEvaluator(Evaluator):
+class DLDENetCOCOEvaluator(Evaluator):
     &#34;&#34;&#34;An evaluator for the DLDENet.
 
     It will evaluate the model computing the mAP over the coco valid dataset.
@@ -91,7 +93,7 @@ class DLDENetEvaluator(Evaluator):
         Returns:
             torchvision.transforms.Compose: A composition of the transformations to apply.
         &#34;&#34;&#34;
-        params = torch.load(self.checkpoint)[&#39;hyperparameters&#39;][&#39;transforms&#39;]
+        params = self.checkpoint[&#39;hyperparameters&#39;][&#39;transforms&#39;]
         params = merge_dicts(params, self.params[&#39;transforms&#39;], verbose=True)
 
         return transforms.Compose([Resize(**params[&#39;resize&#39;]),
@@ -109,9 +111,8 @@ class DLDENetEvaluator(Evaluator):
         class_names = params[&#39;class_names&#39;]
 
         if params[&#39;class_names_from_checkpoint&#39;]:
-            checkpoint = torch.load(self.checkpoint)
-            if &#39;hyperparameters&#39; in checkpoint:
-                class_names = checkpoint[&#39;hyperparameters&#39;][&#39;datasets&#39;][&#39;class_names&#39;]
+            if &#39;hyperparameters&#39; in self.checkpoint:
+                class_names = self.checkpoint[&#39;hyperparameters&#39;][&#39;datasets&#39;][&#39;class_names&#39;]
             else:
                 print(&#34;Couldn&#39;t load the class_names from the checkpoint, it doesn&#39;t have the hyperparameters.&#34;)
 
@@ -166,7 +167,7 @@ class DLDENetEvaluator(Evaluator):
         &#34;&#34;&#34;
         if self.params[&#39;model&#39;][&#39;with_tracked_means&#39;]:
             params = {**self.params[&#39;model&#39;][&#39;tracked&#39;], &#39;device&#39;: self.device}
-            state_dict = torch.load(self.checkpoint, map_location=self.device)[&#39;DLDENet&#39;]
+            state_dict = self.checkpoint[&#39;model&#39;]
             return DLDENetWithTrackedMeans(**params).load_state_dict(state_dict)
 
         return DLDENet.from_checkpoint(self.checkpoint, self.device)
@@ -175,7 +176,7 @@ class DLDENetEvaluator(Evaluator):
     ###         METHODS         ###
     ###############################
 
-    def eval(self):
+    def eval_mode(self):
         &#34;&#34;&#34;Put the model in evaluation mode and set the threshold for the detection.&#34;&#34;&#34;
         params = self.params[&#39;model&#39;][&#39;evaluation&#39;]
         self.model.eval(threshold=params[&#39;threshold&#39;], iou_threshold=params[&#39;iou_threshold&#39;])
@@ -253,7 +254,42 @@ class DLDENetEvaluator(Evaluator):
         with open(file_path, &#39;w&#39;) as file:
             file.write(json.dumps(self.predictions))
 
-        self.dataset.compute_map(file_path)</code></pre>
+        self.dataset.compute_map(file_path)
+
+
+class DLDENetFlickr32Evaluator(Flickr32Evaluator):
+    &#34;&#34;&#34;Extend the Flickr32Evaluator class to perform an evaluation over the dataset using the evaluation kit
+    provided with it.&#34;&#34;&#34;
+
+    @staticmethod
+    def get_base_params():
+        &#34;&#34;&#34;Add the thresholds to the base parameters.&#34;&#34;&#34;
+        return merge_dicts(
+            super(DLDENetFlickr32Evaluator, DLDENetFlickr32Evaluator).get_base_params(),
+            {
+                &#39;thresholds&#39;: {
+                    &#39;detection&#39;: 0.1,
+                    &#39;iou&#39;: 0.1
+                }
+            }
+        )
+
+    def eval_mode(self):
+        &#34;&#34;&#34;Put the model in evaluation mode and set the threshold for the detection.&#34;&#34;&#34;
+        params = self.params[&#39;thresholds&#39;]
+        self.model.eval(threshold=params[&#39;detection&#39;], iou_threshold=params[&#39;iou&#39;])
+
+    def get_transform(self):
+        &#34;&#34;&#34;Get the transformation to applies to the dataset according to the model.&#34;&#34;&#34;
+        return AugmentDetection(params=self.checkpoint[&#39;hyperparameters&#39;][&#39;transform&#39;], evaluation=True)
+
+    def get_model(self):
+        &#34;&#34;&#34;Get the model to use to make the predictions.
+
+        Returns:
+            DLDENet: The model loaded from the checkpoint.
+        &#34;&#34;&#34;
+        return DLDENet.from_checkpoint(self.checkpoint, self.device)</code></pre>
 </details>
 </section>
 <section>
@@ -265,16 +301,16 @@ class DLDENetEvaluator(Evaluator):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator"><code class="flex name class">
-<span>class <span class="ident">DLDENetEvaluator</span></span>
-<span>(</span><span><small>ancestors:</small> <a title="torchsight.evaluators.evaluator.Evaluator" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator">Evaluator</a>)</span>
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator"><code class="flex name class">
+<span>class <span class="ident">DLDENetCOCOEvaluator</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.evaluators.evaluator.Evaluator" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator">Evaluator</a>, <a title="torchsight.utils.print.PrintMixin" href="../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a>)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>An evaluator for the DLDENet.</p>
 <p>It will evaluate the model computing the mAP over the coco valid dataset.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">class DLDENetEvaluator(Evaluator):
+<pre><code class="python">class DLDENetCOCOEvaluator(Evaluator):
     &#34;&#34;&#34;An evaluator for the DLDENet.
 
     It will evaluate the model computing the mAP over the coco valid dataset.
@@ -326,7 +362,7 @@ class DLDENetEvaluator(Evaluator):
         Returns:
             torchvision.transforms.Compose: A composition of the transformations to apply.
         &#34;&#34;&#34;
-        params = torch.load(self.checkpoint)[&#39;hyperparameters&#39;][&#39;transforms&#39;]
+        params = self.checkpoint[&#39;hyperparameters&#39;][&#39;transforms&#39;]
         params = merge_dicts(params, self.params[&#39;transforms&#39;], verbose=True)
 
         return transforms.Compose([Resize(**params[&#39;resize&#39;]),
@@ -344,9 +380,8 @@ class DLDENetEvaluator(Evaluator):
         class_names = params[&#39;class_names&#39;]
 
         if params[&#39;class_names_from_checkpoint&#39;]:
-            checkpoint = torch.load(self.checkpoint)
-            if &#39;hyperparameters&#39; in checkpoint:
-                class_names = checkpoint[&#39;hyperparameters&#39;][&#39;datasets&#39;][&#39;class_names&#39;]
+            if &#39;hyperparameters&#39; in self.checkpoint:
+                class_names = self.checkpoint[&#39;hyperparameters&#39;][&#39;datasets&#39;][&#39;class_names&#39;]
             else:
                 print(&#34;Couldn&#39;t load the class_names from the checkpoint, it doesn&#39;t have the hyperparameters.&#34;)
 
@@ -401,7 +436,7 @@ class DLDENetEvaluator(Evaluator):
         &#34;&#34;&#34;
         if self.params[&#39;model&#39;][&#39;with_tracked_means&#39;]:
             params = {**self.params[&#39;model&#39;][&#39;tracked&#39;], &#39;device&#39;: self.device}
-            state_dict = torch.load(self.checkpoint, map_location=self.device)[&#39;DLDENet&#39;]
+            state_dict = self.checkpoint[&#39;model&#39;]
             return DLDENetWithTrackedMeans(**params).load_state_dict(state_dict)
 
         return DLDENet.from_checkpoint(self.checkpoint, self.device)
@@ -410,7 +445,7 @@ class DLDENetEvaluator(Evaluator):
     ###         METHODS         ###
     ###############################
 
-    def eval(self):
+    def eval_mode(self):
         &#34;&#34;&#34;Put the model in evaluation mode and set the threshold for the detection.&#34;&#34;&#34;
         params = self.params[&#39;model&#39;][&#39;evaluation&#39;]
         self.model.eval(threshold=params[&#39;threshold&#39;], iou_threshold=params[&#39;iou_threshold&#39;])
@@ -492,14 +527,14 @@ class DLDENetEvaluator(Evaluator):
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.params"><code class="name">var <span class="ident">params</span></code></dt>
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.params"><code class="name">var <span class="ident">params</span></code></dt>
 <dd>
 <section class="desc"></section>
 </dd>
 </dl>
 <h3>Static methods</h3>
 <dl>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.transform_boxes"><code class="name flex">
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.transform_boxes"><code class="name flex">
 <span>def <span class="ident">transform_boxes</span></span>(<span>boxes, info)</span>
 </code></dt>
 <dd>
@@ -550,7 +585,7 @@ def transform_boxes(boxes, info):
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.__init__"><code class="name flex">
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.__init__"><code class="name flex">
 <span>def <span class="ident">__init__</span></span>(<span>self, *args, **kwargs)</span>
 </code></dt>
 <dd>
@@ -568,20 +603,20 @@ def transform_boxes(boxes, info):
     super().__init__(*args, **kwargs)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.eval"><code class="name flex">
-<span>def <span class="ident">eval</span></span>(<span>self)</span>
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.eval_mode"><code class="name flex">
+<span>def <span class="ident">eval_mode</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Put the model in evaluation mode and set the threshold for the detection.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def eval(self):
+<pre><code class="python">def eval_mode(self):
     &#34;&#34;&#34;Put the model in evaluation mode and set the threshold for the detection.&#34;&#34;&#34;
     params = self.params[&#39;model&#39;][&#39;evaluation&#39;]
     self.model.eval(threshold=params[&#39;threshold&#39;], iou_threshold=params[&#39;iou_threshold&#39;])</code></pre>
 </details>
 </dd>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.evaluate_callback"><code class="name flex">
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.evaluate_callback"><code class="name flex">
 <span>def <span class="ident">evaluate_callback</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -606,7 +641,7 @@ and use the pycocotools to compute the mAP.</p></section>
     self.dataset.compute_map(file_path)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.forward"><code class="name flex">
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.forward"><code class="name flex">
 <span>def <span class="ident">forward</span></span>(<span>self, images, infos, *_)</span>
 </code></dt>
 <dd>
@@ -655,7 +690,7 @@ and use the pycocotools to compute the mAP.</p></section>
                                      &#39;score&#39;: float(score)})</code></pre>
 </details>
 </dd>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.get_dataset"><code class="name flex">
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_dataset"><code class="name flex">
 <span>def <span class="ident">get_dataset</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -675,9 +710,8 @@ and use the pycocotools to compute the mAP.</p></section>
     class_names = params[&#39;class_names&#39;]
 
     if params[&#39;class_names_from_checkpoint&#39;]:
-        checkpoint = torch.load(self.checkpoint)
-        if &#39;hyperparameters&#39; in checkpoint:
-            class_names = checkpoint[&#39;hyperparameters&#39;][&#39;datasets&#39;][&#39;class_names&#39;]
+        if &#39;hyperparameters&#39; in self.checkpoint:
+            class_names = self.checkpoint[&#39;hyperparameters&#39;][&#39;datasets&#39;][&#39;class_names&#39;]
         else:
             print(&#34;Couldn&#39;t load the class_names from the checkpoint, it doesn&#39;t have the hyperparameters.&#34;)
 
@@ -688,7 +722,7 @@ and use the pycocotools to compute the mAP.</p></section>
         transform=transform)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.get_model"><code class="name flex">
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_model"><code class="name flex">
 <span>def <span class="ident">get_model</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -710,13 +744,13 @@ the flag params['model']['with_tracked_means'].</p>
     &#34;&#34;&#34;
     if self.params[&#39;model&#39;][&#39;with_tracked_means&#39;]:
         params = {**self.params[&#39;model&#39;][&#39;tracked&#39;], &#39;device&#39;: self.device}
-        state_dict = torch.load(self.checkpoint, map_location=self.device)[&#39;DLDENet&#39;]
+        state_dict = self.checkpoint[&#39;model&#39;]
         return DLDENetWithTrackedMeans(**params).load_state_dict(state_dict)
 
     return DLDENet.from_checkpoint(self.checkpoint, self.device)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.evaluators.dlde.DLDENetEvaluator.get_transform"><code class="name flex">
+<dt id="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_transform"><code class="name flex">
 <span>def <span class="ident">get_transform</span></span>(<span>self)</span>
 </code></dt>
 <dd>
@@ -731,7 +765,7 @@ the flag params['model']['with_tracked_means'].</p>
     Returns:
         torchvision.transforms.Compose: A composition of the transformations to apply.
     &#34;&#34;&#34;
-    params = torch.load(self.checkpoint)[&#39;hyperparameters&#39;][&#39;transforms&#39;]
+    params = self.checkpoint[&#39;hyperparameters&#39;][&#39;transforms&#39;]
     params = merge_dicts(params, self.params[&#39;transforms&#39;], verbose=True)
 
     return transforms.Compose([Resize(**params[&#39;resize&#39;]),
@@ -746,8 +780,133 @@ the flag params['model']['with_tracked_means'].</p>
 <ul class="hlist">
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.batch_callback" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.batch_callback">batch_callback</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.evaluate" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.evaluate">evaluate</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_base_params" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.get_base_params">get_base_params</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_dataloader" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.get_dataloader">get_dataloader</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_logger" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.get_logger">get_logger</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.print" href="../utils/print.html#torchsight.utils.print.PrintMixin.print">print</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator"><code class="flex name class">
+<span>class <span class="ident">DLDENetFlickr32Evaluator</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator">Flickr32Evaluator</a>, <a title="torchsight.evaluators.evaluator.Evaluator" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator">Evaluator</a>, <a title="torchsight.utils.print.PrintMixin" href="../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Extend the Flickr32Evaluator class to perform an evaluation over the dataset using the evaluation kit
+provided with it.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class DLDENetFlickr32Evaluator(Flickr32Evaluator):
+    &#34;&#34;&#34;Extend the Flickr32Evaluator class to perform an evaluation over the dataset using the evaluation kit
+    provided with it.&#34;&#34;&#34;
+
+    @staticmethod
+    def get_base_params():
+        &#34;&#34;&#34;Add the thresholds to the base parameters.&#34;&#34;&#34;
+        return merge_dicts(
+            super(DLDENetFlickr32Evaluator, DLDENetFlickr32Evaluator).get_base_params(),
+            {
+                &#39;thresholds&#39;: {
+                    &#39;detection&#39;: 0.1,
+                    &#39;iou&#39;: 0.1
+                }
+            }
+        )
+
+    def eval_mode(self):
+        &#34;&#34;&#34;Put the model in evaluation mode and set the threshold for the detection.&#34;&#34;&#34;
+        params = self.params[&#39;thresholds&#39;]
+        self.model.eval(threshold=params[&#39;detection&#39;], iou_threshold=params[&#39;iou&#39;])
+
+    def get_transform(self):
+        &#34;&#34;&#34;Get the transformation to applies to the dataset according to the model.&#34;&#34;&#34;
+        return AugmentDetection(params=self.checkpoint[&#39;hyperparameters&#39;][&#39;transform&#39;], evaluation=True)
+
+    def get_model(self):
+        &#34;&#34;&#34;Get the model to use to make the predictions.
+
+        Returns:
+            DLDENet: The model loaded from the checkpoint.
+        &#34;&#34;&#34;
+        return DLDENet.from_checkpoint(self.checkpoint, self.device)</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.get_base_params"><code class="name flex">
+<span>def <span class="ident">get_base_params</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Add the thresholds to the base parameters.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def get_base_params():
+    &#34;&#34;&#34;Add the thresholds to the base parameters.&#34;&#34;&#34;
+    return merge_dicts(
+        super(DLDENetFlickr32Evaluator, DLDENetFlickr32Evaluator).get_base_params(),
+        {
+            &#39;thresholds&#39;: {
+                &#39;detection&#39;: 0.1,
+                &#39;iou&#39;: 0.1
+            }
+        }
+    )</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.eval_mode"><code class="name flex">
+<span>def <span class="ident">eval_mode</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Put the model in evaluation mode and set the threshold for the detection.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def eval_mode(self):
+    &#34;&#34;&#34;Put the model in evaluation mode and set the threshold for the detection.&#34;&#34;&#34;
+    params = self.params[&#39;thresholds&#39;]
+    self.model.eval(threshold=params[&#39;detection&#39;], iou_threshold=params[&#39;iou&#39;])</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.get_model"><code class="name flex">
+<span>def <span class="ident">get_model</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the model to use to make the predictions.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>DLDENet</code></strong></dt>
+<dd>The model loaded from the checkpoint.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_model(self):
+    &#34;&#34;&#34;Get the model to use to make the predictions.
+
+    Returns:
+        DLDENet: The model loaded from the checkpoint.
+    &#34;&#34;&#34;
+    return DLDENet.from_checkpoint(self.checkpoint, self.device)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator">Flickr32Evaluator</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.__init__" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.batch_callback" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.batch_callback">batch_callback</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.evaluate" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.evaluate">evaluate</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.evaluate_callback" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.evaluate_callback">evaluate_callback</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.forward" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.forward">forward</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.get_dataloader" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.get_dataloader">get_dataloader</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.get_dataset" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.get_dataset">get_dataset</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.get_logger" href="evaluator.html#torchsight.evaluators.evaluator.Evaluator.get_logger">get_logger</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.get_transform" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.get_transform">get_transform</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.predict" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.predict">predict</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator.print" href="../utils/print.html#torchsight.utils.print.PrintMixin.print">print</a></code></li>
 </ul>
 </li>
 </ul>
@@ -769,17 +928,25 @@ the flag params['model']['with_tracked_means'].</p>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator" href="#torchsight.evaluators.dlde.DLDENetEvaluator">DLDENetEvaluator</a></code></h4>
+<h4><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator">DLDENetCOCOEvaluator</a></code></h4>
 <ul class="two-column">
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.__init__" href="#torchsight.evaluators.dlde.DLDENetEvaluator.__init__">__init__</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.eval" href="#torchsight.evaluators.dlde.DLDENetEvaluator.eval">eval</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.evaluate_callback" href="#torchsight.evaluators.dlde.DLDENetEvaluator.evaluate_callback">evaluate_callback</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.forward" href="#torchsight.evaluators.dlde.DLDENetEvaluator.forward">forward</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.get_dataset" href="#torchsight.evaluators.dlde.DLDENetEvaluator.get_dataset">get_dataset</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.get_model" href="#torchsight.evaluators.dlde.DLDENetEvaluator.get_model">get_model</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.get_transform" href="#torchsight.evaluators.dlde.DLDENetEvaluator.get_transform">get_transform</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.params" href="#torchsight.evaluators.dlde.DLDENetEvaluator.params">params</a></code></li>
-<li><code><a title="torchsight.evaluators.dlde.DLDENetEvaluator.transform_boxes" href="#torchsight.evaluators.dlde.DLDENetEvaluator.transform_boxes">transform_boxes</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.__init__" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.eval_mode" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.eval_mode">eval_mode</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.evaluate_callback" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.evaluate_callback">evaluate_callback</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.forward" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.forward">forward</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_dataset" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_dataset">get_dataset</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_model" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_model">get_model</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_transform" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.get_transform">get_transform</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.params" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.params">params</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetCOCOEvaluator.transform_boxes" href="#torchsight.evaluators.dlde.DLDENetCOCOEvaluator.transform_boxes">transform_boxes</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator" href="#torchsight.evaluators.dlde.DLDENetFlickr32Evaluator">DLDENetFlickr32Evaluator</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.eval_mode" href="#torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.eval_mode">eval_mode</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.get_base_params" href="#torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.get_base_params">get_base_params</a></code></li>
+<li><code><a title="torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.get_model" href="#torchsight.evaluators.dlde.DLDENetFlickr32Evaluator.get_model">get_model</a></code></li>
 </ul>
 </li>
 </ul>

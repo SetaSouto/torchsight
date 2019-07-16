@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.retrievers.retriever API documentation</title>
+<meta name="description" content="Instance retriver." />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.retrievers.retriever</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Instance retriver.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;Instance retriver.&#34;&#34;&#34;
+import math
+
+import numpy as np
+import torch
+from PIL import Image
+
+from torchsight.loggers import PrintLogger
+from torchsight.metrics import iou as compute_iou
+from torchsight.utils import PrintMixin, visualize_boxes
+
+from .datasets import ImagesDataset
+
+
+class InstanceRetriever(PrintMixin):
+    &#34;&#34;&#34;An abstract retriver that looks for instance of objects in a set of images.&#34;&#34;&#34;
+
+    def __init__(self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True, device=None):
+        &#34;&#34;&#34;Initialize the retriever.
+
+        You must provide the root directory of the images where to search of the paths of them.
+
+        Arguments:
+            root (str): The path to the root directory that contains the images
+                where we want to search.
+            paths (list of str): The paths of the images where to look for.
+            extensions (list of str): If given it will load only files with the
+                given extensions.
+            batch_size (int, optional): The batch_size to use when processing the images with the model.
+            num_workers (inr, optional): The number of workers to use to load the images and generate
+                the batches.
+            verbose (bool, optional): If True it will print some info messages while processing.
+            device (str, optional): the device where to run the model. Default to cuda:0 if cuda is available.
+        &#34;&#34;&#34;
+        self.batch_size = batch_size
+        self.verbose = verbose
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.print(&#39;Loading model ...&#39;)
+        self.model = self._get_model()
+        self.print(&#39;Generating dataset ...&#39;)
+        # Tuple with transforms: The first is only for images, the second images + boxes
+        self.image_transform, self.with_boxes_transform = self._get_transforms()
+        self.dataset = ImagesDataset(root=root, paths=paths, extensions=extensions, transform=self.image_transform)
+        self.dataloader = self.dataset.get_dataloader(batch_size, num_workers)
+        self.logger = PrintLogger()
+
+    #############################
+    ###        GETTERS        ###
+    #############################
+
+    def _get_model(self):
+        &#34;&#34;&#34;Get the model to generate the embeddings and bounding boxes.
+
+        The model must be a callable model (i.e. `self.model()` must work) and must return
+        a tuple with the embeddings generated for the batch of images and their bounding boxes.
+        Specifically:
+        - torch.Tensor: with shape `(batch size, num of embeddings, embedding dimension)`
+        - torch.Tensor: with shape `(batch size, num of embeddings, 4)` with the `x1, y1, x2, y2`
+            values for the top-left and bottom-right corners of the bounding box.
+
+        Returns:
+            callable: A model to generate the embeddings for the images.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def _get_transforms(self):
+        &#34;&#34;&#34;Get the transformations to apply to the images in the dataset and in the queries.
+
+        Returns:
+            callable: a transformation for only images (the images where we are going to search).
+            callable: a transformation for images and bounding boxes (the query images with their
+                bounding boxes indicating the instances to search).
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    #############################
+    ###         SEARCH        ###
+    #############################
+
+    def query(self, images, boxes=None, strategy=&#39;max_iou&#39;, k=100):
+        &#34;&#34;&#34;Make a query for the given images where are instances of objects indicated with the boxes argument.
+
+        If None is given for an image or for all, the retriver will set the bounding box as the image size,
+        indicating that the object it&#39;s the predominant in the image.
+
+        Arguments:
+            images (list of PIL Images or np.array): a list with the PIL Images for the query.
+            boxes (list of np.array or torch.Tensor, optional): a list with the tensors denoting the bounding boxes of
+                the objects to query for each image. Each tensor must have `(num of objects, 4)` with its
+                x1, y1, x2, y2 for the top-left corner and the bottom-right corner for each one of the objects
+                to query that is in the image. For example, if the image has only one object to query you must
+                provide an np.array/torch.Tensor like [[x1, y1, x2, y2]].
+            strategy (str, optional): The strategy to use. If &#39;max_iou&#39; it will query with the embedding with bigger
+                IoU that generates the model. If &#39;avg&#39; it will create an embedding with the weighted average of
+                the embeddings with IoU above 0.5.
+            k (int, optional): The number of results to get for each one of the object.
+
+        Returns:
+            np.ndarray: The distances between the embedding queries and the found object in descendant order.
+                So the nearest result to the embedding query `i` has distance `distance[i, 0]`, and so on.
+                To get the distances between the `i` embedding and its `j` result you can do
+                `distances[i, j]`.
+                Shape `(num of query objects, k)`.
+            np.ndarray: The bounding boxes for each result. Shape `(num of query objects, k, 4)`.
+            list of list of str: A list with `len = len(images)` that contains the path for each
+                one of the images where the object was found.
+                If you want to know the path of the result object that is in the `k`-th position
+                of the `i` embedding you can do `results_paths[i][k]`.
+            list of int: the index of the image that the query embedding belongs to. Is useful to know the
+                image of that embedding. To know the image from where is the embedding `i` you
+                can do `belongs_to[i]`.
+        &#34;&#34;&#34;
+        images, boxes = self._query_transform(images, boxes)
+        queries, belongs_to = self._query_embeddings(images, boxes, strategy)  # (num of queries, embedding dim)
+        distances, boxes, results_paths = self._search(queries, k)             # (num of queries, k)
+
+        if torch.is_tensor(distances):
+            distances = distances.numpy()
+
+        if torch.is_tensor(boxes):
+            boxes = boxes.numpy()
+
+        return distances, boxes, results_paths, belongs_to
+
+    def _query_transform(self, images, boxes):
+        &#34;&#34;&#34;Transform the inputs of the queries.
+
+        Arguments:
+            images (list of PIL Images or np.array): a list with the PIL Images for the query.
+            boxes (list of np.array or torch.Tensor, optional): a list with the tensors denoting the bounding boxes of
+                the objects to query for each image. Each tensor must have `(num of objects, 4)` with its
+                x1, y1, x2, y2 for the top-left corner and the bottom-right corner for each one of the objects
+                to query that is in the image. For example, if the image has only one object to query you must
+                provide an np.array/torch.Tensor like [[x1, y1, x2, y2]].
+
+        Returns:
+            list of torch.Tensor: The images transformed.
+            list of torch.Tensor: The boxes transformed.
+        &#34;&#34;&#34;
+        images = [np.array(img) for img in images]
+
+        # If there is no bounding box for any image
+        if boxes is None:
+            boxes = []
+            for image in images:
+                height, width = image.shape[:2]
+                boxes.append(np.array([[0, 0, height, width]]))
+
+        # If there is some None bounding boxes
+        for i, image_boxes in enumerate(boxes):
+            if image_boxes is None:
+                height, width = images[i].shape[:2]
+                boxes[i] = np.array([[0, 0, height, width]])
+
+        # Transform the items
+        for i, image in enumerate(images):
+            image_boxes = boxes[i]
+            image, image_boxes = self.with_boxes_transform({&#39;image&#39;: image, &#39;boxes&#39;: image_boxes})
+            images[i] = image
+            boxes[i] = image_boxes
+
+        return images, boxes
+
+    def _query_embeddings(self, images, boxes, strategy):
+        &#34;&#34;&#34;Generate the embeddings that will be used to search.
+
+        Arguments:
+            images (list of torch.Tensor): the list of transformed images.
+            boxes (list of torch.Tensor): the list of transformed bounding boxes.
+
+        Returns:
+            torch.Tensor: the embeddings generated for each instance.
+                Shape `(number of instances to search, embedding dim)`.
+            list of int: The index of the image where the embedding belongs. It has length
+                `number of instances to search`. Se you can get the image index of the `i`
+                embedding by doing `belongs_to[i]`.
+        &#34;&#34;&#34;
+        num_images = len(images)
+
+        # Make that the images have the same shape
+        max_width = max([image.shape[2] for image in images])
+        max_height = max([image.shape[1] for image in images])
+
+        def pad_image(image):
+            aux = torch.zeros((image.shape[0], max_height, max_width))
+            aux[:, :image.shape[1], :image.shape[2]] = image
+            return aux
+
+        images = torch.stack([pad_image(image) for image in images], dim=0)
+
+        # Process the images with the model
+        with torch.no_grad():
+            self.model.to(self.device)
+            if num_images &lt;= self.batch_size:
+                images = images.to(self.device)
+                batch_embeddings, batch_pred_boxes = self.model(images)     # (num images, *, dim), (num images, *, 4)
+            else:
+                batches = math.ceil(num_images / self.batch_size)
+                batch_embeddings, batch_pred_boxes = [], []
+                for i in range(batches):
+                    batch = images[i * self.batch_size: (i + 1) * self.batch_size].to(self.device)
+                    embeddings, pred_boxes = self.model(batch)
+                    batch_embeddings.append(embeddings)
+                    batch_pred_boxes.append(pred_boxes)
+                batch_embeddings = torch.cat(batch_embeddings, dim=0)       # (num images, *, dim)
+                batch_pred_boxes = torch.cat(batch_pred_boxes, dim=0)       # (num images, *, 4)
+
+        # Get the correct embedding for each query object
+        result = []
+        belongs_to = []
+        for i, embeddings in enumerate(batch_embeddings):
+            pred_boxes = batch_pred_boxes[i]         # (n pred, 4)
+            iou = compute_iou(boxes[i].to(self.device), pred_boxes)  # (n ground, n pred)
+
+            if strategy == &#39;max_iou&#39;:
+                _, iou_argmax = iou.max(dim=1)       # (n ground)
+                for embedding in embeddings[iou_argmax]:
+                    result.append(embedding)
+                    belongs_to.append(i)
+            else:
+                raise NotImplementedError()
+
+        return torch.stack(result, dim=0), belongs_to
+
+    def _search(self, queries, k):
+        &#34;&#34;&#34;Search in the dataset and get the tensor with the distances, bounding boxes and the paths
+        of the images.
+
+        **IMPORTANT**:
+        Keep in mind that the bounding boxes are for the transformed images, not fot the original images.
+        So, if the transformation changes the size of the image the bounding boxes could not fit
+        in the original image.
+
+        Arguments:
+            queries (torch.Tensor): the embeddings generated for each query object.
+                Shape `(number of instances to search, embedding dim)`.
+
+        Returns:
+            np.ndarray: The distances between the embedding queries and the found object in descendant order.
+                So the nearest result to the embedding query `i` has distance `distance[i, 0]`, and so on.
+                To get the distances between the `i` embedding and its `j` result you can do
+                `distances[i, j]`.
+                Shape `(num of query objects, k)`.
+            np.ndarray: The bounding boxes for each result. Shape `(num of query objects, k, 4)`.
+            list of list of str: A list with `len = len(images)` that contains the path for each
+                one of the images where the object was found.
+                If you want to know the path of the result object that is in the `k`-th position
+                of the `i` embedding you can do `results_paths[i][k]`.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def visualize(self, query_image, distances, boxes, paths, query_box=None):
+        &#34;&#34;&#34;Show the query image and its results.
+
+        Arguments:
+            query_image (PIL Image or str): the path or the image that generates the query.
+            distances (np.ndarray): The result distances for the query object.
+                Shape: `(num results)`.
+            boxes (np.ndarray): The boxes for the result embeddings.
+                Shape: `(num results, 4)`.
+            paths (list of str): The path to the result images.
+            query_box (np.ndarray, optional): the bounding box of the query object.
+        &#34;&#34;&#34;
+        if isinstance(query_image, str):
+            query_image = Image.open(query_image)
+
+        if query_box is None:
+            query_box = []
+
+        print(&#39;Query:&#39;)
+        visualize_boxes(query_image, query_box)
+
+        print(&#39;Results:&#39;)
+        num_results = distances.shape[0]
+        boxes_with_dist = torch.zeros(num_results, 5)       # (n, 5)
+        boxes_with_dist[:, :4] = torch.Tensor(boxes)        # (n, 4)
+        boxes_with_dist[:, 4] = torch.Tensor(distances)     # (n,)
+        boxes_with_dist = boxes_with_dist.unsqueeze(dim=1)  # (n, 1, 5)
+        for i, path in enumerate(paths):
+            image = Image.open(path)
+            image_box = boxes_with_dist[i]
+            image = self.image_transform({&#39;image&#39;: image})
+            visualize_boxes(image, image_box)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.retrievers.retriever.InstanceRetriever"><code class="flex name class">
+<span>class <span class="ident">InstanceRetriever</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.utils.print.PrintMixin" href="../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>An abstract retriver that looks for instance of objects in a set of images.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class InstanceRetriever(PrintMixin):
+    &#34;&#34;&#34;An abstract retriver that looks for instance of objects in a set of images.&#34;&#34;&#34;
+
+    def __init__(self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True, device=None):
+        &#34;&#34;&#34;Initialize the retriever.
+
+        You must provide the root directory of the images where to search of the paths of them.
+
+        Arguments:
+            root (str): The path to the root directory that contains the images
+                where we want to search.
+            paths (list of str): The paths of the images where to look for.
+            extensions (list of str): If given it will load only files with the
+                given extensions.
+            batch_size (int, optional): The batch_size to use when processing the images with the model.
+            num_workers (inr, optional): The number of workers to use to load the images and generate
+                the batches.
+            verbose (bool, optional): If True it will print some info messages while processing.
+            device (str, optional): the device where to run the model. Default to cuda:0 if cuda is available.
+        &#34;&#34;&#34;
+        self.batch_size = batch_size
+        self.verbose = verbose
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.print(&#39;Loading model ...&#39;)
+        self.model = self._get_model()
+        self.print(&#39;Generating dataset ...&#39;)
+        # Tuple with transforms: The first is only for images, the second images + boxes
+        self.image_transform, self.with_boxes_transform = self._get_transforms()
+        self.dataset = ImagesDataset(root=root, paths=paths, extensions=extensions, transform=self.image_transform)
+        self.dataloader = self.dataset.get_dataloader(batch_size, num_workers)
+        self.logger = PrintLogger()
+
+    #############################
+    ###        GETTERS        ###
+    #############################
+
+    def _get_model(self):
+        &#34;&#34;&#34;Get the model to generate the embeddings and bounding boxes.
+
+        The model must be a callable model (i.e. `self.model()` must work) and must return
+        a tuple with the embeddings generated for the batch of images and their bounding boxes.
+        Specifically:
+        - torch.Tensor: with shape `(batch size, num of embeddings, embedding dimension)`
+        - torch.Tensor: with shape `(batch size, num of embeddings, 4)` with the `x1, y1, x2, y2`
+            values for the top-left and bottom-right corners of the bounding box.
+
+        Returns:
+            callable: A model to generate the embeddings for the images.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def _get_transforms(self):
+        &#34;&#34;&#34;Get the transformations to apply to the images in the dataset and in the queries.
+
+        Returns:
+            callable: a transformation for only images (the images where we are going to search).
+            callable: a transformation for images and bounding boxes (the query images with their
+                bounding boxes indicating the instances to search).
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    #############################
+    ###         SEARCH        ###
+    #############################
+
+    def query(self, images, boxes=None, strategy=&#39;max_iou&#39;, k=100):
+        &#34;&#34;&#34;Make a query for the given images where are instances of objects indicated with the boxes argument.
+
+        If None is given for an image or for all, the retriver will set the bounding box as the image size,
+        indicating that the object it&#39;s the predominant in the image.
+
+        Arguments:
+            images (list of PIL Images or np.array): a list with the PIL Images for the query.
+            boxes (list of np.array or torch.Tensor, optional): a list with the tensors denoting the bounding boxes of
+                the objects to query for each image. Each tensor must have `(num of objects, 4)` with its
+                x1, y1, x2, y2 for the top-left corner and the bottom-right corner for each one of the objects
+                to query that is in the image. For example, if the image has only one object to query you must
+                provide an np.array/torch.Tensor like [[x1, y1, x2, y2]].
+            strategy (str, optional): The strategy to use. If &#39;max_iou&#39; it will query with the embedding with bigger
+                IoU that generates the model. If &#39;avg&#39; it will create an embedding with the weighted average of
+                the embeddings with IoU above 0.5.
+            k (int, optional): The number of results to get for each one of the object.
+
+        Returns:
+            np.ndarray: The distances between the embedding queries and the found object in descendant order.
+                So the nearest result to the embedding query `i` has distance `distance[i, 0]`, and so on.
+                To get the distances between the `i` embedding and its `j` result you can do
+                `distances[i, j]`.
+                Shape `(num of query objects, k)`.
+            np.ndarray: The bounding boxes for each result. Shape `(num of query objects, k, 4)`.
+            list of list of str: A list with `len = len(images)` that contains the path for each
+                one of the images where the object was found.
+                If you want to know the path of the result object that is in the `k`-th position
+                of the `i` embedding you can do `results_paths[i][k]`.
+            list of int: the index of the image that the query embedding belongs to. Is useful to know the
+                image of that embedding. To know the image from where is the embedding `i` you
+                can do `belongs_to[i]`.
+        &#34;&#34;&#34;
+        images, boxes = self._query_transform(images, boxes)
+        queries, belongs_to = self._query_embeddings(images, boxes, strategy)  # (num of queries, embedding dim)
+        distances, boxes, results_paths = self._search(queries, k)             # (num of queries, k)
+
+        if torch.is_tensor(distances):
+            distances = distances.numpy()
+
+        if torch.is_tensor(boxes):
+            boxes = boxes.numpy()
+
+        return distances, boxes, results_paths, belongs_to
+
+    def _query_transform(self, images, boxes):
+        &#34;&#34;&#34;Transform the inputs of the queries.
+
+        Arguments:
+            images (list of PIL Images or np.array): a list with the PIL Images for the query.
+            boxes (list of np.array or torch.Tensor, optional): a list with the tensors denoting the bounding boxes of
+                the objects to query for each image. Each tensor must have `(num of objects, 4)` with its
+                x1, y1, x2, y2 for the top-left corner and the bottom-right corner for each one of the objects
+                to query that is in the image. For example, if the image has only one object to query you must
+                provide an np.array/torch.Tensor like [[x1, y1, x2, y2]].
+
+        Returns:
+            list of torch.Tensor: The images transformed.
+            list of torch.Tensor: The boxes transformed.
+        &#34;&#34;&#34;
+        images = [np.array(img) for img in images]
+
+        # If there is no bounding box for any image
+        if boxes is None:
+            boxes = []
+            for image in images:
+                height, width = image.shape[:2]
+                boxes.append(np.array([[0, 0, height, width]]))
+
+        # If there is some None bounding boxes
+        for i, image_boxes in enumerate(boxes):
+            if image_boxes is None:
+                height, width = images[i].shape[:2]
+                boxes[i] = np.array([[0, 0, height, width]])
+
+        # Transform the items
+        for i, image in enumerate(images):
+            image_boxes = boxes[i]
+            image, image_boxes = self.with_boxes_transform({&#39;image&#39;: image, &#39;boxes&#39;: image_boxes})
+            images[i] = image
+            boxes[i] = image_boxes
+
+        return images, boxes
+
+    def _query_embeddings(self, images, boxes, strategy):
+        &#34;&#34;&#34;Generate the embeddings that will be used to search.
+
+        Arguments:
+            images (list of torch.Tensor): the list of transformed images.
+            boxes (list of torch.Tensor): the list of transformed bounding boxes.
+
+        Returns:
+            torch.Tensor: the embeddings generated for each instance.
+                Shape `(number of instances to search, embedding dim)`.
+            list of int: The index of the image where the embedding belongs. It has length
+                `number of instances to search`. Se you can get the image index of the `i`
+                embedding by doing `belongs_to[i]`.
+        &#34;&#34;&#34;
+        num_images = len(images)
+
+        # Make that the images have the same shape
+        max_width = max([image.shape[2] for image in images])
+        max_height = max([image.shape[1] for image in images])
+
+        def pad_image(image):
+            aux = torch.zeros((image.shape[0], max_height, max_width))
+            aux[:, :image.shape[1], :image.shape[2]] = image
+            return aux
+
+        images = torch.stack([pad_image(image) for image in images], dim=0)
+
+        # Process the images with the model
+        with torch.no_grad():
+            self.model.to(self.device)
+            if num_images &lt;= self.batch_size:
+                images = images.to(self.device)
+                batch_embeddings, batch_pred_boxes = self.model(images)     # (num images, *, dim), (num images, *, 4)
+            else:
+                batches = math.ceil(num_images / self.batch_size)
+                batch_embeddings, batch_pred_boxes = [], []
+                for i in range(batches):
+                    batch = images[i * self.batch_size: (i + 1) * self.batch_size].to(self.device)
+                    embeddings, pred_boxes = self.model(batch)
+                    batch_embeddings.append(embeddings)
+                    batch_pred_boxes.append(pred_boxes)
+                batch_embeddings = torch.cat(batch_embeddings, dim=0)       # (num images, *, dim)
+                batch_pred_boxes = torch.cat(batch_pred_boxes, dim=0)       # (num images, *, 4)
+
+        # Get the correct embedding for each query object
+        result = []
+        belongs_to = []
+        for i, embeddings in enumerate(batch_embeddings):
+            pred_boxes = batch_pred_boxes[i]         # (n pred, 4)
+            iou = compute_iou(boxes[i].to(self.device), pred_boxes)  # (n ground, n pred)
+
+            if strategy == &#39;max_iou&#39;:
+                _, iou_argmax = iou.max(dim=1)       # (n ground)
+                for embedding in embeddings[iou_argmax]:
+                    result.append(embedding)
+                    belongs_to.append(i)
+            else:
+                raise NotImplementedError()
+
+        return torch.stack(result, dim=0), belongs_to
+
+    def _search(self, queries, k):
+        &#34;&#34;&#34;Search in the dataset and get the tensor with the distances, bounding boxes and the paths
+        of the images.
+
+        **IMPORTANT**:
+        Keep in mind that the bounding boxes are for the transformed images, not fot the original images.
+        So, if the transformation changes the size of the image the bounding boxes could not fit
+        in the original image.
+
+        Arguments:
+            queries (torch.Tensor): the embeddings generated for each query object.
+                Shape `(number of instances to search, embedding dim)`.
+
+        Returns:
+            np.ndarray: The distances between the embedding queries and the found object in descendant order.
+                So the nearest result to the embedding query `i` has distance `distance[i, 0]`, and so on.
+                To get the distances between the `i` embedding and its `j` result you can do
+                `distances[i, j]`.
+                Shape `(num of query objects, k)`.
+            np.ndarray: The bounding boxes for each result. Shape `(num of query objects, k, 4)`.
+            list of list of str: A list with `len = len(images)` that contains the path for each
+                one of the images where the object was found.
+                If you want to know the path of the result object that is in the `k`-th position
+                of the `i` embedding you can do `results_paths[i][k]`.
+        &#34;&#34;&#34;
+        raise NotImplementedError()
+
+    def visualize(self, query_image, distances, boxes, paths, query_box=None):
+        &#34;&#34;&#34;Show the query image and its results.
+
+        Arguments:
+            query_image (PIL Image or str): the path or the image that generates the query.
+            distances (np.ndarray): The result distances for the query object.
+                Shape: `(num results)`.
+            boxes (np.ndarray): The boxes for the result embeddings.
+                Shape: `(num results, 4)`.
+            paths (list of str): The path to the result images.
+            query_box (np.ndarray, optional): the bounding box of the query object.
+        &#34;&#34;&#34;
+        if isinstance(query_image, str):
+            query_image = Image.open(query_image)
+
+        if query_box is None:
+            query_box = []
+
+        print(&#39;Query:&#39;)
+        visualize_boxes(query_image, query_box)
+
+        print(&#39;Results:&#39;)
+        num_results = distances.shape[0]
+        boxes_with_dist = torch.zeros(num_results, 5)       # (n, 5)
+        boxes_with_dist[:, :4] = torch.Tensor(boxes)        # (n, 4)
+        boxes_with_dist[:, 4] = torch.Tensor(distances)     # (n,)
+        boxes_with_dist = boxes_with_dist.unsqueeze(dim=1)  # (n, 1, 5)
+        for i, path in enumerate(paths):
+            image = Image.open(path)
+            image_box = boxes_with_dist[i]
+            image = self.image_transform({&#39;image&#39;: image})
+            visualize_boxes(image, image_box)</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="torchsight.retrievers.slow.SlowInstanceRetriver" href="slow.html#torchsight.retrievers.slow.SlowInstanceRetriver">SlowInstanceRetriver</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.retrievers.retriever.InstanceRetriever.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the retriever.</p>
+<p>You must provide the root directory of the images where to search of the paths of them.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>root</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to the root directory that contains the images
+where we want to search.</dd>
+<dt><strong><code>paths</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>The paths of the images where to look for.</dd>
+<dt><strong><code>extensions</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>If given it will load only files with the
+given extensions.</dd>
+<dt><strong><code>batch_size</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The batch_size to use when processing the images with the model.</dd>
+<dt><strong><code>num_workers</code></strong> :&ensp;<code>inr</code>, optional</dt>
+<dd>The number of workers to use to load the images and generate
+the batches.</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True it will print some info messages while processing.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>the device where to run the model. Default to cuda:0 if cuda is available.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True, device=None):
+    &#34;&#34;&#34;Initialize the retriever.
+
+    You must provide the root directory of the images where to search of the paths of them.
+
+    Arguments:
+        root (str): The path to the root directory that contains the images
+            where we want to search.
+        paths (list of str): The paths of the images where to look for.
+        extensions (list of str): If given it will load only files with the
+            given extensions.
+        batch_size (int, optional): The batch_size to use when processing the images with the model.
+        num_workers (inr, optional): The number of workers to use to load the images and generate
+            the batches.
+        verbose (bool, optional): If True it will print some info messages while processing.
+        device (str, optional): the device where to run the model. Default to cuda:0 if cuda is available.
+    &#34;&#34;&#34;
+    self.batch_size = batch_size
+    self.verbose = verbose
+    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+    self.print(&#39;Loading model ...&#39;)
+    self.model = self._get_model()
+    self.print(&#39;Generating dataset ...&#39;)
+    # Tuple with transforms: The first is only for images, the second images + boxes
+    self.image_transform, self.with_boxes_transform = self._get_transforms()
+    self.dataset = ImagesDataset(root=root, paths=paths, extensions=extensions, transform=self.image_transform)
+    self.dataloader = self.dataset.get_dataloader(batch_size, num_workers)
+    self.logger = PrintLogger()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.retrievers.retriever.InstanceRetriever.query"><code class="name flex">
+<span>def <span class="ident">query</span></span>(<span>self, images, boxes=None, strategy=&#39;max_iou&#39;, k=100)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Make a query for the given images where are instances of objects indicated with the boxes argument.</p>
+<p>If None is given for an image or for all, the retriver will set the bounding box as the image size,
+indicating that the object it's the predominant in the image.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>images</code></strong> :&ensp;<code>list</code> of <code>PIL</code> <code>Images</code> or <code>np.array</code></dt>
+<dd>a list with the PIL Images for the query.</dd>
+<dt><strong><code>boxes</code></strong> :&ensp;<code>list</code> of <code>np.array</code> or <code>torch.Tensor</code>, optional</dt>
+<dd>a list with the tensors denoting the bounding boxes of
+the objects to query for each image. Each tensor must have <code>(num of objects, 4)</code> with its
+x1, y1, x2, y2 for the top-left corner and the bottom-right corner for each one of the objects
+to query that is in the image. For example, if the image has only one object to query you must
+provide an np.array/torch.Tensor like [[x1, y1, x2, y2]].</dd>
+<dt><strong><code>strategy</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The strategy to use. If 'max_iou' it will query with the embedding with bigger
+IoU that generates the model. If 'avg' it will create an embedding with the weighted average of
+the embeddings with IoU above 0.5.</dd>
+<dt><strong><code>k</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The number of results to get for each one of the object.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>np.ndarray: The distances between the embedding queries and the found object in descendant order.
+So the nearest result to the embedding query <code>i</code> has distance <code>distance[i, 0]</code>, and so on.
+To get the distances between the <code>i</code> embedding and its <code>j</code> result you can do
+<code>distances[i, j]</code>.
+Shape <code>(num of query objects, k)</code>.
+np.ndarray: The bounding boxes for each result. Shape <code>(num of query objects, k, 4)</code>.
+list of list of str: A list with <code>len = len(images)</code> that contains the path for each
+one of the images where the object was found.
+If you want to know the path of the result object that is in the <code>k</code>-th position
+of the <code>i</code> embedding you can do <code>results_paths[i][k]</code>.
+list of int: the index of the image that the query embedding belongs to. Is useful to know the
+image of that embedding. To know the image from where is the embedding <code>i</code> you
+can do <code>belongs_to[i]</code>.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def query(self, images, boxes=None, strategy=&#39;max_iou&#39;, k=100):
+    &#34;&#34;&#34;Make a query for the given images where are instances of objects indicated with the boxes argument.
+
+    If None is given for an image or for all, the retriver will set the bounding box as the image size,
+    indicating that the object it&#39;s the predominant in the image.
+
+    Arguments:
+        images (list of PIL Images or np.array): a list with the PIL Images for the query.
+        boxes (list of np.array or torch.Tensor, optional): a list with the tensors denoting the bounding boxes of
+            the objects to query for each image. Each tensor must have `(num of objects, 4)` with its
+            x1, y1, x2, y2 for the top-left corner and the bottom-right corner for each one of the objects
+            to query that is in the image. For example, if the image has only one object to query you must
+            provide an np.array/torch.Tensor like [[x1, y1, x2, y2]].
+        strategy (str, optional): The strategy to use. If &#39;max_iou&#39; it will query with the embedding with bigger
+            IoU that generates the model. If &#39;avg&#39; it will create an embedding with the weighted average of
+            the embeddings with IoU above 0.5.
+        k (int, optional): The number of results to get for each one of the object.
+
+    Returns:
+        np.ndarray: The distances between the embedding queries and the found object in descendant order.
+            So the nearest result to the embedding query `i` has distance `distance[i, 0]`, and so on.
+            To get the distances between the `i` embedding and its `j` result you can do
+            `distances[i, j]`.
+            Shape `(num of query objects, k)`.
+        np.ndarray: The bounding boxes for each result. Shape `(num of query objects, k, 4)`.
+        list of list of str: A list with `len = len(images)` that contains the path for each
+            one of the images where the object was found.
+            If you want to know the path of the result object that is in the `k`-th position
+            of the `i` embedding you can do `results_paths[i][k]`.
+        list of int: the index of the image that the query embedding belongs to. Is useful to know the
+            image of that embedding. To know the image from where is the embedding `i` you
+            can do `belongs_to[i]`.
+    &#34;&#34;&#34;
+    images, boxes = self._query_transform(images, boxes)
+    queries, belongs_to = self._query_embeddings(images, boxes, strategy)  # (num of queries, embedding dim)
+    distances, boxes, results_paths = self._search(queries, k)             # (num of queries, k)
+
+    if torch.is_tensor(distances):
+        distances = distances.numpy()
+
+    if torch.is_tensor(boxes):
+        boxes = boxes.numpy()
+
+    return distances, boxes, results_paths, belongs_to</code></pre>
+</details>
+</dd>
+<dt id="torchsight.retrievers.retriever.InstanceRetriever.visualize"><code class="name flex">
+<span>def <span class="ident">visualize</span></span>(<span>self, query_image, distances, boxes, paths, query_box=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Show the query image and its results.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>query_image</code></strong> :&ensp;<code>PIL</code> <code>Image</code> or <code>str</code></dt>
+<dd>the path or the image that generates the query.</dd>
+<dt><strong><code>distances</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>The result distances for the query object.
+Shape: <code>(num results)</code>.</dd>
+<dt><strong><code>boxes</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>The boxes for the result embeddings.
+Shape: <code>(num results, 4)</code>.</dd>
+<dt><strong><code>paths</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>The path to the result images.</dd>
+<dt><strong><code>query_box</code></strong> :&ensp;<code>np.ndarray</code>, optional</dt>
+<dd>the bounding box of the query object.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def visualize(self, query_image, distances, boxes, paths, query_box=None):
+    &#34;&#34;&#34;Show the query image and its results.
+
+    Arguments:
+        query_image (PIL Image or str): the path or the image that generates the query.
+        distances (np.ndarray): The result distances for the query object.
+            Shape: `(num results)`.
+        boxes (np.ndarray): The boxes for the result embeddings.
+            Shape: `(num results, 4)`.
+        paths (list of str): The path to the result images.
+        query_box (np.ndarray, optional): the bounding box of the query object.
+    &#34;&#34;&#34;
+    if isinstance(query_image, str):
+        query_image = Image.open(query_image)
+
+    if query_box is None:
+        query_box = []
+
+    print(&#39;Query:&#39;)
+    visualize_boxes(query_image, query_box)
+
+    print(&#39;Results:&#39;)
+    num_results = distances.shape[0]
+    boxes_with_dist = torch.zeros(num_results, 5)       # (n, 5)
+    boxes_with_dist[:, :4] = torch.Tensor(boxes)        # (n, 4)
+    boxes_with_dist[:, 4] = torch.Tensor(distances)     # (n,)
+    boxes_with_dist = boxes_with_dist.unsqueeze(dim=1)  # (n, 1, 5)
+    for i, path in enumerate(paths):
+        image = Image.open(path)
+        image_box = boxes_with_dist[i]
+        image = self.image_transform({&#39;image&#39;: image})
+        visualize_boxes(image, image_box)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.utils.print.PrintMixin" href="../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.utils.print.PrintMixin.print" href="../utils/print.html#torchsight.utils.print.PrintMixin.print">print</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.retrievers" href="index.html">torchsight.retrievers</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.retrievers.retriever.InstanceRetriever" href="#torchsight.retrievers.retriever.InstanceRetriever">InstanceRetriever</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.retrievers.retriever.InstanceRetriever.__init__" href="#torchsight.retrievers.retriever.InstanceRetriever.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.retrievers.retriever.InstanceRetriever.query" href="#torchsight.retrievers.retriever.InstanceRetriever.query">query</a></code></li>
+<li><code><a title="torchsight.retrievers.retriever.InstanceRetriever.visualize" href="#torchsight.retrievers.retriever.InstanceRetriever.visualize">visualize</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

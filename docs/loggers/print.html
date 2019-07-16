@@ -42,7 +42,7 @@ class PrintLogger(AbstractLogger):
     this logger with that directory and output the stdout to a file inside that directory.
     &#34;&#34;&#34;
 
-    def __init__(self, description=None, directory=&#39;./logs&#39;):
+    def __init__(self, description=None, directory=None):
         &#34;&#34;&#34;Initialize the logger.
 
         Arguments:
@@ -50,7 +50,7 @@ class PrintLogger(AbstractLogger):
                 Useful to store the hyperparameters of the training for example.
             directory (str, optional): The directory where to save the description file.
         &#34;&#34;&#34;
-        if not os.path.exists(directory):
+        if directory is not None and not os.path.exists(directory):
             os.makedirs(directory)
 
         self.directory = directory
@@ -143,7 +143,10 @@ class PrintLogger(AbstractLogger):
 
         for log in PrintLogger.read(filepath, keep):
             epoch = log[epoch_key]
-            loss = log[loss_key]
+            try:
+                loss = log[loss_key]
+            except KeyError:
+                continue
             if epoch not in losses:
                 losses[epoch] = {&#39;sum&#39;: 0, &#39;count&#39;: 0}
             losses[epoch][&#39;sum&#39;] += float(loss)
@@ -191,7 +194,7 @@ this logger with that directory and output the stdout to a file inside that dire
     this logger with that directory and output the stdout to a file inside that directory.
     &#34;&#34;&#34;
 
-    def __init__(self, description=None, directory=&#39;./logs&#39;):
+    def __init__(self, description=None, directory=None):
         &#34;&#34;&#34;Initialize the logger.
 
         Arguments:
@@ -199,7 +202,7 @@ this logger with that directory and output the stdout to a file inside that dire
                 Useful to store the hyperparameters of the training for example.
             directory (str, optional): The directory where to save the description file.
         &#34;&#34;&#34;
-        if not os.path.exists(directory):
+        if directory is not None and not os.path.exists(directory):
             os.makedirs(directory)
 
         self.directory = directory
@@ -292,7 +295,10 @@ this logger with that directory and output the stdout to a file inside that dire
 
         for log in PrintLogger.read(filepath, keep):
             epoch = log[epoch_key]
-            loss = log[loss_key]
+            try:
+                loss = log[loss_key]
+            except KeyError:
+                continue
             if epoch not in losses:
                 losses[epoch] = {&#39;sum&#39;: 0, &#39;count&#39;: 0}
             losses[epoch][&#39;sum&#39;] += float(loss)
@@ -349,7 +355,10 @@ def epochs_losses(filepath, epoch_key=&#39;epoch&#39;, loss_key=&#39;loss&#39;, 
 
     for log in PrintLogger.read(filepath, keep):
         epoch = log[epoch_key]
-        loss = log[loss_key]
+        try:
+            loss = log[loss_key]
+        except KeyError:
+            continue
         if epoch not in losses:
             losses[epoch] = {&#39;sum&#39;: 0, &#39;count&#39;: 0}
         losses[epoch][&#39;sum&#39;] += float(loss)
@@ -436,7 +445,7 @@ def read(filepath, keep=None):
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.loggers.print.PrintLogger.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, description=None, directory=&#39;./logs&#39;)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, description=None, directory=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the logger.</p>
@@ -450,7 +459,7 @@ Useful to store the hyperparameters of the training for example.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, description=None, directory=&#39;./logs&#39;):
+<pre><code class="python">def __init__(self, description=None, directory=None):
     &#34;&#34;&#34;Initialize the logger.
 
     Arguments:
@@ -458,7 +467,7 @@ Useful to store the hyperparameters of the training for example.</dd>
             Useful to store the hyperparameters of the training for example.
         directory (str, optional): The directory where to save the description file.
     &#34;&#34;&#34;
-    if not os.path.exists(directory):
+    if directory is not None and not os.path.exists(directory):
         os.makedirs(directory)
 
     self.directory = directory

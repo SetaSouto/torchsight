@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.evaluators.flickr32.fl_eval_classification API documentation</title>
+<meta name="description" content="Computes scores for recognition results on the FlickrLogos-32 dataset.
+See http://www.multimedia-computing.de/flickrlogos/ for details …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.evaluators.flickr32.fl_eval_classification</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Computes scores for recognition results on the FlickrLogos-32 dataset.
+See <a href="http://www.multimedia-computing.de/flickrlogos/">http://www.multimedia-computing.de/flickrlogos/</a> for details.</p>
+<p>Please cite the following paper in your work:
+Scalable Logo Recognition in Real-World Images
+Stefan Romberg, Lluis Garcia Pueyo, Rainer Lienhart, Roelof van Zwol
+ACM International Conference on Multimedia Retrieval 2011 (ICMR11), Trento, April 2011.</p>
+<dl>
+<dt><strong><code>Author</code></strong> :&ensp;
+<code>Stefan</code> <code>Romberg</code>, <code>stefan.romberg</code>@<code>informatik.uni</code>-<code>augsburg.de</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>Notes:
+- Script was developed/tested on Windows with Python 2.7</p>
+<p>$Date: 2013-12-19 09:54:21 +0100 (Do, 19 Dez 2013) $
+$Rev: 7692 $$Date: 2013-12-19 09:54:21 +0100 (Do, 19 Dez 2013) $
+$HeadURL: <a href="https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/fl_eval_classification.py">https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/fl_eval_classification.py</a> $
+$Id: fl_eval_classification.py 7692 2013-12-19 08:54:21Z romberg $</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+ Computes scores for recognition results on the FlickrLogos-32 dataset.
+ See http://www.multimedia-computing.de/flickrlogos/ for details.
+
+ Please cite the following paper in your work:
+ Scalable Logo Recognition in Real-World Images
+ Stefan Romberg, Lluis Garcia Pueyo, Rainer Lienhart, Roelof van Zwol
+ ACM International Conference on Multimedia Retrieval 2011 (ICMR11), Trento, April 2011.
+
+ Author:   Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de
+
+ Notes:
+  - Script was developed/tested on Windows with Python 2.7
+
+ $Date: 2013-12-19 09:54:21 +0100 (Do, 19 Dez 2013) $
+ $Rev: 7692 $$Date: 2013-12-19 09:54:21 +0100 (Do, 19 Dez 2013) $
+ $HeadURL: https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/fl_eval_classification.py $
+ $Id: fl_eval_classification.py 7692 2013-12-19 08:54:21Z romberg $
+&#34;&#34;&#34;
+__version__ = &#34;$Id: fl_eval_classification.py 7692 2013-12-19 08:54:21Z romberg $&#34;
+__author__  = &#34;Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de&#34;
+
+import sys, time
+from os.path import exists, isdir, normpath
+
+from .flickrlogos import fl_read_groundtruth2, fl_read_csv, Tee
+
+#==============================================================================
+#
+#==============================================================================
+
+def sround(x, arg):
+    if isinstance(x, float):
+        return round(x, arg)
+    else:
+        return x
+
+def fl_eval_classification(flickrlogos_dir, detection_file, verbose):
+    &#34;&#34;&#34;Computes scores for classification/recognition results.&#34;&#34;&#34;
+    #==========================================================================
+    # check input
+    #==========================================================================
+    flickrlogos_dir = normpath(flickrlogos_dir)
+    detection_file  = normpath(detection_file)
+    
+    if not exists(flickrlogos_dir):
+        print(&#34;ERROR: fl_eval_classification(): Directory given by --flickrlogos does not exist: &#39;&#34;+str(flickrlogos_dir)+&#34;&#39;&#34;)
+        exit(1)
+
+    if not exists(detection_file):
+        print(&#34;ERROR: detection_file: File &#39;&#34;+detection_file+&#34;&#39; does not exist!\n&#34;)
+        exit(1)
+
+    if not flickrlogos_dir.endswith(&#39;/&#39;) and not flickrlogos_dir.endswith(&#39;\\&#39;):
+        flickrlogos_dir += &#39;/&#39;
+
+    gt_all_file     = normpath(flickrlogos_dir + &#34;all.txt&#34;)
+    gt_train_file   = normpath(flickrlogos_dir + &#34;trainset.txt&#34;)
+    gt_valset_file  = normpath(flickrlogos_dir + &#34;valset.txt&#34;)
+    gt_testset_file = normpath(flickrlogos_dir + &#34;testset.txt&#34;)
+
+    if not exists(gt_all_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_all_file)+&#34;&#39;&#34;)
+        exit(1)
+    if not exists(gt_train_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_train_file)+&#34;&#39;&#34;)
+        exit(1)
+    if not exists(gt_valset_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_valset_file)+&#34;&#39;&#34;)
+        exit(1)
+    if not exists(gt_testset_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_testset_file)+&#34;&#39;&#34;)
+        exit(1)
+
+    #==========================================================================
+    # load ground truth
+    # NOTE: Not all ground truth files are actually required to compute the scores
+    #==========================================================================
+    # ALL: Training set + Validation set + Test set
+    gt_all_map_img2class, gt_all_map_class2imgs, gt_all_class_names = fl_read_groundtruth2(gt_all_file)
+    assert len(gt_all_class_names) == 33
+    assert len(gt_all_map_img2class) == 8240
+    assert len(gt_all_map_class2imgs) == 33
+
+    # Training set
+    gt_train_map_img2class, gt_train_map_class2imgs, gt_train_class_names = fl_read_groundtruth2(gt_train_file)
+    assert len(gt_train_class_names) == 32
+    assert len(gt_train_map_img2class) == 320
+    assert len(gt_train_map_class2imgs) == 32
+
+    # Validation set
+    gt_val_map_img2class, gt_val_map_class2imgs, gt_val_val_class_names = fl_read_groundtruth2(gt_valset_file)
+    assert len(gt_val_val_class_names) == 33
+    assert len(gt_val_map_img2class) == 3960
+    assert len(gt_val_map_class2imgs) == 33
+
+    # Test set
+    gt_test_map_img2class, gt_test_map_class2imgs, gt_test_class_names = fl_read_groundtruth2(gt_testset_file)
+    assert len(gt_test_class_names) == 33
+    assert len(gt_test_map_img2class) == 3960
+    assert len(gt_test_map_class2imgs) == 33
+
+    #==========================================================================
+    # load detection results and normalize all class names to lower case
+    #==========================================================================
+    actual_data = fl_read_csv(detection_file)
+    actual_data = [(img, detected_class.lower(), conf) for img, detected_class, conf in actual_data ]
+        
+    #==========================================================================
+    # parse actual_data and compute scores
+    #==========================================================================
+    compute_scores(gt_all_map_img2class, actual_data, gt_all_file, detection_file, verbose)
+
+#==============================================================================
+#
+#==============================================================================
+def compute_scores(groundtruth, actual_data, groundtruth_file=None, detection_file=None, verbose=False):
+    &#34;&#34;&#34;Computes several scores for classification/recognition results.&#34;&#34;&#34;
+
+    assert len(groundtruth) &gt; 0
+    assert len(actual_data) &gt; 0
+    assert isinstance(groundtruth, dict)
+    assert isinstance(actual_data, list)
+
+    #==========================================================================
+    # analyze results
+    #==========================================================================
+    count_bad                               = 0.0
+    count_gt_logos                          = 0.0
+    count_gt_nonlogos                       = 0.0
+
+    # classification
+    count_classified_nonlogo_as_nonlogo     = 0.0
+    count_classified_nonlogo_as_logo        = 0.0
+    count_classified_logo_as_nonlogo        = 0.0
+    count_classified_logo_as_logo           = 0.0
+
+    # detection
+    count_identified_logo_x_as_x            = 0.0
+    count_identified_logo_x_as_y            = 0.0
+
+    # the confidence of the detection is not taken into account in this evaluation
+    for img, detected_class, confidence in actual_data:
+        im = img + &#34;.jpg&#34;
+        if not im in groundtruth:
+            print(&#34;ERROR: Ground truth does not contain key: &#39;&#34;+str(im)+&#34;&#39;. Skipped.&#34;)
+            continue
+
+        real_class = groundtruth[im]
+
+        # count number of images that were actually used in this run
+        if real_class == &#34;no-logo&#34;:
+            count_gt_nonlogos += 1
+        else:
+            count_gt_logos += 1
+
+        if detected_class == &#34;bad&#34;:
+            count_bad += 1
+            continue
+
+        # ----------------------------------------------------
+        if real_class == &#34;no-logo&#34;:
+            if detected_class == &#34;no-logo&#34;:
+                count_classified_nonlogo_as_nonlogo += 1
+            else:
+                count_classified_nonlogo_as_logo += 1
+
+        # ----------------------------------------------------
+        else: # real_class != &#34;no-logo&#34;
+            if detected_class == &#34;no-logo&#34;:
+                count_classified_logo_as_nonlogo += 1
+            else:
+                count_classified_logo_as_logo += 1
+
+                if detected_class == real_class:
+                    count_identified_logo_x_as_x += 1
+                else:
+                    count_identified_logo_x_as_y += 1
+
+    count_classified_as_nonlogos = count_classified_nonlogo_as_nonlogo + count_classified_logo_as_nonlogo
+    count_classified_as_logos    = count_classified_logo_as_logo       + count_classified_nonlogo_as_logo
+
+    #==========================================================================
+    # compute scores for detection
+    #==========================================================================
+    #    Precision   = TP / (TP+FP)
+    #    Recall      = TP / (TP+FN)
+    #    Specificity = TN / (TN+FP)
+    #    Accuracy    = (TP+TN) / (TP+FP+FN+TN)
+    TP = float(count_classified_logo_as_logo)
+    TN = float(count_classified_nonlogo_as_nonlogo)
+    FP = float(count_classified_nonlogo_as_logo)
+    FN = float(count_classified_logo_as_nonlogo)
+
+    detection_precision    = &#34;DivByZero&#34;
+    detection_recall       = &#34;DivByZero&#34;
+    detection_specificity  = &#34;DivByZero&#34;
+    detection_accuracy     = &#34;DivByZero&#34;
+    FalsePositiveRate      = &#34;DivByZero&#34;
+    FalseNegativeRate      = &#34;DivByZero&#34;
+
+    if (TP+FP) &gt; 0:       detection_precision   = TP / (TP+FP)
+    if (TP+FN) &gt; 0:       detection_recall      = TP / (TP+FN)
+    if (TN+FP) &gt; 0:       detection_specificity = TN / (TN+FP)
+    if (TP+FP+FN+TN) &gt; 0: detection_accuracy    = (TP+TN) / (TP+FP+FN+TN)
+    if (FP + TN) &gt; 0:     FalsePositiveRate     = FP / (FP + TN)
+    if (TP + FN) &gt; 0:     FalseNegativeRate     = FN / (TP + FN)
+
+    #==========================================================================
+    # compute scores for recognition
+    #==========================================================================
+    recognition_precision   = count_identified_logo_x_as_x / (count_identified_logo_x_as_x + count_identified_logo_x_as_y)
+    recognition_recall      = count_identified_logo_x_as_x / count_gt_logos
+    recognition_accuracy    = ( (count_identified_logo_x_as_x + 
+                                 count_classified_nonlogo_as_nonlogo )
+                               / (count_gt_logos + count_gt_nonlogos ) )
+
+    #==========================================================================
+    # output
+    #==========================================================================
+    print(&#34;---------------------------------------------------------------------------&#34;)
+    print(&#34; RESULTS &#34;)
+    print(&#34;---------------------------------------------------------------------------&#34;)
+    print(&#34;Ground truth:&#34;)
+    if groundtruth_file is not None:
+        print(&#34;  Ground truth file: &#39;&#34;+groundtruth_file+&#34;&#39;&#34;)
+    print(&#34;  Total number of images...............................:   &#34;+str(len(actual_data)).rjust(5))
+    print(&#34; &#34;)
+    print(&#34;Input&#34;)
+    if detection_file is not None:
+        print(&#34;  Result file: &#39;&#34;+detection_file+&#34;&#39;&#34;)
+    print(&#34;  Result file: Results for logo images ................:   &#34;+str(int(count_gt_logos)).rjust(5))
+    print(&#34;  Result file: Results for non-logo images.............:   &#34;+str(int(count_gt_nonlogos)).rjust(5))
+    print(&#34;  Bad images (excluded from computing scores)..........:   &#34;+str(int(count_bad)).rjust(5))
+    print(&#34; &#34;)
+    
+    if verbose: # usually these scores are not needed for evaluation
+        print(&#34;Detection: (\&#34;Is a logo present: Yes/No?\&#34;)&#34;)
+        print(&#34;  Bad images (excluded from computing scores)..........:   &#34;+str(int(count_bad)).rjust(5))
+        print(&#34; &#34;)
+        print(&#34;  TP = count_classified_logo_as_logo...................:   &#34;+(str(int(count_classified_logo_as_logo)).rjust(5)))
+        print(&#34;  TN = count_classified_nonlogo_as_nonlogo.............:   &#34;+(str(int(count_classified_nonlogo_as_nonlogo)).rjust(5)))
+        print(&#34;  FP = count_classified_nonlogo_as_logo................:   &#34;+(str(int(count_classified_nonlogo_as_logo)).rjust(5)))
+        print(&#34;  FN = count_classified_logo_as_nonlogo................:   &#34;+(str(int(count_classified_logo_as_nonlogo)).rjust(5)))
+        print(&#34; &#34;)
+        print(&#34;  detection_precision..................................:   &#34;+str(sround(detection_precision,3)))
+        print(&#34;  detection_recall.....................................:   &#34;+str(sround(detection_recall,3)))
+        print(&#34;  detection_specificity................................:   &#34;+str(sround(detection_specificity,3)))
+        print(&#34;  detection_accuracy...................................:   &#34;+str(sround(detection_accuracy,3)))
+        print(&#34; &#34;)
+        print(&#34;  True positive rate  = Recall ........................:   &#34;+str(sround(detection_recall,3)))
+        print(&#34;  True negative rate  = Specificity ...................:   &#34;+str(sround(detection_specificity,3)))
+        print(&#34;  False positive rate = FP / (FP + TN) ................:   &#34;+str(sround(FalsePositiveRate,3)))
+        print(&#34;  False negative rate = FN / (TP + FN) ................:   &#34;+str(sround(FalseNegativeRate,3)))
+        print(&#34; &#34;)
+        
+    # main scores
+    print(&#34;Recognition: (\&#34;If a logo is present of which class is it?\&#34;)&#34;)
+    print(&#34;  recognition_precision................................:   &#34;+str(sround(recognition_precision,3)))
+    print(&#34;  recognition_recall...................................:   &#34;+str(sround(recognition_recall,3)))
+    print(&#34;  recognition_accuracy.................................:   &#34;+str(sround(recognition_accuracy,3)))
+    if verbose:
+        print(&#34;\nDate/Time: &#34; + time.asctime())
+        
+    print(&#34;---------------------------------------------------------------------------&#34;)
+
+    return
+
+#==============================================================================
+if __name__ == &#39;__main__&#39;: # MAIN
+#============================================================================== 
+    from optparse import OptionParser
+    usage = &#34;Usage: %prog --flickrlogos=&lt;dataset root dir&gt; --classification=&lt;file with classification results&gt; &#34;
+    parser = OptionParser(usage=usage)
+
+    parser.add_option(&#34;--flickrlogos&#34;, dest=&#34;flickrlogos&#34;, type=str, default=&#34;&#34;,
+                      help=&#34;Base (root) directory of the FlickrLogos-32 dataset\n&#34;)
+    parser.add_option(&#34;--classification&#34;, dest=&#34;classification&#34;, type=str, default=&#34;&#34;,
+                      help= &#34;&#34;&#34;File classification results: &#34;\
+                      &#34;contains the file names of the images and the corresponding &#34;\
+                      &#34;detected classes in the following format: &#34;\
+                      &#34;&lt;image id&gt;, &lt;detected class name&gt;, &lt;confidence value or &#34;\
+                      &#34;1 if class was detected, 0 otherwise&gt; \n&#34;&#34;&#34;)
+    parser.add_option(&#34;-o&#34;,&#34;--output&#34;, dest=&#34;output&#34;, type=str, default=&#34;-&#34;,
+                      help= &#34;Output file, can be &#39;-&#39; for stdout. Default: stdout \n&#34;&#34;&#34;)
+    parser.add_option(&#34;-v&#34;,&#34;--verbose&#34;, dest=&#34;verbose&#34;, action=&#34;store_true&#34;, default=False, 
+                      help=&#34;Optional: Flag for verbose output. Default: False\n&#34;&#34;&#34;)
+    (options, args) = parser.parse_args()
+
+    if len(sys.argv) &lt; 2:
+        parser.print_help()
+        exit(1)
+
+    #==========================================================================
+    # show passed args
+    #==========================================================================
+    if options.verbose:
+        print(&#34;fl_eval_classification.py\n&#34;+__version__)
+        print(&#34;-&#34;*79)
+        print(&#34;ARGS:&#34;)
+        print(&#34;FlickrLogos root dir (--flickrlogos):&#34;)
+        print(&#34;  &gt; &#39;&#34;+options.flickrlogos+&#34;&#39;&#34;)
+        print(&#34;Result file (--classification):&#34;)
+        print(&#34;  &gt; &#39;&#34;+options.classification+&#34;&#39;&#34;)
+        print(&#34;Output file ( --output):&#34;)
+        print(&#34;  &gt; &#39;&#34;+options.output+&#34;&#39;&#34;)
+        print(&#34;-&#34;*79)
+    
+    if options.flickrlogos is None or options.flickrlogos == &#34;&#34;:
+        print(&#34;Missing argument --flickrlogos=&lt;file&gt;&#34;)
+        exit(1)
+        
+    if options.classification is None or options.classification == &#34;&#34;:
+        print(&#34;Missing argument --classification=&lt;file with classification results&gt;&#34;)
+        exit(1)
+        
+    #==========================================================================
+    # if output is a file and not &#34;-&#34; then all print() statements are redirected
+    # to *both* stdout and a file.
+    #==========================================================================
+    if options.output is not None and options.output != &#34;&#34; and options.output != &#34;-&#34;:
+        if isdir(options.output):
+            print(&#34;Invalid argument: Arg --output must denote a file. Exit.&#34;)
+            exit(1)
+
+        Tee(options.output, &#34;w&#34;)
+
+    #==========================================================================
+    # compute scores
+    #==========================================================================
+    fl_eval_classification(options.flickrlogos, options.classification, options.verbose)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="torchsight.evaluators.flickr32.fl_eval_classification.compute_scores"><code class="name flex">
+<span>def <span class="ident">compute_scores</span></span>(<span>groundtruth, actual_data, groundtruth_file=None, detection_file=None, verbose=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Computes several scores for classification/recognition results.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def compute_scores(groundtruth, actual_data, groundtruth_file=None, detection_file=None, verbose=False):
+    &#34;&#34;&#34;Computes several scores for classification/recognition results.&#34;&#34;&#34;
+
+    assert len(groundtruth) &gt; 0
+    assert len(actual_data) &gt; 0
+    assert isinstance(groundtruth, dict)
+    assert isinstance(actual_data, list)
+
+    #==========================================================================
+    # analyze results
+    #==========================================================================
+    count_bad                               = 0.0
+    count_gt_logos                          = 0.0
+    count_gt_nonlogos                       = 0.0
+
+    # classification
+    count_classified_nonlogo_as_nonlogo     = 0.0
+    count_classified_nonlogo_as_logo        = 0.0
+    count_classified_logo_as_nonlogo        = 0.0
+    count_classified_logo_as_logo           = 0.0
+
+    # detection
+    count_identified_logo_x_as_x            = 0.0
+    count_identified_logo_x_as_y            = 0.0
+
+    # the confidence of the detection is not taken into account in this evaluation
+    for img, detected_class, confidence in actual_data:
+        im = img + &#34;.jpg&#34;
+        if not im in groundtruth:
+            print(&#34;ERROR: Ground truth does not contain key: &#39;&#34;+str(im)+&#34;&#39;. Skipped.&#34;)
+            continue
+
+        real_class = groundtruth[im]
+
+        # count number of images that were actually used in this run
+        if real_class == &#34;no-logo&#34;:
+            count_gt_nonlogos += 1
+        else:
+            count_gt_logos += 1
+
+        if detected_class == &#34;bad&#34;:
+            count_bad += 1
+            continue
+
+        # ----------------------------------------------------
+        if real_class == &#34;no-logo&#34;:
+            if detected_class == &#34;no-logo&#34;:
+                count_classified_nonlogo_as_nonlogo += 1
+            else:
+                count_classified_nonlogo_as_logo += 1
+
+        # ----------------------------------------------------
+        else: # real_class != &#34;no-logo&#34;
+            if detected_class == &#34;no-logo&#34;:
+                count_classified_logo_as_nonlogo += 1
+            else:
+                count_classified_logo_as_logo += 1
+
+                if detected_class == real_class:
+                    count_identified_logo_x_as_x += 1
+                else:
+                    count_identified_logo_x_as_y += 1
+
+    count_classified_as_nonlogos = count_classified_nonlogo_as_nonlogo + count_classified_logo_as_nonlogo
+    count_classified_as_logos    = count_classified_logo_as_logo       + count_classified_nonlogo_as_logo
+
+    #==========================================================================
+    # compute scores for detection
+    #==========================================================================
+    #    Precision   = TP / (TP+FP)
+    #    Recall      = TP / (TP+FN)
+    #    Specificity = TN / (TN+FP)
+    #    Accuracy    = (TP+TN) / (TP+FP+FN+TN)
+    TP = float(count_classified_logo_as_logo)
+    TN = float(count_classified_nonlogo_as_nonlogo)
+    FP = float(count_classified_nonlogo_as_logo)
+    FN = float(count_classified_logo_as_nonlogo)
+
+    detection_precision    = &#34;DivByZero&#34;
+    detection_recall       = &#34;DivByZero&#34;
+    detection_specificity  = &#34;DivByZero&#34;
+    detection_accuracy     = &#34;DivByZero&#34;
+    FalsePositiveRate      = &#34;DivByZero&#34;
+    FalseNegativeRate      = &#34;DivByZero&#34;
+
+    if (TP+FP) &gt; 0:       detection_precision   = TP / (TP+FP)
+    if (TP+FN) &gt; 0:       detection_recall      = TP / (TP+FN)
+    if (TN+FP) &gt; 0:       detection_specificity = TN / (TN+FP)
+    if (TP+FP+FN+TN) &gt; 0: detection_accuracy    = (TP+TN) / (TP+FP+FN+TN)
+    if (FP + TN) &gt; 0:     FalsePositiveRate     = FP / (FP + TN)
+    if (TP + FN) &gt; 0:     FalseNegativeRate     = FN / (TP + FN)
+
+    #==========================================================================
+    # compute scores for recognition
+    #==========================================================================
+    recognition_precision   = count_identified_logo_x_as_x / (count_identified_logo_x_as_x + count_identified_logo_x_as_y)
+    recognition_recall      = count_identified_logo_x_as_x / count_gt_logos
+    recognition_accuracy    = ( (count_identified_logo_x_as_x + 
+                                 count_classified_nonlogo_as_nonlogo )
+                               / (count_gt_logos + count_gt_nonlogos ) )
+
+    #==========================================================================
+    # output
+    #==========================================================================
+    print(&#34;---------------------------------------------------------------------------&#34;)
+    print(&#34; RESULTS &#34;)
+    print(&#34;---------------------------------------------------------------------------&#34;)
+    print(&#34;Ground truth:&#34;)
+    if groundtruth_file is not None:
+        print(&#34;  Ground truth file: &#39;&#34;+groundtruth_file+&#34;&#39;&#34;)
+    print(&#34;  Total number of images...............................:   &#34;+str(len(actual_data)).rjust(5))
+    print(&#34; &#34;)
+    print(&#34;Input&#34;)
+    if detection_file is not None:
+        print(&#34;  Result file: &#39;&#34;+detection_file+&#34;&#39;&#34;)
+    print(&#34;  Result file: Results for logo images ................:   &#34;+str(int(count_gt_logos)).rjust(5))
+    print(&#34;  Result file: Results for non-logo images.............:   &#34;+str(int(count_gt_nonlogos)).rjust(5))
+    print(&#34;  Bad images (excluded from computing scores)..........:   &#34;+str(int(count_bad)).rjust(5))
+    print(&#34; &#34;)
+    
+    if verbose: # usually these scores are not needed for evaluation
+        print(&#34;Detection: (\&#34;Is a logo present: Yes/No?\&#34;)&#34;)
+        print(&#34;  Bad images (excluded from computing scores)..........:   &#34;+str(int(count_bad)).rjust(5))
+        print(&#34; &#34;)
+        print(&#34;  TP = count_classified_logo_as_logo...................:   &#34;+(str(int(count_classified_logo_as_logo)).rjust(5)))
+        print(&#34;  TN = count_classified_nonlogo_as_nonlogo.............:   &#34;+(str(int(count_classified_nonlogo_as_nonlogo)).rjust(5)))
+        print(&#34;  FP = count_classified_nonlogo_as_logo................:   &#34;+(str(int(count_classified_nonlogo_as_logo)).rjust(5)))
+        print(&#34;  FN = count_classified_logo_as_nonlogo................:   &#34;+(str(int(count_classified_logo_as_nonlogo)).rjust(5)))
+        print(&#34; &#34;)
+        print(&#34;  detection_precision..................................:   &#34;+str(sround(detection_precision,3)))
+        print(&#34;  detection_recall.....................................:   &#34;+str(sround(detection_recall,3)))
+        print(&#34;  detection_specificity................................:   &#34;+str(sround(detection_specificity,3)))
+        print(&#34;  detection_accuracy...................................:   &#34;+str(sround(detection_accuracy,3)))
+        print(&#34; &#34;)
+        print(&#34;  True positive rate  = Recall ........................:   &#34;+str(sround(detection_recall,3)))
+        print(&#34;  True negative rate  = Specificity ...................:   &#34;+str(sround(detection_specificity,3)))
+        print(&#34;  False positive rate = FP / (FP + TN) ................:   &#34;+str(sround(FalsePositiveRate,3)))
+        print(&#34;  False negative rate = FN / (TP + FN) ................:   &#34;+str(sround(FalseNegativeRate,3)))
+        print(&#34; &#34;)
+        
+    # main scores
+    print(&#34;Recognition: (\&#34;If a logo is present of which class is it?\&#34;)&#34;)
+    print(&#34;  recognition_precision................................:   &#34;+str(sround(recognition_precision,3)))
+    print(&#34;  recognition_recall...................................:   &#34;+str(sround(recognition_recall,3)))
+    print(&#34;  recognition_accuracy.................................:   &#34;+str(sround(recognition_accuracy,3)))
+    if verbose:
+        print(&#34;\nDate/Time: &#34; + time.asctime())
+        
+    print(&#34;---------------------------------------------------------------------------&#34;)
+
+    return</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.fl_eval_classification.fl_eval_classification"><code class="name flex">
+<span>def <span class="ident">fl_eval_classification</span></span>(<span>flickrlogos_dir, detection_file, verbose)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Computes scores for classification/recognition results.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_eval_classification(flickrlogos_dir, detection_file, verbose):
+    &#34;&#34;&#34;Computes scores for classification/recognition results.&#34;&#34;&#34;
+    #==========================================================================
+    # check input
+    #==========================================================================
+    flickrlogos_dir = normpath(flickrlogos_dir)
+    detection_file  = normpath(detection_file)
+    
+    if not exists(flickrlogos_dir):
+        print(&#34;ERROR: fl_eval_classification(): Directory given by --flickrlogos does not exist: &#39;&#34;+str(flickrlogos_dir)+&#34;&#39;&#34;)
+        exit(1)
+
+    if not exists(detection_file):
+        print(&#34;ERROR: detection_file: File &#39;&#34;+detection_file+&#34;&#39; does not exist!\n&#34;)
+        exit(1)
+
+    if not flickrlogos_dir.endswith(&#39;/&#39;) and not flickrlogos_dir.endswith(&#39;\\&#39;):
+        flickrlogos_dir += &#39;/&#39;
+
+    gt_all_file     = normpath(flickrlogos_dir + &#34;all.txt&#34;)
+    gt_train_file   = normpath(flickrlogos_dir + &#34;trainset.txt&#34;)
+    gt_valset_file  = normpath(flickrlogos_dir + &#34;valset.txt&#34;)
+    gt_testset_file = normpath(flickrlogos_dir + &#34;testset.txt&#34;)
+
+    if not exists(gt_all_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_all_file)+&#34;&#39;&#34;)
+        exit(1)
+    if not exists(gt_train_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_train_file)+&#34;&#39;&#34;)
+        exit(1)
+    if not exists(gt_valset_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_valset_file)+&#34;&#39;&#34;)
+        exit(1)
+    if not exists(gt_testset_file):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+str(gt_testset_file)+&#34;&#39;&#34;)
+        exit(1)
+
+    #==========================================================================
+    # load ground truth
+    # NOTE: Not all ground truth files are actually required to compute the scores
+    #==========================================================================
+    # ALL: Training set + Validation set + Test set
+    gt_all_map_img2class, gt_all_map_class2imgs, gt_all_class_names = fl_read_groundtruth2(gt_all_file)
+    assert len(gt_all_class_names) == 33
+    assert len(gt_all_map_img2class) == 8240
+    assert len(gt_all_map_class2imgs) == 33
+
+    # Training set
+    gt_train_map_img2class, gt_train_map_class2imgs, gt_train_class_names = fl_read_groundtruth2(gt_train_file)
+    assert len(gt_train_class_names) == 32
+    assert len(gt_train_map_img2class) == 320
+    assert len(gt_train_map_class2imgs) == 32
+
+    # Validation set
+    gt_val_map_img2class, gt_val_map_class2imgs, gt_val_val_class_names = fl_read_groundtruth2(gt_valset_file)
+    assert len(gt_val_val_class_names) == 33
+    assert len(gt_val_map_img2class) == 3960
+    assert len(gt_val_map_class2imgs) == 33
+
+    # Test set
+    gt_test_map_img2class, gt_test_map_class2imgs, gt_test_class_names = fl_read_groundtruth2(gt_testset_file)
+    assert len(gt_test_class_names) == 33
+    assert len(gt_test_map_img2class) == 3960
+    assert len(gt_test_map_class2imgs) == 33
+
+    #==========================================================================
+    # load detection results and normalize all class names to lower case
+    #==========================================================================
+    actual_data = fl_read_csv(detection_file)
+    actual_data = [(img, detected_class.lower(), conf) for img, detected_class, conf in actual_data ]
+        
+    #==========================================================================
+    # parse actual_data and compute scores
+    #==========================================================================
+    compute_scores(gt_all_map_img2class, actual_data, gt_all_file, detection_file, verbose)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.fl_eval_classification.sround"><code class="name flex">
+<span>def <span class="ident">sround</span></span>(<span>x, arg)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sround(x, arg):
+    if isinstance(x, float):
+        return round(x, arg)
+    else:
+        return x</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.evaluators.flickr32" href="index.html">torchsight.evaluators.flickr32</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_classification.compute_scores" href="#torchsight.evaluators.flickr32.fl_eval_classification.compute_scores">compute_scores</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_classification.fl_eval_classification" href="#torchsight.evaluators.flickr32.fl_eval_classification.fl_eval_classification">fl_eval_classification</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_classification.sround" href="#torchsight.evaluators.flickr32.fl_eval_classification.sround">sround</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

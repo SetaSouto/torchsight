@@ -66,32 +66,15 @@ class DirectionalClassification(nn.Module):
     _Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval._
     [Paper in Arxiv](https://arxiv.org/abs/1802.09662)
 
-    But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+    But there is a problem: If we use only this approach we use a thing similar to a softmax but over the
     cosine similarity of the embedding with each class&#39; mean, as the softmax always gives a winner
     this won&#39;t allow us to identify correctly a background embedding, i.e., a non interesting object
     for the model.
 
-    To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
-    -1 and 1 we can adjust the sigmoid to get:
-
-    sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
-    f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)
-
-    Where x is the cosine similarity between the embedding and a class&#39; mean, k is the concentration
-    parameter and b is the shift parameter. The division is to fit the max value possible to one, and
-    as we&#39;ll use the shift more near 1 than -1 the minimum is always a number very very near 0.
-
-    # How does it work
-
-    Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
-    with size d for images of C classes. Assuming that y is the correct label for the image x,
-    the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
-    parameters of the CNN, means are the mean vectors for each class, k is the concentration
-    of the modified sigmoid function and b is the shift.
-
-    The distribution is like a gaussian but projected to an hypersphere.
-
-    It updates the mean vector of each class based on the embeddings that pass through the network.
+    To avoid this, we can use the sigmoid function instead of the softmax. But if we only use
+    the cosine similarity and the sigmoid function it could be impossible to have a precision of 1
+    (because sigmoid(maximum cosine similarity = 1) = 0.7311).
+    So we must add a weight and a bias to modify the sigmoid and get coherent values.
 
     How can it update the means?
     Because every time that the embeddings pass through the network we must provide the real annotations
@@ -103,8 +86,8 @@ class DirectionalClassification(nn.Module):
     because it will compute the mean with the average of the class&#39; embeddings.
     &#34;&#34;&#34;
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
-                 assignation_thresholds, device=None):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, assignation_thresholds,
+                 means_update=&#39;batch&#39;, means_lr=0.1):
         &#34;&#34;&#34;Initialize the module.
 
         Arguments:
@@ -113,64 +96,43 @@ class DirectionalClassification(nn.Module):
             anchors (int): Number of anchors per location in the feature map.
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
-            concentration (int): The concentration parameter for the modified sigmoid.
-            shift (float): The shift value for the modified sigmoid.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
-            device (str, optional): The device where the module will run.
+            means_update (str, optional): The update method to use. Options: [&#39;batch&#39;, &#39;manual&#39;].
+                See track() method for more documentation.
+            means_lr (float, optional): The learning rate used in the &#39;batch&#39; means update method.
         &#34;&#34;&#34;
         super(DirectionalClassification, self).__init__()
 
+        if means_update not in [&#39;batch&#39;, &#39;manual&#39;]:
+            raise ValueError(&#39;Unsupported means update method &#34;{}&#34;. Options: &#34;batch&#34;, &#34;manual&#34;.&#39;.format(means_update))
         if &#39;object&#39; not in assignation_thresholds:
             raise ValueError(&#39;There is no &#34;object&#34; threshold in the assignation threshold dict&#39;)
         if &#39;background&#39; not in assignation_thresholds:
             raise ValueError(&#39;There is no &#34;background&#34; threshold in the assignation threshold dict&#39;)
 
+        self.means_update = means_update
+        self.means_lr = means_lr
         self.assignation_thresholds = assignation_thresholds
-        self.classes = classes
-        self.concentration = concentration
-        self.shift = shift
-        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
         self.embedding_size = embedding_size
+        self.sigmoid = nn.Sigmoid()
 
         # Start the means for the distributions as zero vectors
         # We can get the mean for the i-th class with self.means[i]
-        self.means = torch.zeros(classes, embedding_size).type(torch.float).to(self.device)
+        self.register_buffer(&#39;means&#39;, torch.zeros(classes, embedding_size))
+        self.weight = nn.Parameter(torch.Tensor(classes))
+        self.bias = nn.Parameter(torch.Tensor(classes))
+        nn.init.constant_(self.weight, 7)
+        nn.init.constant_(self.bias, -0.5)
 
         # We need to keep track of embeddings for each class to update the means. How? The mean could be
         # calculated by the average of the embeddings of the same class normalized. So it&#39;s the sum of
         # embeddings that passes through the network and that result normalized to have unit norm.
-        self.embeddings_sums = torch.zeros_like(self.means)
+        self.register_buffer(&#39;embeddings_sums&#39;, torch.zeros_like(self.means))
 
         # Create the encoder
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
-                                 anchors=anchors, features=features).to(self.device)
-
-    def to(self, device):
-        &#34;&#34;&#34;Move the module and the means to the given device.
-
-        Arguments:
-            device (str): The device where to move the module and its attributes.
-        &#34;&#34;&#34;
-        self.device = device
-        self.means = self.means.to(device)
-        self.embeddings_sums = self.embeddings_sums.to(device)
-        return super(DirectionalClassification, self).to(device)
-
-    def modified_sigmoid(self, inputs):
-        &#34;&#34;&#34;Return the modified sigmoid value applied to the given values.
-
-        Arguments:
-            x (torch.Tensor): The tensor with the values to apply the modified function.
-
-        Returns:
-            torch.Tensor: The value for each x that the function returns.
-        &#34;&#34;&#34;
-        def sigmoid(inputs):
-            &#34;&#34;&#34;Original sigmoid.&#34;&#34;&#34;
-            return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
-
-        return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))
+                                 anchors=anchors, features=features)
 
     def encode(self, feature_map):
         &#34;&#34;&#34;Generate the embeddings for the given feature map.
@@ -197,6 +159,15 @@ class DirectionalClassification(nn.Module):
 
     def track(self, embeddings, anchors, annotations):
         &#34;&#34;&#34;Track the embeddings to accumulate the embeddings assigned to the same class.
+
+        We have two ways to track the embedding: batch update or one-shot update.
+
+        The batch update change the mean of the class every time a batch of images pass through
+        the network. It applies learning rate to update so the update is like:
+        mean(t+1) = (1 - lr) * mean(t) + lr * batch_embeddings(t).
+
+        The one-shot update keep track of the embeddings in another tensor, the embeddings_sums
+        and you must call the method `update_means()` to update the means with those sums.
 
         Take the embeddings, assign the annotations to each anchor get the assigned anchors
         to objects and with those embeddings sum to the embeddings_sums according with their
@@ -240,7 +211,20 @@ class DirectionalClassification(nn.Module):
                 # and sum them to the embeddings_sum
                 for label in assigned_annotations[:, -1].unique():
                     mask = objects_annotations[:, -1] == label
-                    self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)
+                    label = label.long()
+                    label_embeddings = objects_embeddings[mask].sum(dim=0)
+                    if self.means_update == &#39;batch&#39;:
+                        embeddings_norm = label_embeddings.norm()
+                        if embeddings_norm == 0:
+                            continue
+                        label_embeddings /= embeddings_norm
+                        self.means[label] = (1 - self.means_lr) * self.means[label]
+                        self.means[label] += self.means_lr * label_embeddings
+                        self.means[label] /= self.means[label].norm()
+                    elif self.means_update == &#39;manual&#39;:
+                        self.embeddings_sums[label] += label_embeddings
+                    else:
+                        raise ValueError(&#39;Unsupported means update type: &#34;{}&#34;&#39;.format(self.means_update))
 
     def classify(self, embeddings):
         &#34;&#34;&#34;Get the probability for each embedding to below to each class.
@@ -259,7 +243,8 @@ class DirectionalClassification(nn.Module):
                     (batch size, total embeddings, number of classes)
         &#34;&#34;&#34;
         similarity = torch.matmul(embeddings, self.means.permute(1, 0))
-        return self.modified_sigmoid(similarity)
+        max_val = self.sigmoid(self.weight * (1 + self.bias))
+        return self.sigmoid(self.weight * (similarity + self.bias)) / max_val
 
     def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
         &#34;&#34;&#34;Update means and get the probabilities for each embedding to belong to each class.
@@ -302,35 +287,9 @@ class DirectionalClassification(nn.Module):
 
     def update_means(self):
         &#34;&#34;&#34;Normalize the embeddings_sums and set them as the new means for the module.&#34;&#34;&#34;
-        with torch.no_grad():
-            self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
-
-    def state_dict(self, *args, **kwargs):
-        &#34;&#34;&#34;Get the state dict of the model.
-
-        Why to override this method? Because we must also save the means.
-
-        Returns:
-            dict: The dict with the whole state of the model.
-        &#34;&#34;&#34;
-        return {
-            &#39;means&#39;: self.means,
-            &#39;parameters&#39;: super(DirectionalClassification, self).state_dict(*args, **kwargs)
-        }
-
-    def load_state_dict(self, state_dict):
-        &#34;&#34;&#34;Load a given state dict of this model.
-
-        Arguments:
-            state_dict (dict): A state dict generated by this model.
-        &#34;&#34;&#34;
-        if &#39;means&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;means&#34; key.&#39;)
-        if &#39;parameters&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
-
-        self.means = state_dict[&#39;means&#39;]
-        super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])
+        if self.means_update == &#39;manual&#39;:
+            with torch.no_grad():
+                self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
 
 
 class DLDENetWithTrackedMeans(RetinaNet):
@@ -339,8 +298,8 @@ class DLDENetWithTrackedMeans(RetinaNet):
     Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
     &#34;&#34;&#34;
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
-                 shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
+                 assignation_thresholds=None, means_update=&#39;batch&#39;, means_lr=0.1, pretrained=True, device=None):
         &#34;&#34;&#34;Initialize the network.
 
         Arguments:
@@ -350,35 +309,29 @@ class DLDENetWithTrackedMeans(RetinaNet):
                 For the default dict please see RetinaNet module.
             anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
-            concentration (int): The concentration parameter for the distribution in the classification module.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+            means_update_type (str, optional): The update method to use. Options: [&#39;batch&#39;, &#39;manual&#39;].
+                See DirectionalClassification.track() method for more documentation.
+            means_lr (float, optional): The learning rate used in the &#39;batch&#39; means update method.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
         &#34;&#34;&#34;
         self.embedding_size = embedding_size
-        self.concentration = concentration
-        self.shift = shift
+        self.means_update = means_update
+        self.means_lr = means_lr
 
         if assignation_thresholds is not None:
             self.assignation_thresholds = assignation_thresholds
         else:
             self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
 
-        super().__init__(classes, resnet, features, anchors, pretrained, device)
-
-    def to(self, device):
-        &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
-        parameters and attributes to the given device.
-
-        Arguments:
-            device (str): The device where to move the module.
-        &#34;&#34;&#34;
-        self.device = device
-        self.classification.to(device)
-        return super().to(device)
+        super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         &#34;&#34;&#34;Get the directional classification module.
@@ -396,9 +349,8 @@ class DLDENetWithTrackedMeans(RetinaNet):
         &#34;&#34;&#34;
         return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
                                          anchors=anchors, features=features, classes=classes,
-                                         concentration=self.concentration, shift=self.shift,
                                          assignation_thresholds=self.assignation_thresholds,
-                                         device=self.device)
+                                         means_update=self.means_update, means_lr=self.means_lr)
 
     def forward(self, images, annotations=None, initializing=False):
         &#34;&#34;&#34;Forward pass through the network.
@@ -408,7 +360,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         In training mode (model.train()) returns the base anchors, the regressions for those anchors
         and the classification probabilities for each anchor.
 
-        While training is mandatory to provide the annotations to keep track of the means for each class&#39;
+        During training is mandatory to provide the annotations to keep track of the means for each class&#39;
         direction. As each image could have different amounts of annotations to fit them in only one tensor
         you can fill the &#39;false&#39; annotations with -1 and so those annotations will be ignored.
 
@@ -461,36 +413,35 @@ class DLDENetWithTrackedMeans(RetinaNet):
 
         return self.transform(images, anchors, regressions, classifications)
 
-    def update_means(self):
-        &#34;&#34;&#34;Update the means of the classification submodule.&#34;&#34;&#34;
-        return self.classification.update_means()
-
-    def state_dict(self, *args, **kwargs):
-        &#34;&#34;&#34;Get the state dict of the model.
-
-        Why to override this method? Because we must also save the means of the classifier.
-
-        Returns:
-            dict: The dict with the whole state of the model.
-        &#34;&#34;&#34;
-        return {
-            &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
-            &#39;parameters&#39;: super().state_dict(*args, **kwargs)
-        }
-
-    def load_state_dict(self, state_dict):
-        &#34;&#34;&#34;Load a given state dict of this model.
+    @classmethod
+    def from_checkpoint(cls, checkpoint, device=None):
+        &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetWithTrackedMeansTrainer.
 
         Arguments:
-            state_dict (dict): A state dict generated by this model.
-        &#34;&#34;&#34;
-        if &#39;classification&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;classification&#34; key.&#39;)
-        if &#39;parameters&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+            checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+            device (str, optional): The device where to load the model.
 
-        super().load_state_dict(state_dict[&#39;parameters&#39;])
-        self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
+        Returns:
+            DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+        &#34;&#34;&#34;
+        device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint, map_location=device)
+
+        params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
+
+        model = cls(classes=params[&#39;classes&#39;],
+                    resnet=params[&#39;resnet&#39;],
+                    features=params[&#39;features&#39;],
+                    anchors=params[&#39;anchors&#39;],
+                    embedding_size=params[&#39;embedding_size&#39;],
+                    assignation_thresholds=params[&#39;assignation_thresholds&#39;],
+                    pretrained=params[&#39;pretrained&#39;])
+        model.load_state_dict(checkpoint[&#39;model&#39;])
+        model.classification.embeddings_sums = torch.zeros_like(model.classification.means).to(device)
+
+        return model</code></pre>
 </details>
 </section>
 <section>
@@ -517,8 +468,8 @@ class DLDENetWithTrackedMeans(RetinaNet):
     Based on RetinaNet, for more info about the architecture please visit the RetinaNet documentation.
     &#34;&#34;&#34;
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
-                 shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
+                 assignation_thresholds=None, means_update=&#39;batch&#39;, means_lr=0.1, pretrained=True, device=None):
         &#34;&#34;&#34;Initialize the network.
 
         Arguments:
@@ -528,35 +479,29 @@ class DLDENetWithTrackedMeans(RetinaNet):
                 For the default dict please see RetinaNet module.
             anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
-            concentration (int): The concentration parameter for the distribution in the classification module.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+            means_update_type (str, optional): The update method to use. Options: [&#39;batch&#39;, &#39;manual&#39;].
+                See DirectionalClassification.track() method for more documentation.
+            means_lr (float, optional): The learning rate used in the &#39;batch&#39; means update method.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
         &#34;&#34;&#34;
         self.embedding_size = embedding_size
-        self.concentration = concentration
-        self.shift = shift
+        self.means_update = means_update
+        self.means_lr = means_lr
 
         if assignation_thresholds is not None:
             self.assignation_thresholds = assignation_thresholds
         else:
             self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
 
-        super().__init__(classes, resnet, features, anchors, pretrained, device)
-
-    def to(self, device):
-        &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
-        parameters and attributes to the given device.
-
-        Arguments:
-            device (str): The device where to move the module.
-        &#34;&#34;&#34;
-        self.device = device
-        self.classification.to(device)
-        return super().to(device)
+        super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         &#34;&#34;&#34;Get the directional classification module.
@@ -574,9 +519,8 @@ class DLDENetWithTrackedMeans(RetinaNet):
         &#34;&#34;&#34;
         return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
                                          anchors=anchors, features=features, classes=classes,
-                                         concentration=self.concentration, shift=self.shift,
                                          assignation_thresholds=self.assignation_thresholds,
-                                         device=self.device)
+                                         means_update=self.means_update, means_lr=self.means_lr)
 
     def forward(self, images, annotations=None, initializing=False):
         &#34;&#34;&#34;Forward pass through the network.
@@ -586,7 +530,7 @@ class DLDENetWithTrackedMeans(RetinaNet):
         In training mode (model.train()) returns the base anchors, the regressions for those anchors
         and the classification probabilities for each anchor.
 
-        While training is mandatory to provide the annotations to keep track of the means for each class&#39;
+        During training is mandatory to provide the annotations to keep track of the means for each class&#39;
         direction. As each image could have different amounts of annotations to fit them in only one tensor
         you can fill the &#39;false&#39; annotations with -1 and so those annotations will be ignored.
 
@@ -639,41 +583,93 @@ class DLDENetWithTrackedMeans(RetinaNet):
 
         return self.transform(images, anchors, regressions, classifications)
 
-    def update_means(self):
-        &#34;&#34;&#34;Update the means of the classification submodule.&#34;&#34;&#34;
-        return self.classification.update_means()
-
-    def state_dict(self, *args, **kwargs):
-        &#34;&#34;&#34;Get the state dict of the model.
-
-        Why to override this method? Because we must also save the means of the classifier.
-
-        Returns:
-            dict: The dict with the whole state of the model.
-        &#34;&#34;&#34;
-        return {
-            &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
-            &#39;parameters&#39;: super().state_dict(*args, **kwargs)
-        }
-
-    def load_state_dict(self, state_dict):
-        &#34;&#34;&#34;Load a given state dict of this model.
+    @classmethod
+    def from_checkpoint(cls, checkpoint, device=None):
+        &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetWithTrackedMeansTrainer.
 
         Arguments:
-            state_dict (dict): A state dict generated by this model.
-        &#34;&#34;&#34;
-        if &#39;classification&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;classification&#34; key.&#39;)
-        if &#39;parameters&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
+            checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+            device (str, optional): The device where to load the model.
 
-        super().load_state_dict(state_dict[&#39;parameters&#39;])
-        self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
+        Returns:
+            DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+        &#34;&#34;&#34;
+        device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint, map_location=device)
+
+        params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
+
+        model = cls(classes=params[&#39;classes&#39;],
+                    resnet=params[&#39;resnet&#39;],
+                    features=params[&#39;features&#39;],
+                    anchors=params[&#39;anchors&#39;],
+                    embedding_size=params[&#39;embedding_size&#39;],
+                    assignation_thresholds=params[&#39;assignation_thresholds&#39;],
+                    pretrained=params[&#39;pretrained&#39;])
+        model.load_state_dict(checkpoint[&#39;model&#39;])
+        model.classification.embeddings_sums = torch.zeros_like(model.classification.means).to(device)
+
+        return model</code></pre>
 </details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.from_checkpoint"><code class="name flex">
+<span>def <span class="ident">from_checkpoint</span></span>(<span>cls, checkpoint, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get an instance of the model from a checkpoint generated with the DLDENetWithTrackedMeansTrainer.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>checkpoint</code></strong> :&ensp;<code>str</code> or <code>dict</code></dt>
+<dd>The path to the checkpoint file or the loaded checkpoint file.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The device where to load the model.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>DLDENet</code></strong></dt>
+<dd>An instance with the weights and hyperparameters got from the checkpoint file.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@classmethod
+def from_checkpoint(cls, checkpoint, device=None):
+    &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetWithTrackedMeansTrainer.
+
+    Arguments:
+        checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+        device (str, optional): The device where to load the model.
+
+    Returns:
+        DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
+    &#34;&#34;&#34;
+    device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+    if isinstance(checkpoint, str):
+        checkpoint = torch.load(checkpoint, map_location=device)
+
+    params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
+
+    model = cls(classes=params[&#39;classes&#39;],
+                resnet=params[&#39;resnet&#39;],
+                features=params[&#39;features&#39;],
+                anchors=params[&#39;anchors&#39;],
+                embedding_size=params[&#39;embedding_size&#39;],
+                assignation_thresholds=params[&#39;assignation_thresholds&#39;],
+                pretrained=params[&#39;pretrained&#39;])
+    model.load_state_dict(checkpoint[&#39;model&#39;])
+    model.classification.embeddings_sums = torch.zeros_like(model.classification.means).to(device)
+
+    return model</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15, shift=0.8, assignation_thresholds=None, pretrained=True, device=None)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512, assignation_thresholds=None, means_update=&#39;batch&#39;, means_lr=0.1, pretrained=True, device=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the network.</p>
@@ -689,13 +685,20 @@ For the default dict please see RetinaNet module.</dd>
 <dt><strong><code>anchors</code></strong> :&ensp;<code>dict</code>, optional</dt>
 <dd>The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
 the Anchors module. For default values please see RetinaNet module.</dd>
+<dt><strong><code>fpn_levels</code></strong> :&ensp;<code>list</code> of <code>int</code></dt>
+<dd>The numbers of the layers in the FPN to get their feature maps.
+If None is given it will return all the levels from 3 to 7.
+If some level is not present it won't return that feature map level of the pyramid.</dd>
 <dt><strong><code>embedding_size</code></strong> :&ensp;<code>int</code>, optional</dt>
 <dd>The length of the embedding to generate per anchor.</dd>
-<dt><strong><code>concentration</code></strong> :&ensp;<code>int</code></dt>
-<dd>The concentration parameter for the distribution in the classification module.</dd>
 <dt><strong><code>assignation_thresholds</code></strong> :&ensp;<code>dict</code></dt>
 <dd>A dict with the thresholds to assign an anchor to an object
 or to background. It must have the keys 'object' and 'background' with float values.</dd>
+<dt><strong><code>means_update_type</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The update method to use. Options: ['batch', 'manual'].
+See DirectionalClassification.track() method for more documentation.</dd>
+<dt><strong><code>means_lr</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>The learning rate used in the 'batch' means update method.</dd>
 <dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
 This pretraining is provided by the torchvision package.</dd>
@@ -704,8 +707,8 @@ This pretraining is provided by the torchvision package.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, concentration=15,
-             shift=0.8, assignation_thresholds=None, pretrained=True, device=None):
+<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
+             assignation_thresholds=None, means_update=&#39;batch&#39;, means_lr=0.1, pretrained=True, device=None):
     &#34;&#34;&#34;Initialize the network.
 
     Arguments:
@@ -715,24 +718,29 @@ This pretraining is provided by the torchvision package.</dd>
             For the default dict please see RetinaNet module.
         anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
             the Anchors module. For default values please see RetinaNet module.
+        fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+            If None is given it will return all the levels from 3 to 7.
+            If some level is not present it won&#39;t return that feature map level of the pyramid.
         embedding_size (int, optional): The length of the embedding to generate per anchor.
-        concentration (int): The concentration parameter for the distribution in the classification module.
         assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
             or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
+        means_update_type (str, optional): The update method to use. Options: [&#39;batch&#39;, &#39;manual&#39;].
+            See DirectionalClassification.track() method for more documentation.
+        means_lr (float, optional): The learning rate used in the &#39;batch&#39; means update method.
         pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
             This pretraining is provided by the torchvision package.
         device (str, optional): The device where the module will run.
     &#34;&#34;&#34;
     self.embedding_size = embedding_size
-    self.concentration = concentration
-    self.shift = shift
+    self.means_update = means_update
+    self.means_lr = means_lr
 
     if assignation_thresholds is not None:
         self.assignation_thresholds = assignation_thresholds
     else:
         self.assignation_thresholds = {&#39;object&#39;: 0.5, &#39;background&#39;: 0.4}
 
-    super().__init__(classes, resnet, features, anchors, pretrained, device)</code></pre>
+    super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)</code></pre>
 </details>
 </dd>
 <dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.forward"><code class="name flex">
@@ -743,7 +751,7 @@ This pretraining is provided by the torchvision package.</dd>
 <p>----- Training -----</p>
 <p>In training mode (model.train()) returns the base anchors, the regressions for those anchors
 and the classification probabilities for each anchor.</p>
-<p>While training is mandatory to provide the annotations to keep track of the means for each class'
+<p>During training is mandatory to provide the annotations to keep track of the means for each class'
 direction. As each image could have different amounts of annotations to fit them in only one tensor
 you can fill the 'false' annotations with -1 and so those annotations will be ignored.</p>
 <p>Example: You have 2 images, the first one with only 1 annotation and the second one with 3.
@@ -785,7 +793,7 @@ classification submodule.</dd>
     In training mode (model.train()) returns the base anchors, the regressions for those anchors
     and the classification probabilities for each anchor.
 
-    While training is mandatory to provide the annotations to keep track of the means for each class&#39;
+    During training is mandatory to provide the annotations to keep track of the means for each class&#39;
     direction. As each image could have different amounts of annotations to fit them in only one tensor
     you can fill the &#39;false&#39; annotations with -1 and so those annotations will be ignored.
 
@@ -879,100 +887,8 @@ classification submodule.</dd>
     &#34;&#34;&#34;
     return DirectionalClassification(in_channels=in_channels, embedding_size=self.embedding_size,
                                      anchors=anchors, features=features, classes=classes,
-                                     concentration=self.concentration, shift=self.shift,
                                      assignation_thresholds=self.assignation_thresholds,
-                                     device=self.device)</code></pre>
-</details>
-</dd>
-<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.load_state_dict"><code class="name flex">
-<span>def <span class="ident">load_state_dict</span></span>(<span>self, state_dict)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Load a given state dict of this model.</p>
-<h2 id="arguments">Arguments</h2>
-<dl>
-<dt><strong><code>state_dict</code></strong> :&ensp;<code>dict</code></dt>
-<dd>A state dict generated by this model.</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def load_state_dict(self, state_dict):
-    &#34;&#34;&#34;Load a given state dict of this model.
-
-    Arguments:
-        state_dict (dict): A state dict generated by this model.
-    &#34;&#34;&#34;
-    if &#39;classification&#39; not in state_dict:
-        raise ValueError(&#39;The given state dict does not contains &#34;classification&#34; key.&#39;)
-    if &#39;parameters&#39; not in state_dict:
-        raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
-
-    super().load_state_dict(state_dict[&#39;parameters&#39;])
-    self.classification.load_state_dict(state_dict[&#39;classification&#39;])</code></pre>
-</details>
-</dd>
-<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.state_dict"><code class="name flex">
-<span>def <span class="ident">state_dict</span></span>(<span>self, *args, **kwargs)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Get the state dict of the model.</p>
-<p>Why to override this method? Because we must also save the means of the classifier.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>dict</code></strong></dt>
-<dd>The dict with the whole state of the model.</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def state_dict(self, *args, **kwargs):
-    &#34;&#34;&#34;Get the state dict of the model.
-
-    Why to override this method? Because we must also save the means of the classifier.
-
-    Returns:
-        dict: The dict with the whole state of the model.
-    &#34;&#34;&#34;
-    return {
-        &#39;classification&#39;: self.classification.state_dict(*args, **kwargs),
-        &#39;parameters&#39;: super().state_dict(*args, **kwargs)
-    }</code></pre>
-</details>
-</dd>
-<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.to"><code class="name flex">
-<span>def <span class="ident">to</span></span>(<span>self, device)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Move the module to the given device and also notify the classification module to move its
-parameters and attributes to the given device.</p>
-<h2 id="arguments">Arguments</h2>
-<dl>
-<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
-<dd>The device where to move the module.</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def to(self, device):
-    &#34;&#34;&#34;Move the module to the given device and also notify the classification module to move its
-    parameters and attributes to the given device.
-
-    Arguments:
-        device (str): The device where to move the module.
-    &#34;&#34;&#34;
-    self.device = device
-    self.classification.to(device)
-    return super().to(device)</code></pre>
-</details>
-</dd>
-<dt id="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.update_means"><code class="name flex">
-<span>def <span class="ident">update_means</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Update the means of the classification submodule.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def update_means(self):
-    &#34;&#34;&#34;Update the means of the classification submodule.&#34;&#34;&#34;
-    return self.classification.update_means()</code></pre>
+                                     means_update=self.means_update, means_lr=self.means_lr)</code></pre>
 </details>
 </dd>
 </dl>
@@ -982,7 +898,9 @@ parameters and attributes to the given device.</p>
 <ul class="hlist">
 <li><code><a title="torchsight.models.retinanet.RetinaNet.classify" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.classify">classify</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.make_predictions" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.make_predictions">make_predictions</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.to" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.to">to</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>
 </ul>
 </li>
@@ -1010,25 +928,14 @@ embedding contains the semantic of the object without losing much visual detail.
 <p>I was inspired by the following paper:</p>
 <p><em>Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval.</em>
 <a href="https://arxiv.org/abs/1802.09662">Paper in Arxiv</a></p>
-<p>But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+<p>But there is a problem: If we use only this approach we use a thing similar to a softmax but over the
 cosine similarity of the embedding with each class' mean, as the softmax always gives a winner
 this won't allow us to identify correctly a background embedding, i.e., a non interesting object
 for the model.</p>
-<p>To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
--1 and 1 we can adjust the sigmoid to get:</p>
-<p>sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
-f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)</p>
-<p>Where x is the cosine similarity between the embedding and a class' mean, k is the concentration
-parameter and b is the shift parameter. The division is to fit the max value possible to one, and
-as we'll use the shift more near 1 than -1 the minimum is always a number very very near 0.</p>
-<h1 id="how-does-it-work">How does it work</h1>
-<p>Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
-with size d for images of C classes. Assuming that y is the correct label for the image x,
-the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
-parameters of the CNN, means are the mean vectors for each class, k is the concentration
-of the modified sigmoid function and b is the shift.</p>
-<p>The distribution is like a gaussian but projected to an hypersphere.</p>
-<p>It updates the mean vector of each class based on the embeddings that pass through the network.</p>
+<p>To avoid this, we can use the sigmoid function instead of the softmax. But if we only use
+the cosine similarity and the sigmoid function it could be impossible to have a precision of 1
+(because sigmoid(maximum cosine similarity = 1) = 0.7311).
+So we must add a weight and a bias to modify the sigmoid and get coherent values.</p>
 <p>How can it update the means?
 Because every time that the embeddings pass through the network we must provide the real annotations
 to update the classes' means with those embeddings. Not a fully update of course, we sum this embeddings
@@ -1064,32 +971,15 @@ because it will compute the mean with the average of the class' embeddings.</p><
     _Directional Statistics-based Deep Metric Learning for Image Classification and Retrieval._
     [Paper in Arxiv](https://arxiv.org/abs/1802.09662)
 
-    But there is a problem: If we use only this approach we use a thing similar a softmax but over the
+    But there is a problem: If we use only this approach we use a thing similar to a softmax but over the
     cosine similarity of the embedding with each class&#39; mean, as the softmax always gives a winner
     this won&#39;t allow us to identify correctly a background embedding, i.e., a non interesting object
     for the model.
 
-    To avoid this, we can modify the sigmoid function. As we know that the cosine similarity range between
-    -1 and 1 we can adjust the sigmoid to get:
-
-    sigmoid (x, k, b) = 1 / (exp(-k * (x - b)) + 1)
-    f(x, k, b) = sigmoid(x, k, b) / sigmoid(1, k, b)
-
-    Where x is the cosine similarity between the embedding and a class&#39; mean, k is the concentration
-    parameter and b is the shift parameter. The division is to fit the max value possible to one, and
-    as we&#39;ll use the shift more near 1 than -1 the minimum is always a number very very near 0.
-
-    # How does it work
-
-    Basically, it assumes that we have a CNN that generates unit embeddings (L2 normalized)
-    with size d for images of C classes. Assuming that y is the correct label for the image x,
-    the loss tries to maximize the probability P(y | x, theta, means, k, b) where theta are the
-    parameters of the CNN, means are the mean vectors for each class, k is the concentration
-    of the modified sigmoid function and b is the shift.
-
-    The distribution is like a gaussian but projected to an hypersphere.
-
-    It updates the mean vector of each class based on the embeddings that pass through the network.
+    To avoid this, we can use the sigmoid function instead of the softmax. But if we only use
+    the cosine similarity and the sigmoid function it could be impossible to have a precision of 1
+    (because sigmoid(maximum cosine similarity = 1) = 0.7311).
+    So we must add a weight and a bias to modify the sigmoid and get coherent values.
 
     How can it update the means?
     Because every time that the embeddings pass through the network we must provide the real annotations
@@ -1101,8 +991,8 @@ because it will compute the mean with the average of the class' embeddings.</p><
     because it will compute the mean with the average of the class&#39; embeddings.
     &#34;&#34;&#34;
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
-                 assignation_thresholds, device=None):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, assignation_thresholds,
+                 means_update=&#39;batch&#39;, means_lr=0.1):
         &#34;&#34;&#34;Initialize the module.
 
         Arguments:
@@ -1111,64 +1001,43 @@ because it will compute the mean with the average of the class' embeddings.</p><
             anchors (int): Number of anchors per location in the feature map.
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
-            concentration (int): The concentration parameter for the modified sigmoid.
-            shift (float): The shift value for the modified sigmoid.
             assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
                 or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
-            device (str, optional): The device where the module will run.
+            means_update (str, optional): The update method to use. Options: [&#39;batch&#39;, &#39;manual&#39;].
+                See track() method for more documentation.
+            means_lr (float, optional): The learning rate used in the &#39;batch&#39; means update method.
         &#34;&#34;&#34;
         super(DirectionalClassification, self).__init__()
 
+        if means_update not in [&#39;batch&#39;, &#39;manual&#39;]:
+            raise ValueError(&#39;Unsupported means update method &#34;{}&#34;. Options: &#34;batch&#34;, &#34;manual&#34;.&#39;.format(means_update))
         if &#39;object&#39; not in assignation_thresholds:
             raise ValueError(&#39;There is no &#34;object&#34; threshold in the assignation threshold dict&#39;)
         if &#39;background&#39; not in assignation_thresholds:
             raise ValueError(&#39;There is no &#34;background&#34; threshold in the assignation threshold dict&#39;)
 
+        self.means_update = means_update
+        self.means_lr = means_lr
         self.assignation_thresholds = assignation_thresholds
-        self.classes = classes
-        self.concentration = concentration
-        self.shift = shift
-        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
         self.embedding_size = embedding_size
+        self.sigmoid = nn.Sigmoid()
 
         # Start the means for the distributions as zero vectors
         # We can get the mean for the i-th class with self.means[i]
-        self.means = torch.zeros(classes, embedding_size).type(torch.float).to(self.device)
+        self.register_buffer(&#39;means&#39;, torch.zeros(classes, embedding_size))
+        self.weight = nn.Parameter(torch.Tensor(classes))
+        self.bias = nn.Parameter(torch.Tensor(classes))
+        nn.init.constant_(self.weight, 7)
+        nn.init.constant_(self.bias, -0.5)
 
         # We need to keep track of embeddings for each class to update the means. How? The mean could be
         # calculated by the average of the embeddings of the same class normalized. So it&#39;s the sum of
         # embeddings that passes through the network and that result normalized to have unit norm.
-        self.embeddings_sums = torch.zeros_like(self.means)
+        self.register_buffer(&#39;embeddings_sums&#39;, torch.zeros_like(self.means))
 
         # Create the encoder
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
-                                 anchors=anchors, features=features).to(self.device)
-
-    def to(self, device):
-        &#34;&#34;&#34;Move the module and the means to the given device.
-
-        Arguments:
-            device (str): The device where to move the module and its attributes.
-        &#34;&#34;&#34;
-        self.device = device
-        self.means = self.means.to(device)
-        self.embeddings_sums = self.embeddings_sums.to(device)
-        return super(DirectionalClassification, self).to(device)
-
-    def modified_sigmoid(self, inputs):
-        &#34;&#34;&#34;Return the modified sigmoid value applied to the given values.
-
-        Arguments:
-            x (torch.Tensor): The tensor with the values to apply the modified function.
-
-        Returns:
-            torch.Tensor: The value for each x that the function returns.
-        &#34;&#34;&#34;
-        def sigmoid(inputs):
-            &#34;&#34;&#34;Original sigmoid.&#34;&#34;&#34;
-            return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
-
-        return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))
+                                 anchors=anchors, features=features)
 
     def encode(self, feature_map):
         &#34;&#34;&#34;Generate the embeddings for the given feature map.
@@ -1195,6 +1064,15 @@ because it will compute the mean with the average of the class' embeddings.</p><
 
     def track(self, embeddings, anchors, annotations):
         &#34;&#34;&#34;Track the embeddings to accumulate the embeddings assigned to the same class.
+
+        We have two ways to track the embedding: batch update or one-shot update.
+
+        The batch update change the mean of the class every time a batch of images pass through
+        the network. It applies learning rate to update so the update is like:
+        mean(t+1) = (1 - lr) * mean(t) + lr * batch_embeddings(t).
+
+        The one-shot update keep track of the embeddings in another tensor, the embeddings_sums
+        and you must call the method `update_means()` to update the means with those sums.
 
         Take the embeddings, assign the annotations to each anchor get the assigned anchors
         to objects and with those embeddings sum to the embeddings_sums according with their
@@ -1238,7 +1116,20 @@ because it will compute the mean with the average of the class' embeddings.</p><
                 # and sum them to the embeddings_sum
                 for label in assigned_annotations[:, -1].unique():
                     mask = objects_annotations[:, -1] == label
-                    self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)
+                    label = label.long()
+                    label_embeddings = objects_embeddings[mask].sum(dim=0)
+                    if self.means_update == &#39;batch&#39;:
+                        embeddings_norm = label_embeddings.norm()
+                        if embeddings_norm == 0:
+                            continue
+                        label_embeddings /= embeddings_norm
+                        self.means[label] = (1 - self.means_lr) * self.means[label]
+                        self.means[label] += self.means_lr * label_embeddings
+                        self.means[label] /= self.means[label].norm()
+                    elif self.means_update == &#39;manual&#39;:
+                        self.embeddings_sums[label] += label_embeddings
+                    else:
+                        raise ValueError(&#39;Unsupported means update type: &#34;{}&#34;&#39;.format(self.means_update))
 
     def classify(self, embeddings):
         &#34;&#34;&#34;Get the probability for each embedding to below to each class.
@@ -1257,7 +1148,8 @@ because it will compute the mean with the average of the class' embeddings.</p><
                     (batch size, total embeddings, number of classes)
         &#34;&#34;&#34;
         similarity = torch.matmul(embeddings, self.means.permute(1, 0))
-        return self.modified_sigmoid(similarity)
+        max_val = self.sigmoid(self.weight * (1 + self.bias))
+        return self.sigmoid(self.weight * (similarity + self.bias)) / max_val
 
     def forward(self, feature_maps, anchors=None, annotations=None, classify=True):
         &#34;&#34;&#34;Update means and get the probabilities for each embedding to belong to each class.
@@ -1300,40 +1192,14 @@ because it will compute the mean with the average of the class' embeddings.</p><
 
     def update_means(self):
         &#34;&#34;&#34;Normalize the embeddings_sums and set them as the new means for the module.&#34;&#34;&#34;
-        with torch.no_grad():
-            self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)
-
-    def state_dict(self, *args, **kwargs):
-        &#34;&#34;&#34;Get the state dict of the model.
-
-        Why to override this method? Because we must also save the means.
-
-        Returns:
-            dict: The dict with the whole state of the model.
-        &#34;&#34;&#34;
-        return {
-            &#39;means&#39;: self.means,
-            &#39;parameters&#39;: super(DirectionalClassification, self).state_dict(*args, **kwargs)
-        }
-
-    def load_state_dict(self, state_dict):
-        &#34;&#34;&#34;Load a given state dict of this model.
-
-        Arguments:
-            state_dict (dict): A state dict generated by this model.
-        &#34;&#34;&#34;
-        if &#39;means&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;means&#34; key.&#39;)
-        if &#39;parameters&#39; not in state_dict:
-            raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
-
-        self.means = state_dict[&#39;means&#39;]
-        super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])</code></pre>
+        if self.means_update == &#39;manual&#39;:
+            with torch.no_grad():
+                self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.models.dlde.tracked.DirectionalClassification.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, embedding_size, anchors, features, classes, concentration, shift, assignation_thresholds, device=None)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, embedding_size, anchors, features, classes, assignation_thresholds, means_update=&#39;batch&#39;, means_lr=0.1)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the module.</p>
@@ -1349,20 +1215,19 @@ because it will compute the mean with the average of the class' embeddings.</p><
 <dd>Number of features in the conv layers that generates the embedding.</dd>
 <dt><strong><code>classes</code></strong> :&ensp;<code>int</code></dt>
 <dd>The number of classes to detect.</dd>
-<dt><strong><code>concentration</code></strong> :&ensp;<code>int</code></dt>
-<dd>The concentration parameter for the modified sigmoid.</dd>
-<dt><strong><code>shift</code></strong> :&ensp;<code>float</code></dt>
-<dd>The shift value for the modified sigmoid.</dd>
 <dt><strong><code>assignation_thresholds</code></strong> :&ensp;<code>dict</code></dt>
 <dd>A dict with the thresholds to assign an anchor to an object
 or to background. It must have the keys 'object' and 'background' with float values.</dd>
-<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The device where the module will run.</dd>
+<dt><strong><code>means_update</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The update method to use. Options: ['batch', 'manual'].
+See track() method for more documentation.</dd>
+<dt><strong><code>means_lr</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>The learning rate used in the 'batch' means update method.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, in_channels, embedding_size, anchors, features, classes, concentration, shift,
-             assignation_thresholds, device=None):
+<pre><code class="python">def __init__(self, in_channels, embedding_size, anchors, features, classes, assignation_thresholds,
+             means_update=&#39;batch&#39;, means_lr=0.1):
     &#34;&#34;&#34;Initialize the module.
 
     Arguments:
@@ -1371,38 +1236,43 @@ or to background. It must have the keys 'object' and 'background' with float val
         anchors (int): Number of anchors per location in the feature map.
         features (int): Number of features in the conv layers that generates the embedding.
         classes (int): The number of classes to detect.
-        concentration (int): The concentration parameter for the modified sigmoid.
-        shift (float): The shift value for the modified sigmoid.
         assignation_thresholds (dict): A dict with the thresholds to assign an anchor to an object
             or to background. It must have the keys &#39;object&#39; and &#39;background&#39; with float values.
-        device (str, optional): The device where the module will run.
+        means_update (str, optional): The update method to use. Options: [&#39;batch&#39;, &#39;manual&#39;].
+            See track() method for more documentation.
+        means_lr (float, optional): The learning rate used in the &#39;batch&#39; means update method.
     &#34;&#34;&#34;
     super(DirectionalClassification, self).__init__()
 
+    if means_update not in [&#39;batch&#39;, &#39;manual&#39;]:
+        raise ValueError(&#39;Unsupported means update method &#34;{}&#34;. Options: &#34;batch&#34;, &#34;manual&#34;.&#39;.format(means_update))
     if &#39;object&#39; not in assignation_thresholds:
         raise ValueError(&#39;There is no &#34;object&#34; threshold in the assignation threshold dict&#39;)
     if &#39;background&#39; not in assignation_thresholds:
         raise ValueError(&#39;There is no &#34;background&#34; threshold in the assignation threshold dict&#39;)
 
+    self.means_update = means_update
+    self.means_lr = means_lr
     self.assignation_thresholds = assignation_thresholds
-    self.classes = classes
-    self.concentration = concentration
-    self.shift = shift
-    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
     self.embedding_size = embedding_size
+    self.sigmoid = nn.Sigmoid()
 
     # Start the means for the distributions as zero vectors
     # We can get the mean for the i-th class with self.means[i]
-    self.means = torch.zeros(classes, embedding_size).type(torch.float).to(self.device)
+    self.register_buffer(&#39;means&#39;, torch.zeros(classes, embedding_size))
+    self.weight = nn.Parameter(torch.Tensor(classes))
+    self.bias = nn.Parameter(torch.Tensor(classes))
+    nn.init.constant_(self.weight, 7)
+    nn.init.constant_(self.bias, -0.5)
 
     # We need to keep track of embeddings for each class to update the means. How? The mean could be
     # calculated by the average of the embeddings of the same class normalized. So it&#39;s the sum of
     # embeddings that passes through the network and that result normalized to have unit norm.
-    self.embeddings_sums = torch.zeros_like(self.means)
+    self.register_buffer(&#39;embeddings_sums&#39;, torch.zeros_like(self.means))
 
     # Create the encoder
     self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size,
-                             anchors=anchors, features=features).to(self.device)</code></pre>
+                             anchors=anchors, features=features)</code></pre>
 </details>
 </dd>
 <dt id="torchsight.models.dlde.tracked.DirectionalClassification.classify"><code class="name flex">
@@ -1442,7 +1312,8 @@ Shape:
                 (batch size, total embeddings, number of classes)
     &#34;&#34;&#34;
     similarity = torch.matmul(embeddings, self.means.permute(1, 0))
-    return self.modified_sigmoid(similarity)</code></pre>
+    max_val = self.sigmoid(self.weight * (1 + self.bias))
+    return self.sigmoid(self.weight * (similarity + self.bias)) / max_val</code></pre>
 </details>
 </dd>
 <dt id="torchsight.models.dlde.tracked.DirectionalClassification.encode"><code class="name flex">
@@ -1559,119 +1430,17 @@ Shape:
         return self.classify(embeddings)</code></pre>
 </details>
 </dd>
-<dt id="torchsight.models.dlde.tracked.DirectionalClassification.load_state_dict"><code class="name flex">
-<span>def <span class="ident">load_state_dict</span></span>(<span>self, state_dict)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Load a given state dict of this model.</p>
-<h2 id="arguments">Arguments</h2>
-<dl>
-<dt><strong><code>state_dict</code></strong> :&ensp;<code>dict</code></dt>
-<dd>A state dict generated by this model.</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def load_state_dict(self, state_dict):
-    &#34;&#34;&#34;Load a given state dict of this model.
-
-    Arguments:
-        state_dict (dict): A state dict generated by this model.
-    &#34;&#34;&#34;
-    if &#39;means&#39; not in state_dict:
-        raise ValueError(&#39;The given state dict does not contains &#34;means&#34; key.&#39;)
-    if &#39;parameters&#39; not in state_dict:
-        raise ValueError(&#39;The given state dict does not contains &#34;parameters&#34; key.&#39;)
-
-    self.means = state_dict[&#39;means&#39;]
-    super(DirectionalClassification, self).load_state_dict(state_dict[&#39;parameters&#39;])</code></pre>
-</details>
-</dd>
-<dt id="torchsight.models.dlde.tracked.DirectionalClassification.modified_sigmoid"><code class="name flex">
-<span>def <span class="ident">modified_sigmoid</span></span>(<span>self, inputs)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Return the modified sigmoid value applied to the given values.</p>
-<h2 id="arguments">Arguments</h2>
-<dl>
-<dt><strong><code>x</code></strong> :&ensp;<code>torch.Tensor</code></dt>
-<dd>The tensor with the values to apply the modified function.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>torch.Tensor: The value for each x that the function returns.</p></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def modified_sigmoid(self, inputs):
-    &#34;&#34;&#34;Return the modified sigmoid value applied to the given values.
-
-    Arguments:
-        x (torch.Tensor): The tensor with the values to apply the modified function.
-
-    Returns:
-        torch.Tensor: The value for each x that the function returns.
-    &#34;&#34;&#34;
-    def sigmoid(inputs):
-        &#34;&#34;&#34;Original sigmoid.&#34;&#34;&#34;
-        return 1 / (torch.exp(-1 * self.concentration * (inputs - self.shift)) + 1)
-
-    return sigmoid(inputs) / sigmoid(torch.Tensor([1.]).to(self.device))</code></pre>
-</details>
-</dd>
-<dt id="torchsight.models.dlde.tracked.DirectionalClassification.state_dict"><code class="name flex">
-<span>def <span class="ident">state_dict</span></span>(<span>self, *args, **kwargs)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Get the state dict of the model.</p>
-<p>Why to override this method? Because we must also save the means.</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>dict</code></strong></dt>
-<dd>The dict with the whole state of the model.</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def state_dict(self, *args, **kwargs):
-    &#34;&#34;&#34;Get the state dict of the model.
-
-    Why to override this method? Because we must also save the means.
-
-    Returns:
-        dict: The dict with the whole state of the model.
-    &#34;&#34;&#34;
-    return {
-        &#39;means&#39;: self.means,
-        &#39;parameters&#39;: super(DirectionalClassification, self).state_dict(*args, **kwargs)
-    }</code></pre>
-</details>
-</dd>
-<dt id="torchsight.models.dlde.tracked.DirectionalClassification.to"><code class="name flex">
-<span>def <span class="ident">to</span></span>(<span>self, device)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Move the module and the means to the given device.</p>
-<h2 id="arguments">Arguments</h2>
-<dl>
-<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
-<dd>The device where to move the module and its attributes.</dd>
-</dl></section>
-<details class="source">
-<summary>Source code</summary>
-<pre><code class="python">def to(self, device):
-    &#34;&#34;&#34;Move the module and the means to the given device.
-
-    Arguments:
-        device (str): The device where to move the module and its attributes.
-    &#34;&#34;&#34;
-    self.device = device
-    self.means = self.means.to(device)
-    self.embeddings_sums = self.embeddings_sums.to(device)
-    return super(DirectionalClassification, self).to(device)</code></pre>
-</details>
-</dd>
 <dt id="torchsight.models.dlde.tracked.DirectionalClassification.track"><code class="name flex">
 <span>def <span class="ident">track</span></span>(<span>self, embeddings, anchors, annotations)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Track the embeddings to accumulate the embeddings assigned to the same class.</p>
+<p>We have two ways to track the embedding: batch update or one-shot update.</p>
+<p>The batch update change the mean of the class every time a batch of images pass through
+the network. It applies learning rate to update so the update is like:
+mean(t+1) = (1 - lr) * mean(t) + lr * batch_embeddings(t).</p>
+<p>The one-shot update keep track of the embeddings in another tensor, the embeddings_sums
+and you must call the method <code>update_means()</code> to update the means with those sums.</p>
 <p>Take the embeddings, assign the annotations to each anchor get the assigned anchors
 to objects and with those embeddings sum to the embeddings_sums according with their
 assignations to annotations.</p>
@@ -1700,6 +1469,15 @@ Shape:
 <summary>Source code</summary>
 <pre><code class="python">def track(self, embeddings, anchors, annotations):
     &#34;&#34;&#34;Track the embeddings to accumulate the embeddings assigned to the same class.
+
+    We have two ways to track the embedding: batch update or one-shot update.
+
+    The batch update change the mean of the class every time a batch of images pass through
+    the network. It applies learning rate to update so the update is like:
+    mean(t+1) = (1 - lr) * mean(t) + lr * batch_embeddings(t).
+
+    The one-shot update keep track of the embeddings in another tensor, the embeddings_sums
+    and you must call the method `update_means()` to update the means with those sums.
 
     Take the embeddings, assign the annotations to each anchor get the assigned anchors
     to objects and with those embeddings sum to the embeddings_sums according with their
@@ -1743,7 +1521,20 @@ Shape:
             # and sum them to the embeddings_sum
             for label in assigned_annotations[:, -1].unique():
                 mask = objects_annotations[:, -1] == label
-                self.embeddings_sums[label.type(torch.long)] += objects_embeddings[mask].sum(dim=0)</code></pre>
+                label = label.long()
+                label_embeddings = objects_embeddings[mask].sum(dim=0)
+                if self.means_update == &#39;batch&#39;:
+                    embeddings_norm = label_embeddings.norm()
+                    if embeddings_norm == 0:
+                        continue
+                    label_embeddings /= embeddings_norm
+                    self.means[label] = (1 - self.means_lr) * self.means[label]
+                    self.means[label] += self.means_lr * label_embeddings
+                    self.means[label] /= self.means[label].norm()
+                elif self.means_update == &#39;manual&#39;:
+                    self.embeddings_sums[label] += label_embeddings
+                else:
+                    raise ValueError(&#39;Unsupported means update type: &#34;{}&#34;&#39;.format(self.means_update))</code></pre>
 </details>
 </dd>
 <dt id="torchsight.models.dlde.tracked.DirectionalClassification.update_means"><code class="name flex">
@@ -1755,8 +1546,9 @@ Shape:
 <summary>Source code</summary>
 <pre><code class="python">def update_means(self):
     &#34;&#34;&#34;Normalize the embeddings_sums and set them as the new means for the module.&#34;&#34;&#34;
-    with torch.no_grad():
-        self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)</code></pre>
+    if self.means_update == &#39;manual&#39;:
+        with torch.no_grad():
+            self.means = self.embeddings_sums / self.embeddings_sums.norm(dim=1, keepdim=True)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1782,11 +1574,8 @@ Shape:
 <ul class="">
 <li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.__init__" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.__init__">__init__</a></code></li>
 <li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.forward" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.from_checkpoint" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.from_checkpoint">from_checkpoint</a></code></li>
 <li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.get_classification_module" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.get_classification_module">get_classification_module</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.load_state_dict" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.load_state_dict">load_state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.state_dict" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.state_dict">state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.to" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.to">to</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.update_means" href="#torchsight.models.dlde.tracked.DLDENetWithTrackedMeans.update_means">update_means</a></code></li>
 </ul>
 </li>
 <li>
@@ -1796,10 +1585,6 @@ Shape:
 <li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.classify" href="#torchsight.models.dlde.tracked.DirectionalClassification.classify">classify</a></code></li>
 <li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.encode" href="#torchsight.models.dlde.tracked.DirectionalClassification.encode">encode</a></code></li>
 <li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.forward" href="#torchsight.models.dlde.tracked.DirectionalClassification.forward">forward</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.load_state_dict" href="#torchsight.models.dlde.tracked.DirectionalClassification.load_state_dict">load_state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.modified_sigmoid" href="#torchsight.models.dlde.tracked.DirectionalClassification.modified_sigmoid">modified_sigmoid</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.state_dict" href="#torchsight.models.dlde.tracked.DirectionalClassification.state_dict">state_dict</a></code></li>
-<li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.to" href="#torchsight.models.dlde.tracked.DirectionalClassification.to">to</a></code></li>
 <li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.track" href="#torchsight.models.dlde.tracked.DirectionalClassification.track">track</a></code></li>
 <li><code><a title="torchsight.models.dlde.tracked.DirectionalClassification.update_means" href="#torchsight.models.dlde.tracked.DirectionalClassification.update_means">update_means</a></code></li>
 </ul>

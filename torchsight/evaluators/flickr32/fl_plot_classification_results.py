@@ -29,8 +29,8 @@ from collections import defaultdict
 
 import matplotlib.pyplot as plt
 
-from flickrlogos import fl_read_groundtruth, fl_read_csv
-from flickrlogos.ConfusionMatrix import ConfusionMatrix
+from .flickrlogos import fl_read_groundtruth, fl_read_csv
+from .flickrlogos.ConfusionMatrix import ConfusionMatrix
 
 #==============================================================================
 #

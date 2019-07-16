@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.transforms.augmentation API documentation</title>
+<meta name="description" content="A module with transform pipelines to make augmentations." />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.transforms.augmentation</code> module</h1>
+</header>
+<section id="section-intro">
+<p>A module with transform pipelines to make augmentations.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;A module with transform pipelines to make augmentations.&#34;&#34;&#34;
+import cv2
+import numpy as np
+import torch
+from albumentations import (Compose, GaussianBlur, GaussNoise, LongestMaxSize,
+                            Normalize, PadIfNeeded, RandomBrightnessContrast,
+                            RandomSizedBBoxSafeCrop, Rotate)
+from albumentations.pytorch import ToTensor
+from PIL.Image import Image
+
+from torchsight.utils import JsonObject
+
+
+class AugmentDetection():
+    &#34;&#34;&#34;A custom pipeline to augment the data for a detection task.&#34;&#34;&#34;
+
+    def __init__(self, params=None, evaluation=False, normalize=True):
+        &#34;&#34;&#34;Initialize the pipeline.
+
+        Arguments:
+            params (dict or JsonObject, optional): The params for the pipeline. See get_params().
+            evaluation (bool, optional): if True it will not augment the images, only apply the transforms
+                to match the sizes.
+            normalize (bool, optional): If False it will not apply normalization on evaluation mode.
+                Useful to get images without distortion for the human eye.
+        &#34;&#34;&#34;
+        self.params = self.get_params().merge(params)
+
+        if evaluation:
+            transforms = [
+                LongestMaxSize(**self.params.LongestMaxSize),
+                PadIfNeeded(**self.params.PadIfNeeded)
+            ]
+            transforms += [Normalize(), ToTensor()] if normalize else [ToTensor()]
+        else:
+            transforms = [
+                GaussNoise(**self.params.GaussNoise),
+                # GaussianBlur(**self.params.GaussianBlur),
+                RandomBrightnessContrast(**self.params.RandomBrightnessContrast),
+                Rotate(**self.params.Rotate),
+                LongestMaxSize(**self.params.LongestMaxSize),
+                PadIfNeeded(**self.params.PadIfNeeded),
+                RandomSizedBBoxSafeCrop(**self.params.RandomSizedBBoxSafeCrop),
+                Normalize(),
+                ToTensor()
+            ]
+
+        self.transform = Compose(transforms, bbox_params=self.get_box_params())
+        self.transform_no_boxes = Compose(transforms)
+
+    @staticmethod
+    def get_params():
+        &#34;&#34;&#34;Get the default parameters for the transforms of the pipeline.
+
+        Returns:
+            JsonObject: with the params for the transforms.
+        &#34;&#34;&#34;
+        return JsonObject({
+            &#39;GaussNoise&#39;: {
+                &#39;var_limit&#39;: (10, 50),
+                &#39;p&#39;: 0.5
+            },
+            &#39;GaussianBlur&#39;: {
+                &#39;blur_limit&#39;: 0.7,
+                &#39;p&#39;: 0.5
+            },
+            &#39;RandomBrightnessContrast&#39;: {
+                &#39;brightness_limit&#39;: 0.2,
+                &#39;contrast_limit&#39;: 0.2,
+                &#39;p&#39;: 0.5
+            },
+            &#39;Rotate&#39;: {
+                &#39;limit&#39;: 45,
+                &#39;p&#39;: 0.5
+            },
+            &#39;LongestMaxSize&#39;: {
+                &#39;max_size&#39;: 512
+            },
+            &#39;PadIfNeeded&#39;: {
+                &#39;min_height&#39;: 512,
+                &#39;min_width&#39;: 512,
+                &#39;border_mode&#39;: cv2.BORDER_CONSTANT,
+                &#39;value&#39;: [0, 0, 0]
+            },
+            &#39;RandomSizedBBoxSafeCrop&#39;: {
+                &#39;height&#39;: 512,
+                &#39;width&#39;: 512
+            }
+        })
+
+    @staticmethod
+    def get_box_params():
+        &#34;&#34;&#34;Get the parameters needed for the bounding boxes transforms.
+
+        See: https://github.com/albu/albumentations/blob/master/notebooks/example_bboxes.ipynb
+
+        Returns:
+            dict: The params for the bounding boxes transforms.
+        &#34;&#34;&#34;
+        return {
+            &#39;format&#39;: &#39;pascal_voc&#39;,  # like [x_min, y_min, x_max, y_max]
+            &#39;min_area&#39;: 0,
+            &#39;min_visibility&#39;: 0
+        }
+
+    def __call__(self, data):
+        &#34;&#34;&#34;Apply the transformations.
+
+        Arguments:
+            dict: with
+                image (PIL Image or np.ndarray): The image to transform.
+                boxes (np.ndarray or torch.Tensor, optional): The bounding boxes of the image with shape
+                    `(num boxes, 4 or 5)`.
+                    4 in the case that there aren&#39;t labels, and 5 in the case when the bounding boxes have labels.
+
+        Returns:
+            torch.Tensor: The transformed image.
+            torch.Tensor: The transformed bounding boxes if there is any.
+        &#34;&#34;&#34;
+        image, boxes = data[&#39;image&#39;], data.get(&#39;boxes&#39;, None)
+
+        # Transform image to np.ndarray
+        if isinstance(image, Image):
+            image = np.array(image)
+
+        # Apply the transformation to the image
+        if boxes is None or boxes.shape[0] == 0:
+            image = self.transform_no_boxes(image=image)[&#39;image&#39;]
+
+            if boxes is None:
+                return image
+
+            return image, boxes
+
+        # Transform to numpy the boxes if it were tensors
+        was_tensor = False
+        if torch.is_tensor(boxes):
+            was_tensor = True
+            boxes = boxes.numpy()
+
+        # Add a dummy label if the boxes does not have one
+        had_label = True
+        if boxes.shape[1] == 4:
+            had_label = False
+            num_boxes = boxes.shape[0]
+            boxes = np.concatenate([boxes, np.zeros((num_boxes, 1))], axis=1)
+
+        # Apply the transformation
+        transformed = self.transform(image=image, bboxes=boxes)
+        image, boxes = transformed[&#39;image&#39;], transformed.get(&#39;bboxes&#39;, None)
+
+        # Remove the dummy label
+        if not had_label:
+            boxes = np.array(boxes)
+            boxes = boxes[:, :4]
+
+        # Transform to tensor
+        if was_tensor:
+            boxes = torch.Tensor(boxes)
+
+        # Return the transformed image and boxes
+        return image, boxes</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.transforms.augmentation.AugmentDetection"><code class="flex name class">
+<span>class <span class="ident">AugmentDetection</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>A custom pipeline to augment the data for a detection task.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class AugmentDetection():
+    &#34;&#34;&#34;A custom pipeline to augment the data for a detection task.&#34;&#34;&#34;
+
+    def __init__(self, params=None, evaluation=False, normalize=True):
+        &#34;&#34;&#34;Initialize the pipeline.
+
+        Arguments:
+            params (dict or JsonObject, optional): The params for the pipeline. See get_params().
+            evaluation (bool, optional): if True it will not augment the images, only apply the transforms
+                to match the sizes.
+            normalize (bool, optional): If False it will not apply normalization on evaluation mode.
+                Useful to get images without distortion for the human eye.
+        &#34;&#34;&#34;
+        self.params = self.get_params().merge(params)
+
+        if evaluation:
+            transforms = [
+                LongestMaxSize(**self.params.LongestMaxSize),
+                PadIfNeeded(**self.params.PadIfNeeded)
+            ]
+            transforms += [Normalize(), ToTensor()] if normalize else [ToTensor()]
+        else:
+            transforms = [
+                GaussNoise(**self.params.GaussNoise),
+                # GaussianBlur(**self.params.GaussianBlur),
+                RandomBrightnessContrast(**self.params.RandomBrightnessContrast),
+                Rotate(**self.params.Rotate),
+                LongestMaxSize(**self.params.LongestMaxSize),
+                PadIfNeeded(**self.params.PadIfNeeded),
+                RandomSizedBBoxSafeCrop(**self.params.RandomSizedBBoxSafeCrop),
+                Normalize(),
+                ToTensor()
+            ]
+
+        self.transform = Compose(transforms, bbox_params=self.get_box_params())
+        self.transform_no_boxes = Compose(transforms)
+
+    @staticmethod
+    def get_params():
+        &#34;&#34;&#34;Get the default parameters for the transforms of the pipeline.
+
+        Returns:
+            JsonObject: with the params for the transforms.
+        &#34;&#34;&#34;
+        return JsonObject({
+            &#39;GaussNoise&#39;: {
+                &#39;var_limit&#39;: (10, 50),
+                &#39;p&#39;: 0.5
+            },
+            &#39;GaussianBlur&#39;: {
+                &#39;blur_limit&#39;: 0.7,
+                &#39;p&#39;: 0.5
+            },
+            &#39;RandomBrightnessContrast&#39;: {
+                &#39;brightness_limit&#39;: 0.2,
+                &#39;contrast_limit&#39;: 0.2,
+                &#39;p&#39;: 0.5
+            },
+            &#39;Rotate&#39;: {
+                &#39;limit&#39;: 45,
+                &#39;p&#39;: 0.5
+            },
+            &#39;LongestMaxSize&#39;: {
+                &#39;max_size&#39;: 512
+            },
+            &#39;PadIfNeeded&#39;: {
+                &#39;min_height&#39;: 512,
+                &#39;min_width&#39;: 512,
+                &#39;border_mode&#39;: cv2.BORDER_CONSTANT,
+                &#39;value&#39;: [0, 0, 0]
+            },
+            &#39;RandomSizedBBoxSafeCrop&#39;: {
+                &#39;height&#39;: 512,
+                &#39;width&#39;: 512
+            }
+        })
+
+    @staticmethod
+    def get_box_params():
+        &#34;&#34;&#34;Get the parameters needed for the bounding boxes transforms.
+
+        See: https://github.com/albu/albumentations/blob/master/notebooks/example_bboxes.ipynb
+
+        Returns:
+            dict: The params for the bounding boxes transforms.
+        &#34;&#34;&#34;
+        return {
+            &#39;format&#39;: &#39;pascal_voc&#39;,  # like [x_min, y_min, x_max, y_max]
+            &#39;min_area&#39;: 0,
+            &#39;min_visibility&#39;: 0
+        }
+
+    def __call__(self, data):
+        &#34;&#34;&#34;Apply the transformations.
+
+        Arguments:
+            dict: with
+                image (PIL Image or np.ndarray): The image to transform.
+                boxes (np.ndarray or torch.Tensor, optional): The bounding boxes of the image with shape
+                    `(num boxes, 4 or 5)`.
+                    4 in the case that there aren&#39;t labels, and 5 in the case when the bounding boxes have labels.
+
+        Returns:
+            torch.Tensor: The transformed image.
+            torch.Tensor: The transformed bounding boxes if there is any.
+        &#34;&#34;&#34;
+        image, boxes = data[&#39;image&#39;], data.get(&#39;boxes&#39;, None)
+
+        # Transform image to np.ndarray
+        if isinstance(image, Image):
+            image = np.array(image)
+
+        # Apply the transformation to the image
+        if boxes is None or boxes.shape[0] == 0:
+            image = self.transform_no_boxes(image=image)[&#39;image&#39;]
+
+            if boxes is None:
+                return image
+
+            return image, boxes
+
+        # Transform to numpy the boxes if it were tensors
+        was_tensor = False
+        if torch.is_tensor(boxes):
+            was_tensor = True
+            boxes = boxes.numpy()
+
+        # Add a dummy label if the boxes does not have one
+        had_label = True
+        if boxes.shape[1] == 4:
+            had_label = False
+            num_boxes = boxes.shape[0]
+            boxes = np.concatenate([boxes, np.zeros((num_boxes, 1))], axis=1)
+
+        # Apply the transformation
+        transformed = self.transform(image=image, bboxes=boxes)
+        image, boxes = transformed[&#39;image&#39;], transformed.get(&#39;bboxes&#39;, None)
+
+        # Remove the dummy label
+        if not had_label:
+            boxes = np.array(boxes)
+            boxes = boxes[:, :4]
+
+        # Transform to tensor
+        if was_tensor:
+            boxes = torch.Tensor(boxes)
+
+        # Return the transformed image and boxes
+        return image, boxes</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.transforms.augmentation.AugmentDetection.get_box_params"><code class="name flex">
+<span>def <span class="ident">get_box_params</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the parameters needed for the bounding boxes transforms.</p>
+<dl>
+<dt><strong><code>See</code></strong> :&ensp;&lt;<code>https</code>://<code>github.com</code>/<code>albu</code>/<code>albumentations</code>/<code>blob</code>/<code>master</code>/<code>notebooks</code>/<code>example_bboxes.ipynb</code>&gt;</dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>The params for the bounding boxes transforms.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def get_box_params():
+    &#34;&#34;&#34;Get the parameters needed for the bounding boxes transforms.
+
+    See: https://github.com/albu/albumentations/blob/master/notebooks/example_bboxes.ipynb
+
+    Returns:
+        dict: The params for the bounding boxes transforms.
+    &#34;&#34;&#34;
+    return {
+        &#39;format&#39;: &#39;pascal_voc&#39;,  # like [x_min, y_min, x_max, y_max]
+        &#39;min_area&#39;: 0,
+        &#39;min_visibility&#39;: 0
+    }</code></pre>
+</details>
+</dd>
+<dt id="torchsight.transforms.augmentation.AugmentDetection.get_params"><code class="name flex">
+<span>def <span class="ident">get_params</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the default parameters for the transforms of the pipeline.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>JsonObject</code></strong></dt>
+<dd>with the params for the transforms.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def get_params():
+    &#34;&#34;&#34;Get the default parameters for the transforms of the pipeline.
+
+    Returns:
+        JsonObject: with the params for the transforms.
+    &#34;&#34;&#34;
+    return JsonObject({
+        &#39;GaussNoise&#39;: {
+            &#39;var_limit&#39;: (10, 50),
+            &#39;p&#39;: 0.5
+        },
+        &#39;GaussianBlur&#39;: {
+            &#39;blur_limit&#39;: 0.7,
+            &#39;p&#39;: 0.5
+        },
+        &#39;RandomBrightnessContrast&#39;: {
+            &#39;brightness_limit&#39;: 0.2,
+            &#39;contrast_limit&#39;: 0.2,
+            &#39;p&#39;: 0.5
+        },
+        &#39;Rotate&#39;: {
+            &#39;limit&#39;: 45,
+            &#39;p&#39;: 0.5
+        },
+        &#39;LongestMaxSize&#39;: {
+            &#39;max_size&#39;: 512
+        },
+        &#39;PadIfNeeded&#39;: {
+            &#39;min_height&#39;: 512,
+            &#39;min_width&#39;: 512,
+            &#39;border_mode&#39;: cv2.BORDER_CONSTANT,
+            &#39;value&#39;: [0, 0, 0]
+        },
+        &#39;RandomSizedBBoxSafeCrop&#39;: {
+            &#39;height&#39;: 512,
+            &#39;width&#39;: 512
+        }
+    })</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.transforms.augmentation.AugmentDetection.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, params=None, evaluation=False, normalize=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the pipeline.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>params</code></strong> :&ensp;<code>dict</code> or <code>JsonObject</code>, optional</dt>
+<dd>The params for the pipeline. See get_params().</dd>
+<dt><strong><code>evaluation</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>if True it will not augment the images, only apply the transforms
+to match the sizes.</dd>
+<dt><strong><code>normalize</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If False it will not apply normalization on evaluation mode.
+Useful to get images without distortion for the human eye.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, params=None, evaluation=False, normalize=True):
+    &#34;&#34;&#34;Initialize the pipeline.
+
+    Arguments:
+        params (dict or JsonObject, optional): The params for the pipeline. See get_params().
+        evaluation (bool, optional): if True it will not augment the images, only apply the transforms
+            to match the sizes.
+        normalize (bool, optional): If False it will not apply normalization on evaluation mode.
+            Useful to get images without distortion for the human eye.
+    &#34;&#34;&#34;
+    self.params = self.get_params().merge(params)
+
+    if evaluation:
+        transforms = [
+            LongestMaxSize(**self.params.LongestMaxSize),
+            PadIfNeeded(**self.params.PadIfNeeded)
+        ]
+        transforms += [Normalize(), ToTensor()] if normalize else [ToTensor()]
+    else:
+        transforms = [
+            GaussNoise(**self.params.GaussNoise),
+            # GaussianBlur(**self.params.GaussianBlur),
+            RandomBrightnessContrast(**self.params.RandomBrightnessContrast),
+            Rotate(**self.params.Rotate),
+            LongestMaxSize(**self.params.LongestMaxSize),
+            PadIfNeeded(**self.params.PadIfNeeded),
+            RandomSizedBBoxSafeCrop(**self.params.RandomSizedBBoxSafeCrop),
+            Normalize(),
+            ToTensor()
+        ]
+
+    self.transform = Compose(transforms, bbox_params=self.get_box_params())
+    self.transform_no_boxes = Compose(transforms)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.transforms" href="index.html">torchsight.transforms</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.transforms.augmentation.AugmentDetection" href="#torchsight.transforms.augmentation.AugmentDetection">AugmentDetection</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.transforms.augmentation.AugmentDetection.__init__" href="#torchsight.transforms.augmentation.AugmentDetection.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.transforms.augmentation.AugmentDetection.get_box_params" href="#torchsight.transforms.augmentation.AugmentDetection.get_box_params">get_box_params</a></code></li>
+<li><code><a title="torchsight.transforms.augmentation.AugmentDetection.get_params" href="#torchsight.transforms.augmentation.AugmentDetection.get_params">get_params</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

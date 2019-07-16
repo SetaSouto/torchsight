@@ -26,23 +26,47 @@
 <pre><code class="python">&#34;&#34;&#34;Commands to extract some stats from the log files.&#34;&#34;&#34;
 import click
 
+from .boxes import describe_boxes
+from .dldenet import dldenet
+from .focal import focal
 from .print import printlogger
+from .sizes import sizes
 
 
 @click.group()
 def stats():
-    &#34;&#34;&#34;Extract stats from the logs.&#34;&#34;&#34;
+    &#34;&#34;&#34;Commands to compute statistics or metrics&#34;&#34;&#34;
 
 
-stats.add_command(printlogger)</code></pre>
+stats.add_command(describe_boxes)
+stats.add_command(dldenet)
+stats.add_command(focal)
+stats.add_command(printlogger)
+stats.add_command(sizes)</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="torchsight.cli.stats.boxes" href="boxes.html">torchsight.cli.stats.boxes</a></code></dt>
+<dd>
+<section class="desc"><p>Commands to see stats about the bounding boxes of a dataset.</p></section>
+</dd>
+<dt><code class="name"><a title="torchsight.cli.stats.dldenet" href="dldenet.html">torchsight.cli.stats.dldenet</a></code></dt>
+<dd>
+<section class="desc"><p>Some stats about the DLDENet.</p></section>
+</dd>
+<dt><code class="name"><a title="torchsight.cli.stats.focal" href="focal.html">torchsight.cli.stats.focal</a></code></dt>
+<dd>
+<section class="desc"><p>Commands to interact and get some stats of the Focal Loss.</p></section>
+</dd>
 <dt><code class="name"><a title="torchsight.cli.stats.print" href="print.html">torchsight.cli.stats.print</a></code></dt>
 <dd>
 <section class="desc"><p>Extract stats from the PrintLogger.</p></section>
+</dd>
+<dt><code class="name"><a title="torchsight.cli.stats.sizes" href="sizes.html">torchsight.cli.stats.sizes</a></code></dt>
+<dd>
+<section class="desc"><p>Commands to interpolate the sizes of some structures.</p></section>
 </dd>
 </dl>
 </section>
@@ -66,7 +90,11 @@ stats.add_command(printlogger)</code></pre>
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="torchsight.cli.stats.boxes" href="boxes.html">torchsight.cli.stats.boxes</a></code></li>
+<li><code><a title="torchsight.cli.stats.dldenet" href="dldenet.html">torchsight.cli.stats.dldenet</a></code></li>
+<li><code><a title="torchsight.cli.stats.focal" href="focal.html">torchsight.cli.stats.focal</a></code></li>
 <li><code><a title="torchsight.cli.stats.print" href="print.html">torchsight.cli.stats.print</a></code></li>
+<li><code><a title="torchsight.cli.stats.sizes" href="sizes.html">torchsight.cli.stats.sizes</a></code></li>
 </ul>
 </li>
 </ul>

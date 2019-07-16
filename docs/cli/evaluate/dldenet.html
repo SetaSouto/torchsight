@@ -25,15 +25,13 @@
 <summary>Source code</summary>
 <pre><code class="python">&#34;&#34;&#34;Evaluate the DLDENet models.&#34;&#34;&#34;
 import click
-import torch
-
-from torchsight.evaluators import DLDENetEvaluator
 
 
 @click.command()
-@click.argument(&#39;checkpoint&#39;, type=click.Path(exists=True))
-@click.option(&#39;--dataset&#39;, default=&#39;coco&#39;, help=&#39;The dataset to use to validate.&#39;, show_default=True)
-@click.argument(&#39;dataset-root&#39;)
+@click.option(&#39;-c&#39;, &#39;--checkpoint&#39;, required=True, type=click.Path(exists=True))
+@click.option(&#39;-d&#39;, &#39;--dataset&#39;, default=&#39;coco&#39;, type=click.Choice([&#39;coco&#39;, &#39;flickr32&#39;]),
+              help=&#39;The dataset to use to validate.&#39;, show_default=True)
+@click.option(&#39;-dr&#39;, &#39;--dataset-root&#39;, help=&#39;The root directory where is the data of the dataset.&#39;)
 @click.option(&#39;--results-dir&#39;, default=&#39;./evaluations/dldenet/{dataset}&#39;, show_default=True,
               help=&#39;The directory where to store the results.&#39;)
 @click.option(&#39;--coco-dataset&#39;, default=&#39;val2017&#39;, help=&#39;The coco dataset to use.&#39;, show_default=True)
@@ -47,27 +45,50 @@ from torchsight.evaluators import DLDENetEvaluator
 def dldenet(checkpoint, dataset, dataset_root, results_dir, coco_dataset, classes,
             batch_size, num_workers, width_tracked_means, device, threshold, iou_threshold):
     &#34;&#34;&#34;Evaluate the DLDENet with the indicated dataset that contains its data in DATASET-ROOT with the
-    model saved at CHECKPOINT.
+    model saved at CHECKPOINT.&#34;&#34;&#34;
+    import torch
 
-    Available datasets:
+    from torchsight.evaluators import (DLDENetCOCOEvaluator,
+                                       DLDENetFlickr32Evaluator)
 
-    - COCO
-    &#34;&#34;&#34;
     device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
-    class_names_from_checkpoint = classes is None
-    class_names = () if classes is None else classes.split()
-    results_dir = results_dir.format(dataset=dataset)
-    results_file = &#39;{}.json&#39;.format(coco_dataset)
-    DLDENetEvaluator(checkpoint,
-                     params={&#39;results&#39;: {&#39;dir&#39;: results_dir, &#39;file&#39;: results_file},
-                             &#39;dataset&#39;: {&#39;root&#39;: dataset_root,
-                                         &#39;validation&#39;: coco_dataset,
-                                         &#39;class_names&#39;: class_names,
-                                         &#39;class_names_from_checkpoint&#39;: class_names_from_checkpoint},
-                             &#39;dataloader&#39;: {&#39;batch_size&#39;: batch_size, &#39;num_workers&#39;: num_workers},
-                             &#39;model&#39;: {&#39;with_tracked_means&#39;: width_tracked_means,
-                                       &#39;evaluation&#39;: {&#39;threshold&#39;: threshold, &#39;iou_threshold&#39;: iou_threshold}}},
-                     device=device).evaluate()</code></pre>
+
+    if dataset == &#39;coco&#39;:
+        class_names_from_checkpoint = classes is None
+        class_names = () if classes is None else classes.split()
+        results_dir = results_dir.format(dataset=dataset)
+        results_file = &#39;{}.json&#39;.format(coco_dataset)
+
+        DLDENetCOCOEvaluator(
+            checkpoint,
+            params={&#39;results&#39;: {&#39;dir&#39;: results_dir, &#39;file&#39;: results_file},
+                    &#39;dataset&#39;: {&#39;root&#39;: dataset_root,
+                                &#39;validation&#39;: coco_dataset,
+                                &#39;class_names&#39;: class_names,
+                                &#39;class_names_from_checkpoint&#39;: class_names_from_checkpoint},
+                    &#39;dataloader&#39;: {&#39;batch_size&#39;: batch_size, &#39;num_workers&#39;: num_workers},
+                    &#39;model&#39;: {&#39;with_tracked_means&#39;: width_tracked_means,
+                              &#39;evaluation&#39;: {&#39;threshold&#39;: threshold, &#39;iou_threshold&#39;: iou_threshold}}},
+            device=device
+        ).evaluate()
+
+    if dataset == &#39;flickr32&#39;:
+        DLDENetFlickr32Evaluator(
+            checkpoint,
+            params={
+                &#39;root&#39;: dataset_root,
+                &#39;file&#39;: &#39;{}/flickr32_predictions.csv&#39;.format(results_dir),
+                &#39;dataloader&#39;: {
+                    &#39;num_workers&#39;: num_workers,
+                    &#39;batch_size&#39;: batch_size
+                },
+                &#39;thresholds&#39;: {
+                    &#39;detection&#39;: threshold,
+                    &#39;iou&#39;: iou_threshold
+                }
+            },
+            device=device
+        ).evaluate()</code></pre>
 </details>
 </section>
 <section>

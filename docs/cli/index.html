@@ -27,8 +27,10 @@
 import click
 
 from .evaluate import evaluate
+from .experiments import experiments
 from .stats import stats
 from .train import train
+from .visualize import visualize
 
 
 @click.group()
@@ -38,8 +40,10 @@ def cli():
 
 # COMMANDS OF THE CLI
 cli.add_command(evaluate)
+cli.add_command(experiments)
 cli.add_command(stats)
-cli.add_command(train)</code></pre>
+cli.add_command(train)
+cli.add_command(visualize)</code></pre>
 </details>
 </section>
 <section>
@@ -49,6 +53,10 @@ cli.add_command(train)</code></pre>
 <dd>
 <section class="desc"><p>Commands to evaluate the models.</p></section>
 </dd>
+<dt><code class="name"><a title="torchsight.cli.experiments" href="experiments/index.html">torchsight.cli.experiments</a></code></dt>
+<dd>
+<section class="desc"><p>Commands for the experiments.</p></section>
+</dd>
 <dt><code class="name"><a title="torchsight.cli.stats" href="stats/index.html">torchsight.cli.stats</a></code></dt>
 <dd>
 <section class="desc"><p>Commands to extract some stats from the log files.</p></section>
@@ -56,6 +64,10 @@ cli.add_command(train)</code></pre>
 <dt><code class="name"><a title="torchsight.cli.train" href="train/index.html">torchsight.cli.train</a></code></dt>
 <dd>
 <section class="desc"><p>Train commands for the CLI.</p></section>
+</dd>
+<dt><code class="name"><a title="torchsight.cli.visualize" href="visualize/index.html">torchsight.cli.visualize</a></code></dt>
+<dd>
+<section class="desc"><p>Commands to visualize the datasets or the results.</p></section>
 </dd>
 </dl>
 </section>
@@ -80,8 +92,10 @@ cli.add_command(train)</code></pre>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="torchsight.cli.evaluate" href="evaluate/index.html">torchsight.cli.evaluate</a></code></li>
+<li><code><a title="torchsight.cli.experiments" href="experiments/index.html">torchsight.cli.experiments</a></code></li>
 <li><code><a title="torchsight.cli.stats" href="stats/index.html">torchsight.cli.stats</a></code></li>
 <li><code><a title="torchsight.cli.train" href="train/index.html">torchsight.cli.train</a></code></li>
+<li><code><a title="torchsight.cli.visualize" href="visualize/index.html">torchsight.cli.visualize</a></code></li>
 </ul>
 </li>
 </ul>

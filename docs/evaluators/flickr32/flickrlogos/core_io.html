@@ -1,0 +1,1720 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.evaluators.flickr32.flickrlogos.core_io API documentation</title>
+<meta name="description" content="Convenient I/O functions …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.evaluators.flickr32.flickrlogos.core_io</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Convenient I/O functions.</p>
+<dl>
+<dt><strong><code>Author</code></strong> :&ensp;
+<code>Stefan</code> <code>Romberg</code>, <code>stefan.romberg</code>@<code>informatik.uni</code>-<code>augsburg.de</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>Note</code></strong> :&ensp;<code>Script</code> <code>was</code> <code>developed</code>/<code>tested</code> <code>on</code> <code>Windows</code> <code>with</code> <code>Python</code> <code>2.7</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>$Date: 2013-11-18 13:07:55 +0100 (Mo, 18 Nov 2013) $
+$Rev: 7627 $$Date: 2013-11-18 13:07:55 +0100 (Mo, 18 Nov 2013) $
+$HeadURL: <a href="https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/flickrlogos/core_io.py">https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/flickrlogos/core_io.py</a> $
+$Id: core_io.py 7627 2013-11-18 12:07:55Z romberg $</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+Convenient I/O functions.
+
+Author:   Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de
+
+Note: Script was developed/tested on Windows with Python 2.7
+
+$Date: 2013-11-18 13:07:55 +0100 (Mo, 18 Nov 2013) $
+$Rev: 7627 $$Date: 2013-11-18 13:07:55 +0100 (Mo, 18 Nov 2013) $
+$HeadURL: https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/flickrlogos/core_io.py $
+$Id: core_io.py 7627 2013-11-18 12:07:55Z romberg $
+&#34;&#34;&#34;
+import sys, random
+import re
+import string
+import zlib
+from collections import defaultdict
+
+if sys.version_info &gt;= (3,0,0):
+    from pickle import dump as pickle_dump
+    from pickle import load as pickle_load
+else:
+    from cPickle import dump as pickle_dump
+    from cPickle import load as pickle_load
+
+import os
+from os.path import exists, basename, dirname, join, isdir, normpath, abspath, split, sep
+from os import makedirs, listdir
+
+#===============================================================================
+# helper classes
+#===============================================================================
+
+class Tee(object):
+    &#34;&#34;&#34;Simulates the behaviour of the unix program &#39;tee&#39; to write output
+    both to stdout *and* a file.
+    &#34;&#34;&#34;
+
+    def __init__(self, name, mode=&#34;w&#34;):
+        self.file = None
+        if name is not None and name != &#34;-&#34;:
+            print(&#34;Tee: Mirring stdout to file &#39;&#34;+name+&#34;&#39;&#34;)
+            self.file = open(name, mode)
+        self.stdout = sys.stdout
+        sys.stdout = self
+
+    def __del__(self):
+        if self.file is not None:
+            self.file.close()
+        sys.stdout = self.stdout
+
+    def write(self, data):
+        if self.file is not None:
+            self.file.write(data)
+            #self.file.flush()
+        self.stdout.write(data)
+
+#===============================================================================
+# helper methods
+#===============================================================================
+
+def filename(x):
+    &#34;&#34;&#34;Returns the filename without the directory part including extension.&#34;&#34;&#34;
+    return split(x)[1]
+
+def icount(it):
+    &#34;&#34;&#34;Computes the length of some data given an iterator.
+    Note: It consumes the iterator.
+    &#34;&#34;&#34;
+    for size,_ in enumerate(it):
+        pass
+    return size+1
+
+def msplit(s, delimiters=&#34;;,\t&#34;, strip=True, remove_empty_tokens=False, strip_linebreaks=True):
+    &#34;&#34;&#34;Splits the given string by any of the given delimiters.
+    More sophisticated version of string.split() aka &#34;multisplit&#34;.
+
+    Usage examples:
+
+    &gt;&gt;&gt; msplit(&#34;abcd&#34;)
+    [&#39;abcd&#39;]
+    &gt;&gt;&gt; msplit(&#34;a,b,c,d&#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c,d&#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c;d e&#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d e&#39;]
+
+    The parameter delimiters denotes *all* delimiters that are used to split
+    the string into separate tokens. Delimiters *must be* single characters.
+    Note: By default msplit() does not split the string at spaces.
+
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c;d e&#34;, delimiters=&#34;;,\\t &#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;e&#39;]
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c;d e&#34;, delimiters=&#34;;&#34;)
+    [&#39;a\\tb,c&#39;, &#39;d e&#39;]
+
+    If strip is True (default) then split tokens will further be stripped
+    of leading and trailing whitespaces.
+    Examples:
+
+    &gt;&gt;&gt; msplit(&#34; a,     b    , c  &#34;, strip=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]
+    &gt;&gt;&gt; msplit(&#34; a,     b    , c  &#34;, strip=False)
+    [&#39; a&#39;, &#39;     b    &#39;, &#39; c  &#39;]
+
+    Note that if argument delimiter contains &#34; &#34; (space) as delimiter argument
+    strip has no effect when set to True. Whitespaces are stripped from tokens
+    *after* the original string has been split at delimiters. That means:
+
+    &gt;&gt;&gt; msplit(&#34;a b c &#34;, delimiters=&#34; &#34;, strip=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;&#39;]
+
+    If strip_linebreaks is True (default) then line breaks will be removed
+    before the string is split into tokens. This avoids trailing empty tokens:
+    Examples:
+
+    Note: strip=True swallows line breaks and so the last token will be empty:
+
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=True, strip_linebreaks=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=True, strip_linebreaks=False)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;&#39;]
+
+    Note: strip=False will preserve the trailing line break as extra token:
+
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=False, strip_linebreaks=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=False, strip_linebreaks=False)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;\\n&#39;]
+
+    If remove_empty_tokens is set to True then empty tokens are removed before
+    the list of tokens is returned. By default remove_empty_tokens is False.
+    Examples:
+
+    &gt;&gt;&gt; msplit(&#34;a,,b&#34;, remove_empty_tokens=True)
+    [&#39;a&#39;, &#39;b&#39;]
+    &gt;&gt;&gt; msplit(&#34;a,,b,&#34;, remove_empty_tokens=True)
+    [&#39;a&#39;, &#39;b&#39;]
+    &gt;&gt;&gt; msplit(&#34;&#34;, remove_empty_tokens=True)
+    []
+    &gt;&gt;&gt; msplit(&#34;,&#34;, remove_empty_tokens=True)
+    []
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=True)
+    []
+
+    &gt;&gt;&gt; msplit(&#34;a,,b&#34;, remove_empty_tokens=False)
+    [&#39;a&#39;, &#39;&#39;, &#39;b&#39;]
+    &gt;&gt;&gt; msplit(&#34;a,,b,&#34;, remove_empty_tokens=False)
+    [&#39;a&#39;, &#39;&#39;, &#39;b&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;&#34;, remove_empty_tokens=False)
+    []
+    &gt;&gt;&gt; msplit(&#34;,&#34;, remove_empty_tokens=False)
+    [&#39;&#39;, &#39;&#39;]
+
+    Degenerated cases:
+
+    &gt;&gt;&gt; msplit(&#34;&#34;)
+    []
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=False, strip_linebreaks=True)
+    [&#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=False, strip_linebreaks=False)
+    [&#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=True)
+    []
+    &gt;&gt;&gt; msplit(None)
+    Traceback (most recent call last):
+      File &#34;C:\EPD-6.2\lib\doctest.py&#34;, line 1248, in __run
+        compileflags, 1) in test.globs
+      File &#34;&lt;doctest __main__.msplit[27]&gt;&#34;, line 1, in &lt;module&gt;
+        msplit(5)
+      File &#34;F:\research\python\csv_scripts\csv_convert2cvectorfile.py&#34;, line 139, in msplit
+        raise TypeError(&#34;msplit() expects string as first argument.&#34;)
+    TypeError: msplit() expects string as first argument.
+    &gt;&gt;&gt; msplit(5)
+    Traceback (most recent call last):
+      File &#34;C:\EPD-6.2\lib\doctest.py&#34;, line 1248, in __run
+        compileflags, 1) in test.globs
+      File &#34;&lt;doctest __main__.msplit[27]&gt;&#34;, line 1, in &lt;module&gt;
+        msplit(5)
+      File &#34;F:\research\python\csv_scripts\csv_convert2cvectorfile.py&#34;, line 139, in msplit
+        raise TypeError(&#34;msplit() expects string as first argument.&#34;)
+    TypeError: msplit() expects string as first argument.
+
+    Autor: Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de
+    &#34;&#34;&#34;
+    if isinstance(s, bytes):
+        s = s.decode(&#39;utf-8&#39;)
+    if not isinstance(s, str):
+        raise TypeError(&#34;msplit() expects string as first argument.&#34;)
+    if s is None or len(s) == 0:
+        return []
+
+    if strip_linebreaks:
+        if s[-2:] == &#34;\r\n&#34;:
+            s = s[0:len(s)-2]
+        else:
+            y = s[-1]
+            if y == &#34;\n&#34; or y == &#34;\r&#34;:
+                s = s[0:len(s)-1]
+
+    delim = delimiters[0]
+    for d in delimiters[1:]:
+        s = s.replace(d, delim)
+
+    tokens = s.split(delim)
+
+    if strip:
+        tokens = [ t.strip() for t in tokens ]
+
+    if remove_empty_tokens:
+        tokens = [ t for t in tokens if len(t) &gt; 0 ]
+
+    return tokens
+
+#===============================================================================
+#
+#===============================================================================
+
+def csv_read(filename, delimiters=&#34;,\t;&#34;, grep=None, strip_tokens=True):
+    &#34;&#34;&#34;Reads a CSV file and returns a list of list holding each data value.
+
+    * If *filename* is None or empty an exception is raised.
+    * If *filename* does not exist None is returned.
+    * If *filename* ends with &#34;.zz&#34; csv_read() tries to automatically read
+      and decompress the file content with zlib.
+
+    .. Seealso::
+        :func:`csv_write`
+        :func:`csv_iread`
+    &#34;&#34;&#34;
+    if filename is None or filename == &#34;&#34;:
+        raise Exception(&#34;csv_read(): Cannot handle filename which is empty or None.&#34;)
+    if not exists(filename):
+        sys.stderr.write(&#34;csv_read(): File &#39;&#34;+filename+&#34;&#39; does not exist!&#34;)
+        return None
+
+    #TODO: exclude_columns
+    #TODO: exclude_rows
+    #TODO: convert numbers
+
+    if filename.endswith(&#34;.zz&#34;):
+        # assume file content was compressed with zlib. (e.g. by csv_write)
+        text  = read_compressed_file(filename)
+        lines = text.splitlines()
+        del text
+
+        if delimiters is not None:
+            data = []
+            for line in lines:
+                tokens = msplit(line, delimiters, strip=strip_tokens)
+                data.append( tokens )
+
+            if grep is not None:
+                data = [ x for x in data if x.count(grep) &gt; 0 ]
+
+            return data
+        else:
+            if grep is not None:
+                lines = [ x for x in lines if x.count(grep) &gt; 0 ]
+
+            return lines
+
+    else:
+        with open(filename, &#34;rb&#34;) as f:
+            data = []
+            if delimiters is not None:
+                if isinstance(delimiters, list):
+                    for line in f:
+                        tokens = msplit(line, delimiters, strip=strip_tokens)
+                        data.append( tokens )
+
+                elif isinstance(delimiters, str):
+                    if strip_tokens:
+                        for line in f:
+                            tokens = msplit(line, delimiters, strip=strip_tokens)
+                            data.append( tokens )
+                    else:
+                        for line in f:
+                            data.append( line.split(delimiters) )
+                else:
+                    raise Exception(&#34;Cannot handle delimiter type: &#34;+str(delimiters))
+            else:
+                data = [ line.strip() for line in f ]
+
+            if grep is not None:
+                data = [ x for x in data if x.count(grep) &gt; 0 ]
+            return data
+
+def csv_write(list_of_list, filename, delimiter=&#34;,&#34;, compression=None, create_dirs=False):
+    &#34;&#34;&#34;Writes a list of lists to a CSV file.
+
+    Example:
+
+    &gt;&gt;&gt; data_out = [ [&#34;column1&#34;, &#39;1&#39;, &#39;11&#39;], [&#34;Test&#34;, &#39;2&#39;, &#39;22&#39;] ]
+    &gt;&gt;&gt; csv_write(data_out, &#34;testlist.txt&#34;)
+    &gt;&gt;&gt; os.path.exists(&#34;testlist.txt&#34;)
+    True
+    &gt;&gt;&gt; data_in = csv_read(&#34;testlist.txt&#34;)
+    &gt;&gt;&gt; data_in == data_out
+    True
+
+    csv_write() can also write compressed CSV files. To enable compression
+    set *compression* to a number in [0, 9]. The file will not be saved as
+    &#34;filename&#34; but as &#34;filename.zz&#34;.
+
+    &gt;&gt;&gt; data_out = [ [&#34;column1&#34;, &#39;1&#39;, &#39;11&#39;], [&#34;Test&#34;, &#39;2&#39;, &#39;22&#39;] ]
+    &gt;&gt;&gt; csv_write(data_out, &#34;testlist2.txt&#34;, compression=9)
+    &gt;&gt;&gt; os.path.exists(&#34;testlist2.txt&#34;)
+    False
+    &gt;&gt;&gt; os.path.exists(&#34;testlist2.txt.zz&#34;)
+    True
+    &gt;&gt;&gt; data_in = csv_read(&#34;testlist2.txt.zz&#34;)
+    &gt;&gt;&gt; data_in == data_out
+    True
+
+    If *compression* is enabled then the list is converted
+    to a CSV string and compressed to a file. During this operation the
+    whole CSV table is kept as string in memory.
+
+    .. Seealso::
+        :func:`csv_read`
+    &#34;&#34;&#34;
+    if create_dirs:
+        outdir = dirname(filename)
+        if not exists(outdir):
+            makedirs(outdir)
+
+    if compression is None:
+        with open(filename, &#34;wb&#34;) as f:
+            for item in list_of_list:
+                if isinstance(item, str):
+                    line = item + &#39;\n&#39;
+                else:
+                    line = delimiter.join([ str(x) for x in item ]) + &#39;\n&#39;
+                f.write( line.encode(&#39;utf-8&#39;) )
+
+    else:
+        if not isinstance(compression, int):
+            compression = 9
+
+        lines = []
+        for item in list_of_list:
+            if isinstance(item, str):
+                line = item + &#39;\n&#39;
+            else:
+                line = delimiter.join([ str(x) for x in item ]) + &#39;\n&#39;
+            lines.append( line )
+
+        if not filename.endswith(&#34;.zz&#34;):
+            filename = filename + &#34;.zz&#34;
+        
+        write_compressed_file(filename, &#39;&#39;.join(lines), compression_level=compression)
+
+#===============================================================================
+# file compression
+#===============================================================================
+
+def write_compressed_file(filename, content, compression_level=9):
+    &#34;&#34;&#34;Writes the string *content* to the given file and compresses the data.
+
+    &gt;&gt;&gt; data_in = &#34;Das ist \\nein Test\\n.&#34;
+    &gt;&gt;&gt; write_compressed_file(&#34;testfile2&#34;, data_in)
+
+    &gt;&gt;&gt; data_out = read_compressed_file(&#34;testfile2&#34;)
+    &gt;&gt;&gt; data_in == data_out
+    True
+
+    .. Seealso::
+        :func:`read_compressed_file`
+        :func:`csv_write`
+    &#34;&#34;&#34;
+    assert isinstance(content, str), &#34;Can only write strings.&#34;
+    with open(filename, &#34;wb&#34;) as f:
+        f.write( zlib.compress(content.encode(&#39;utf-8&#39;), compression_level) )
+
+def read_compressed_file(filename):
+    &#34;&#34;&#34;Reads zlib compressed strings from a file.
+
+    .. Seealso::
+        :func:`write_compressed_file`
+        :func:`csv_read`
+    &#34;&#34;&#34;
+    if not exists(filename) or not os.path.isfile(filename):
+        return None
+    with open(filename, &#34;rb&#34;) as f:
+        return zlib.decompress( f.read() ).decode(&#39;utf-8&#39;)
+
+#===============================================================================
+# convenient wrappers for simple serialization of python objects
+#===============================================================================
+
+def savedump(data, filename, silent=False):
+    &#34;&#34;&#34;Serializes data to a file using the built-in cPickle module.
+
+    .. Seealso::
+        :func:`loaddump`
+    &#34;&#34;&#34;
+    assert filename is not None and filename != &#34;&#34; and filename != &#34;-&#34;, filename
+
+    if not silent:
+        print(&#34;savedump(): Saving data to &#39;&#34;+filename+&#34;&#39;...&#34;),
+    with open(filename, &#34;wb&#34;) as f:
+        pickle_dump(data, f, protocol=2)
+    if not silent:
+        print(&#34;Done&#34;)
+
+def loaddump(filename, silent=False):
+    &#34;&#34;&#34;Unserializes data from a file that was written with
+    the built-in cPickle module.
+
+    .. Seealso::
+        :func:`savedump`
+    &#34;&#34;&#34;
+    assert filename is not None and filename != &#34;&#34; and filename != &#34;-&#34;, filename
+
+    if not exists(filename):
+        if not silent:
+            print(&#34;loaddump(): File &#39;&#34;+filename+&#34;&#39; does not exist. Returning None.&#34;)
+        return None
+
+    try:
+        if not silent:
+            print(&#34;loaddump(): Loading data from &#39;&#34;+filename+&#34;&#39;...&#34;),
+        with open(filename, &#34;rb&#34;) as f:
+            data = pickle_load(f)
+        if not silent:
+            print(&#34;Done&#34;)
+        return data
+    except Exception as ex:
+        print(&#34;ERROR: loaddump(): Could not load data from &#39;&#34;+filename+&#34;&#39;.&#34;)
+        print(&#34;       Passing exception to caller.&#34;)
+        print(str(ex))
+        raise ex
+
+#===============================================================================
+#
+#===============================================================================
+
+def exclude_dot_files(filelist):
+    &#34;&#34;&#34;Removes all files starting with &#39;.&#39; from a filelist.&#34;&#34;&#34;
+    return [ x for x in filelist if not x.startswith(&#39;.&#39;) ]
+
+def is_image_file(filename):
+    &#34;&#34;&#34;Determines if filename indicates that the file is an image.
+
+    Returns true if the filename ends with (case insensitive) one of the
+    extensions &#39;.jpg&#39;,&#39;.jpeg&#39;,&#39;.pgm&#39;,&#39;.png&#39;,&#39;.tif&#39;,&#39;.tiff&#39;,&#39;.gif&#39;,&#39;.bmp&#39; and
+    it does not start with &#39;.&#39;.
+    (This hides the ._* files produced by Mac OS X aka &#34;Apple Double files&#34;)
+    &#34;&#34;&#34;
+    # assume no image file starts with &#39;.&#39;: Hides ._* files produced by Mac OS X.
+    if filename is None or filename == &#34;&#34; or filename.startswith(&#39;.&#39;):
+        return False
+
+    x = filename.lower()
+    return ( x.endswith(&#34;.jpg&#34;) or
+             x.endswith(&#34;.jpeg&#34;) or
+             x.endswith(&#34;.pgm&#34;) or
+             x.endswith(&#34;.png&#34;) or
+             x.endswith(&#34;.tiff&#34;) or
+             x.endswith(&#34;.tif&#34;) or
+             x.endswith(&#34;.gif&#34;) or
+             x.endswith(&#34;.bmp&#34;) )
+
+def clean_string(s):
+    return re.sub(&#39;[%s]&#39; % (string.punctuation+string.digits), &#39;&#39;, s).lower()
+
+def get_all_image_files(dir_path):
+    &#34;&#34;&#34;Returns a list of all image files within *dir_path*.&#34;&#34;&#34;
+    assert dir_path is not None
+
+    files    = listdir(dir_path)
+    images   = sorted(exclude_dot_files(files))
+    imgFiles = [ &#39;&#39;.join( (dir_path, sep, x) ) for x in images if is_image_file(x) ]
+    return imgFiles
+
+def get_classes_by_filenames(image_directory):
+    assert image_directory is not None
+
+    oldcategory = &#34;&#34;
+    images      = sorted(exclude_dot_files(listdir(image_directory)))
+
+    classes = dict()
+    for img in images:
+        if not is_image_file(img):
+            continue
+
+        category = clean_string(basename(img)[0:-4])
+        if category == oldcategory:
+            continue
+
+        oldcategory = category
+        print(&#34;class: &#34;+category)
+        imgFiles = [ item for item in images if clean_string(basename(item)[0:-4]) == category ]
+        classes[category] = imgFiles
+
+    return classes
+
+def get_classes_by_dirnames(base_directory):
+    &#34;&#34;&#34;Returns all image files below base_directory and their associated class.
+
+    &lt;base_directory&gt;/class1/1.jpg
+    &lt;base_directory&gt;/class1/2.jpg
+    &lt;base_directory&gt;/class2/3.jpg
+    &lt;base_directory&gt;/class2/4.jpg
+
+    will yield a dictionary:
+     &#34;class1&#34; -&gt; [1.jpg, 2.jpg]
+     &#34;class2&#34; -&gt; [3.jpg, 4.jpg]
+    &#34;&#34;&#34;
+    assert base_directory is not None
+    directories = sorted(exclude_dot_files(listdir(base_directory)))
+
+    classes = dict()
+    for item in directories:
+        dir_path = base_directory + sep + item
+        if not isdir(dir_path):
+            print(&#34;Warning: item &#39;&#34;+str(dir_path)+&#34;&#39; is not a directory. Skipping...&#34;)
+            continue
+
+        category = item
+        print(&#34;class: &#34;+category)
+
+        imgFiles = get_all_image_files(dir_path)
+        classes[category] = imgFiles
+
+    return classes
+
+def wildcards2regex(wildcard_pattern):
+    &#34;&#34;&#34;Converts a wildcard pattern such as &#34;*.txt&#34; to a regular expression.&#34;&#34;&#34;
+    p = wildcard_pattern
+    p = p.replace(&#34;\\&#34;, &#34;\\\\&#34;)
+
+    p = p.replace(&#34;.&#34;, &#34;\\.&#34;)
+    p = p.replace(&#34;^&#34;, &#34;\\^&#34;)
+    p = p.replace(&#34;$&#34;, &#34;\\$&#34;)
+    p = p.replace(&#34;+&#34;, &#34;\\+&#34;)
+    p = p.replace(&#34;-&#34;, &#34;\\-&#34;)
+    p = p.replace(&#34;=&#34;, &#34;\\=&#34;) # ?
+    p = p.replace(&#34;,&#34;, &#34;\\,&#34;) # ?
+    p = p.replace(&#34;(&#34;, &#34;\\(&#34;)
+    p = p.replace(&#34;)&#34;, &#34;\\)&#34;)
+    p = p.replace(&#34;[&#34;, &#34;\\[&#34;)
+    p = p.replace(&#34;]&#34;, &#34;\\]&#34;)
+    p = p.replace(&#34;{&#34;, &#34;\\{&#34;)
+    p = p.replace(&#34;}&#34;, &#34;\\}&#34;)
+    p = p.replace(&#34;/&#34;, &#34;\/}&#34;) # ?
+
+    p = p.replace(&#34;*&#34;, &#34;.*&#34;)
+    p = p.replace(&#34;?&#34;, &#34;.&#34;)
+    return &#34;^&#34; + p + &#34;$&#34;
+
+def grab_files(directory, wildcard_pattern=None, regex_pattern=None,
+               topdown=True, followlinks=False):
+    &#34;&#34;&#34;Returns all files within directory AND its subdirectories that match
+    the given pattern. Either wildcards or a regular expression can be used
+    as pattern.
+
+    If *followlinks* is set to True, symlinks are followed when traversing
+    the directory. If *topdown* is set to False, subdirectories are traversed
+    bottom-up.
+
+    @author: Stefan Romberg
+    &#34;&#34;&#34;
+    assert directory is not None and directory != &#34;&#34;
+    assert ( ( wildcard_pattern is not None and regex_pattern is None ) or
+             ( wildcard_pattern is None and regex_pattern is not None ) )
+
+    # prepare regex engine
+    if wildcard_pattern is not None:
+        regex_pattern = wildcards2regex(normpath(wildcard_pattern))
+    rec      = re.compile(regex_pattern)
+    search   = rec.search
+
+    # traverse directories
+    matched_files = []
+    for dir_path, dirnames, filenames in os.walk(directory,
+                                                 topdown=topdown,
+                                                 followlinks=followlinks):
+        for filename in filenames:
+            f_name = normpath(join(dir_path, filename))
+            m      = search(f_name)
+            if m is not None:
+                assert m.start() == 0 and m.end() == len(f_name), (m.start(), m.end(), f_name)
+                matched_files.append( f_name )
+
+    return matched_files
+
+def grab_files2(directory, suffix, topdown=True, followlinks=False):
+    &#34;&#34;&#34;Returns all files within directory AND its subdirectories that end
+    with *suffix*.
+
+    If *followlinks* is set to True, symlinks are followed when traversing
+    the directory. If *topdown* is set to False, subdirectories are traversed
+    bottom-up.
+
+    @author: Stefan Romberg
+    &#34;&#34;&#34;
+    assert directory is not None and directory != &#34;&#34;
+
+    # traverse directories
+    matched_files = []
+    for dir_path, dirnames, filenames in os.walk(directory,
+                                                 topdown=topdown,
+                                                 followlinks=followlinks):
+
+        print(&#34;grab_files2(): Processing dir: &#34;+dir_path)
+        for filename in filenames:
+            if filename.endswith(suffix):
+                matched_files.append( join(dir_path, filename) )
+
+    return matched_files
+
+#TODO: move method somewhere appropriate as it deals with a specific directory layout
+def get_files_per_class_by_pattern(dir_path, classes, pattern):
+    x = defaultdict(set)
+    for c in classes:
+        subdir = abspath(dir_path) + &#39;/&#39; + c + &#39;/&#39;
+        files  = grab_files(normpath(subdir), pattern)
+        x[c]   = files
+        for f in files:
+            assert exists(f), f
+    return x
+
+if __name__ == &#39;__main__&#39;:
+    #===========================================================================
+    # TESTS
+    #===========================================================================
+    import doctest
+    doctest.testmod()
+    print(&#34;All doctests passed.&#34;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.clean_string"><code class="name flex">
+<span>def <span class="ident">clean_string</span></span>(<span>s)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def clean_string(s):
+    return re.sub(&#39;[%s]&#39; % (string.punctuation+string.digits), &#39;&#39;, s).lower()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_read"><code class="name flex">
+<span>def <span class="ident">csv_read</span></span>(<span>filename, delimiters=&#39;,\t;&#39;, grep=None, strip_tokens=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads a CSV file and returns a list of list holding each data value.</p>
+<ul>
+<li>If <em>filename</em> is None or empty an exception is raised.</li>
+<li>If <em>filename</em> does not exist None is returned.</li>
+<li>If <em>filename</em> ends with ".zz" csv_read() tries to automatically read
+and decompress the file content with zlib.</li>
+</ul>
+<div class="admonition seealso">
+<p class="admonition-title">Seealso</p>
+<p>:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_write" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.csv_write"><code>csv_write()</code></a>
+:func:<code>csv_iread</code></p>
+</div></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def csv_read(filename, delimiters=&#34;,\t;&#34;, grep=None, strip_tokens=True):
+    &#34;&#34;&#34;Reads a CSV file and returns a list of list holding each data value.
+
+    * If *filename* is None or empty an exception is raised.
+    * If *filename* does not exist None is returned.
+    * If *filename* ends with &#34;.zz&#34; csv_read() tries to automatically read
+      and decompress the file content with zlib.
+
+    .. Seealso::
+        :func:`csv_write`
+        :func:`csv_iread`
+    &#34;&#34;&#34;
+    if filename is None or filename == &#34;&#34;:
+        raise Exception(&#34;csv_read(): Cannot handle filename which is empty or None.&#34;)
+    if not exists(filename):
+        sys.stderr.write(&#34;csv_read(): File &#39;&#34;+filename+&#34;&#39; does not exist!&#34;)
+        return None
+
+    #TODO: exclude_columns
+    #TODO: exclude_rows
+    #TODO: convert numbers
+
+    if filename.endswith(&#34;.zz&#34;):
+        # assume file content was compressed with zlib. (e.g. by csv_write)
+        text  = read_compressed_file(filename)
+        lines = text.splitlines()
+        del text
+
+        if delimiters is not None:
+            data = []
+            for line in lines:
+                tokens = msplit(line, delimiters, strip=strip_tokens)
+                data.append( tokens )
+
+            if grep is not None:
+                data = [ x for x in data if x.count(grep) &gt; 0 ]
+
+            return data
+        else:
+            if grep is not None:
+                lines = [ x for x in lines if x.count(grep) &gt; 0 ]
+
+            return lines
+
+    else:
+        with open(filename, &#34;rb&#34;) as f:
+            data = []
+            if delimiters is not None:
+                if isinstance(delimiters, list):
+                    for line in f:
+                        tokens = msplit(line, delimiters, strip=strip_tokens)
+                        data.append( tokens )
+
+                elif isinstance(delimiters, str):
+                    if strip_tokens:
+                        for line in f:
+                            tokens = msplit(line, delimiters, strip=strip_tokens)
+                            data.append( tokens )
+                    else:
+                        for line in f:
+                            data.append( line.split(delimiters) )
+                else:
+                    raise Exception(&#34;Cannot handle delimiter type: &#34;+str(delimiters))
+            else:
+                data = [ line.strip() for line in f ]
+
+            if grep is not None:
+                data = [ x for x in data if x.count(grep) &gt; 0 ]
+            return data</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_write"><code class="name flex">
+<span>def <span class="ident">csv_write</span></span>(<span>list_of_list, filename, delimiter=&#39;,&#39;, compression=None, create_dirs=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Writes a list of lists to a CSV file.</p>
+<p>Example:</p>
+<pre><code>&gt;&gt;&gt; data_out = [ ["column1", '1', '11'], ["Test", '2', '22'] ]
+&gt;&gt;&gt; csv_write(data_out, "testlist.txt")
+&gt;&gt;&gt; os.path.exists("testlist.txt")
+True
+&gt;&gt;&gt; data_in = csv_read("testlist.txt")
+&gt;&gt;&gt; data_in == data_out
+True
+</code></pre>
+<p>csv_write() can also write compressed CSV files. To enable compression
+set <em>compression</em> to a number in [0, 9]. The file will not be saved as
+"filename" but as "filename.zz".</p>
+<pre><code>&gt;&gt;&gt; data_out = [ ["column1", '1', '11'], ["Test", '2', '22'] ]
+&gt;&gt;&gt; csv_write(data_out, "testlist2.txt", compression=9)
+&gt;&gt;&gt; os.path.exists("testlist2.txt")
+False
+&gt;&gt;&gt; os.path.exists("testlist2.txt.zz")
+True
+&gt;&gt;&gt; data_in = csv_read("testlist2.txt.zz")
+&gt;&gt;&gt; data_in == data_out
+True
+</code></pre>
+<p>If <em>compression</em> is enabled then the list is converted
+to a CSV string and compressed to a file. During this operation the
+whole CSV table is kept as string in memory.</p>
+<div class="admonition seealso">
+<p class="admonition-title">Seealso</p>
+<p>:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_read" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.csv_read"><code>csv_read()</code></a></p>
+</div></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def csv_write(list_of_list, filename, delimiter=&#34;,&#34;, compression=None, create_dirs=False):
+    &#34;&#34;&#34;Writes a list of lists to a CSV file.
+
+    Example:
+
+    &gt;&gt;&gt; data_out = [ [&#34;column1&#34;, &#39;1&#39;, &#39;11&#39;], [&#34;Test&#34;, &#39;2&#39;, &#39;22&#39;] ]
+    &gt;&gt;&gt; csv_write(data_out, &#34;testlist.txt&#34;)
+    &gt;&gt;&gt; os.path.exists(&#34;testlist.txt&#34;)
+    True
+    &gt;&gt;&gt; data_in = csv_read(&#34;testlist.txt&#34;)
+    &gt;&gt;&gt; data_in == data_out
+    True
+
+    csv_write() can also write compressed CSV files. To enable compression
+    set *compression* to a number in [0, 9]. The file will not be saved as
+    &#34;filename&#34; but as &#34;filename.zz&#34;.
+
+    &gt;&gt;&gt; data_out = [ [&#34;column1&#34;, &#39;1&#39;, &#39;11&#39;], [&#34;Test&#34;, &#39;2&#39;, &#39;22&#39;] ]
+    &gt;&gt;&gt; csv_write(data_out, &#34;testlist2.txt&#34;, compression=9)
+    &gt;&gt;&gt; os.path.exists(&#34;testlist2.txt&#34;)
+    False
+    &gt;&gt;&gt; os.path.exists(&#34;testlist2.txt.zz&#34;)
+    True
+    &gt;&gt;&gt; data_in = csv_read(&#34;testlist2.txt.zz&#34;)
+    &gt;&gt;&gt; data_in == data_out
+    True
+
+    If *compression* is enabled then the list is converted
+    to a CSV string and compressed to a file. During this operation the
+    whole CSV table is kept as string in memory.
+
+    .. Seealso::
+        :func:`csv_read`
+    &#34;&#34;&#34;
+    if create_dirs:
+        outdir = dirname(filename)
+        if not exists(outdir):
+            makedirs(outdir)
+
+    if compression is None:
+        with open(filename, &#34;wb&#34;) as f:
+            for item in list_of_list:
+                if isinstance(item, str):
+                    line = item + &#39;\n&#39;
+                else:
+                    line = delimiter.join([ str(x) for x in item ]) + &#39;\n&#39;
+                f.write( line.encode(&#39;utf-8&#39;) )
+
+    else:
+        if not isinstance(compression, int):
+            compression = 9
+
+        lines = []
+        for item in list_of_list:
+            if isinstance(item, str):
+                line = item + &#39;\n&#39;
+            else:
+                line = delimiter.join([ str(x) for x in item ]) + &#39;\n&#39;
+            lines.append( line )
+
+        if not filename.endswith(&#34;.zz&#34;):
+            filename = filename + &#34;.zz&#34;
+        
+        write_compressed_file(filename, &#39;&#39;.join(lines), compression_level=compression)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.exclude_dot_files"><code class="name flex">
+<span>def <span class="ident">exclude_dot_files</span></span>(<span>filelist)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Removes all files starting with '.' from a filelist.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def exclude_dot_files(filelist):
+    &#34;&#34;&#34;Removes all files starting with &#39;.&#39; from a filelist.&#34;&#34;&#34;
+    return [ x for x in filelist if not x.startswith(&#39;.&#39;) ]</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.filename"><code class="name flex">
+<span>def <span class="ident">filename</span></span>(<span>x)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns the filename without the directory part including extension.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def filename(x):
+    &#34;&#34;&#34;Returns the filename without the directory part including extension.&#34;&#34;&#34;
+    return split(x)[1]</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.get_all_image_files"><code class="name flex">
+<span>def <span class="ident">get_all_image_files</span></span>(<span>dir_path)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns a list of all image files within <em>dir_path</em>.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_all_image_files(dir_path):
+    &#34;&#34;&#34;Returns a list of all image files within *dir_path*.&#34;&#34;&#34;
+    assert dir_path is not None
+
+    files    = listdir(dir_path)
+    images   = sorted(exclude_dot_files(files))
+    imgFiles = [ &#39;&#39;.join( (dir_path, sep, x) ) for x in images if is_image_file(x) ]
+    return imgFiles</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.get_classes_by_dirnames"><code class="name flex">
+<span>def <span class="ident">get_classes_by_dirnames</span></span>(<span>base_directory)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns all image files below base_directory and their associated class.</p>
+<p><base_directory>/class1/1.jpg
+<base_directory>/class1/2.jpg
+<base_directory>/class2/3.jpg
+<base_directory>/class2/4.jpg</p>
+<p>will yield a dictionary:
+"class1" -&gt; [1.jpg, 2.jpg]
+"class2" -&gt; [3.jpg, 4.jpg]</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_classes_by_dirnames(base_directory):
+    &#34;&#34;&#34;Returns all image files below base_directory and their associated class.
+
+    &lt;base_directory&gt;/class1/1.jpg
+    &lt;base_directory&gt;/class1/2.jpg
+    &lt;base_directory&gt;/class2/3.jpg
+    &lt;base_directory&gt;/class2/4.jpg
+
+    will yield a dictionary:
+     &#34;class1&#34; -&gt; [1.jpg, 2.jpg]
+     &#34;class2&#34; -&gt; [3.jpg, 4.jpg]
+    &#34;&#34;&#34;
+    assert base_directory is not None
+    directories = sorted(exclude_dot_files(listdir(base_directory)))
+
+    classes = dict()
+    for item in directories:
+        dir_path = base_directory + sep + item
+        if not isdir(dir_path):
+            print(&#34;Warning: item &#39;&#34;+str(dir_path)+&#34;&#39; is not a directory. Skipping...&#34;)
+            continue
+
+        category = item
+        print(&#34;class: &#34;+category)
+
+        imgFiles = get_all_image_files(dir_path)
+        classes[category] = imgFiles
+
+    return classes</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.get_classes_by_filenames"><code class="name flex">
+<span>def <span class="ident">get_classes_by_filenames</span></span>(<span>image_directory)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_classes_by_filenames(image_directory):
+    assert image_directory is not None
+
+    oldcategory = &#34;&#34;
+    images      = sorted(exclude_dot_files(listdir(image_directory)))
+
+    classes = dict()
+    for img in images:
+        if not is_image_file(img):
+            continue
+
+        category = clean_string(basename(img)[0:-4])
+        if category == oldcategory:
+            continue
+
+        oldcategory = category
+        print(&#34;class: &#34;+category)
+        imgFiles = [ item for item in images if clean_string(basename(item)[0:-4]) == category ]
+        classes[category] = imgFiles
+
+    return classes</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.get_files_per_class_by_pattern"><code class="name flex">
+<span>def <span class="ident">get_files_per_class_by_pattern</span></span>(<span>dir_path, classes, pattern)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_files_per_class_by_pattern(dir_path, classes, pattern):
+    x = defaultdict(set)
+    for c in classes:
+        subdir = abspath(dir_path) + &#39;/&#39; + c + &#39;/&#39;
+        files  = grab_files(normpath(subdir), pattern)
+        x[c]   = files
+        for f in files:
+            assert exists(f), f
+    return x</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.grab_files"><code class="name flex">
+<span>def <span class="ident">grab_files</span></span>(<span>directory, wildcard_pattern=None, regex_pattern=None, topdown=True, followlinks=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns all files within directory AND its subdirectories that match
+the given pattern. Either wildcards or a regular expression can be used
+as pattern.</p>
+<p>If <em>followlinks</em> is set to True, symlinks are followed when traversing
+the directory. If <em>topdown</em> is set to False, subdirectories are traversed
+bottom-up.</p>
+<p>@author: Stefan Romberg</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def grab_files(directory, wildcard_pattern=None, regex_pattern=None,
+               topdown=True, followlinks=False):
+    &#34;&#34;&#34;Returns all files within directory AND its subdirectories that match
+    the given pattern. Either wildcards or a regular expression can be used
+    as pattern.
+
+    If *followlinks* is set to True, symlinks are followed when traversing
+    the directory. If *topdown* is set to False, subdirectories are traversed
+    bottom-up.
+
+    @author: Stefan Romberg
+    &#34;&#34;&#34;
+    assert directory is not None and directory != &#34;&#34;
+    assert ( ( wildcard_pattern is not None and regex_pattern is None ) or
+             ( wildcard_pattern is None and regex_pattern is not None ) )
+
+    # prepare regex engine
+    if wildcard_pattern is not None:
+        regex_pattern = wildcards2regex(normpath(wildcard_pattern))
+    rec      = re.compile(regex_pattern)
+    search   = rec.search
+
+    # traverse directories
+    matched_files = []
+    for dir_path, dirnames, filenames in os.walk(directory,
+                                                 topdown=topdown,
+                                                 followlinks=followlinks):
+        for filename in filenames:
+            f_name = normpath(join(dir_path, filename))
+            m      = search(f_name)
+            if m is not None:
+                assert m.start() == 0 and m.end() == len(f_name), (m.start(), m.end(), f_name)
+                matched_files.append( f_name )
+
+    return matched_files</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.grab_files2"><code class="name flex">
+<span>def <span class="ident">grab_files2</span></span>(<span>directory, suffix, topdown=True, followlinks=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns all files within directory AND its subdirectories that end
+with <em>suffix</em>.</p>
+<p>If <em>followlinks</em> is set to True, symlinks are followed when traversing
+the directory. If <em>topdown</em> is set to False, subdirectories are traversed
+bottom-up.</p>
+<p>@author: Stefan Romberg</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def grab_files2(directory, suffix, topdown=True, followlinks=False):
+    &#34;&#34;&#34;Returns all files within directory AND its subdirectories that end
+    with *suffix*.
+
+    If *followlinks* is set to True, symlinks are followed when traversing
+    the directory. If *topdown* is set to False, subdirectories are traversed
+    bottom-up.
+
+    @author: Stefan Romberg
+    &#34;&#34;&#34;
+    assert directory is not None and directory != &#34;&#34;
+
+    # traverse directories
+    matched_files = []
+    for dir_path, dirnames, filenames in os.walk(directory,
+                                                 topdown=topdown,
+                                                 followlinks=followlinks):
+
+        print(&#34;grab_files2(): Processing dir: &#34;+dir_path)
+        for filename in filenames:
+            if filename.endswith(suffix):
+                matched_files.append( join(dir_path, filename) )
+
+    return matched_files</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.icount"><code class="name flex">
+<span>def <span class="ident">icount</span></span>(<span>it)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Computes the length of some data given an iterator.
+Note: It consumes the iterator.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def icount(it):
+    &#34;&#34;&#34;Computes the length of some data given an iterator.
+    Note: It consumes the iterator.
+    &#34;&#34;&#34;
+    for size,_ in enumerate(it):
+        pass
+    return size+1</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.is_image_file"><code class="name flex">
+<span>def <span class="ident">is_image_file</span></span>(<span>filename)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Determines if filename indicates that the file is an image.</p>
+<p>Returns true if the filename ends with (case insensitive) one of the
+extensions '.jpg','.jpeg','.pgm','.png','.tif','.tiff','.gif','.bmp' and
+it does not start with '.'.
+(This hides the ._* files produced by Mac OS X aka "Apple Double files")</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def is_image_file(filename):
+    &#34;&#34;&#34;Determines if filename indicates that the file is an image.
+
+    Returns true if the filename ends with (case insensitive) one of the
+    extensions &#39;.jpg&#39;,&#39;.jpeg&#39;,&#39;.pgm&#39;,&#39;.png&#39;,&#39;.tif&#39;,&#39;.tiff&#39;,&#39;.gif&#39;,&#39;.bmp&#39; and
+    it does not start with &#39;.&#39;.
+    (This hides the ._* files produced by Mac OS X aka &#34;Apple Double files&#34;)
+    &#34;&#34;&#34;
+    # assume no image file starts with &#39;.&#39;: Hides ._* files produced by Mac OS X.
+    if filename is None or filename == &#34;&#34; or filename.startswith(&#39;.&#39;):
+        return False
+
+    x = filename.lower()
+    return ( x.endswith(&#34;.jpg&#34;) or
+             x.endswith(&#34;.jpeg&#34;) or
+             x.endswith(&#34;.pgm&#34;) or
+             x.endswith(&#34;.png&#34;) or
+             x.endswith(&#34;.tiff&#34;) or
+             x.endswith(&#34;.tif&#34;) or
+             x.endswith(&#34;.gif&#34;) or
+             x.endswith(&#34;.bmp&#34;) )</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.loaddump"><code class="name flex">
+<span>def <span class="ident">loaddump</span></span>(<span>filename, silent=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Unserializes data from a file that was written with
+the built-in cPickle module.</p>
+<div class="admonition seealso">
+<p class="admonition-title">Seealso</p>
+<p>:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.savedump" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.savedump"><code>savedump()</code></a></p>
+</div></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def loaddump(filename, silent=False):
+    &#34;&#34;&#34;Unserializes data from a file that was written with
+    the built-in cPickle module.
+
+    .. Seealso::
+        :func:`savedump`
+    &#34;&#34;&#34;
+    assert filename is not None and filename != &#34;&#34; and filename != &#34;-&#34;, filename
+
+    if not exists(filename):
+        if not silent:
+            print(&#34;loaddump(): File &#39;&#34;+filename+&#34;&#39; does not exist. Returning None.&#34;)
+        return None
+
+    try:
+        if not silent:
+            print(&#34;loaddump(): Loading data from &#39;&#34;+filename+&#34;&#39;...&#34;),
+        with open(filename, &#34;rb&#34;) as f:
+            data = pickle_load(f)
+        if not silent:
+            print(&#34;Done&#34;)
+        return data
+    except Exception as ex:
+        print(&#34;ERROR: loaddump(): Could not load data from &#39;&#34;+filename+&#34;&#39;.&#34;)
+        print(&#34;       Passing exception to caller.&#34;)
+        print(str(ex))
+        raise ex</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.msplit"><code class="name flex">
+<span>def <span class="ident">msplit</span></span>(<span>s, delimiters=&#39;;,\t&#39;, strip=True, remove_empty_tokens=False, strip_linebreaks=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Splits the given string by any of the given delimiters.
+More sophisticated version of string.split() aka "multisplit".</p>
+<p>Usage examples:</p>
+<pre><code>&gt;&gt;&gt; msplit("abcd")
+['abcd']
+&gt;&gt;&gt; msplit("a,b,c,d")
+['a', 'b', 'c', 'd']
+&gt;&gt;&gt; msplit("a\tb,c,d")
+['a', 'b', 'c', 'd']
+&gt;&gt;&gt; msplit("a\tb,c;d e")
+['a', 'b', 'c', 'd e']
+</code></pre>
+<p>The parameter delimiters denotes <em>all</em> delimiters that are used to split
+the string into separate tokens. Delimiters <em>must be</em> single characters.
+Note: By default msplit() does not split the string at spaces.</p>
+<pre><code>&gt;&gt;&gt; msplit("a\tb,c;d e", delimiters=";,\t ")
+['a', 'b', 'c', 'd', 'e']
+&gt;&gt;&gt; msplit("a\tb,c;d e", delimiters=";")
+['a\tb,c', 'd e']
+</code></pre>
+<p>If strip is True (default) then split tokens will further be stripped
+of leading and trailing whitespaces.
+Examples:</p>
+<pre><code>&gt;&gt;&gt; msplit(" a,     b    , c  ", strip=True)
+['a', 'b', 'c']
+&gt;&gt;&gt; msplit(" a,     b    , c  ", strip=False)
+[' a', '     b    ', ' c  ']
+</code></pre>
+<p>Note that if argument delimiter contains " " (space) as delimiter argument
+strip has no effect when set to True. Whitespaces are stripped from tokens
+<em>after</em> the original string has been split at delimiters. That means:</p>
+<pre><code>&gt;&gt;&gt; msplit("a b c ", delimiters=" ", strip=True)
+['a', 'b', 'c', '']
+</code></pre>
+<p>If strip_linebreaks is True (default) then line breaks will be removed
+before the string is split into tokens. This avoids trailing empty tokens:
+Examples:</p>
+<dl>
+<dt><strong><code>Note</code></strong> :&ensp;<code>strip</code>=<code>True</code> <code>swallows</code> <code>line</code> <code>breaks</code> <code>and</code> <code>so</code> <code>the</code> <code>last</code> <code>token</code> <code>will</code> <code>be</code> <code>empty</code>:</dt>
+<dd>
+<p>&nbsp;</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>msplit("a b c d \n", delimiters=" ", strip=True, strip_linebreaks=True)
+['a', 'b', 'c', 'd', '']
+msplit("a b c d \n", delimiters=" ", strip=True, strip_linebreaks=False)
+['a', 'b', 'c', 'd', '']</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</dd>
+<dt><strong><code>Note</code></strong> :&ensp;<code>strip</code>=<code>False</code> <code>will</code> <code>preserve</code> <code>the</code> <code>trailing</code> <code>line</code> <code>break</code> <code>as</code> <code>extra</code> <code>token</code>:</dt>
+<dd>
+<p>&nbsp;</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>msplit("a b c d \n", delimiters=" ", strip=False, strip_linebreaks=True)
+['a', 'b', 'c', 'd', '']
+msplit("a b c d \n", delimiters=" ", strip=False, strip_linebreaks=False)
+['a', 'b', 'c', 'd', '\n']</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</dd>
+</dl>
+<p>If remove_empty_tokens is set to True then empty tokens are removed before
+the list of tokens is returned. By default remove_empty_tokens is False.
+Examples:</p>
+<pre><code>&gt;&gt;&gt; msplit("a,,b", remove_empty_tokens=True)
+['a', 'b']
+&gt;&gt;&gt; msplit("a,,b,", remove_empty_tokens=True)
+['a', 'b']
+&gt;&gt;&gt; msplit("", remove_empty_tokens=True)
+[]
+&gt;&gt;&gt; msplit(",", remove_empty_tokens=True)
+[]
+&gt;&gt;&gt; msplit(",,,", remove_empty_tokens=True)
+[]
+
+&gt;&gt;&gt; msplit("a,,b", remove_empty_tokens=False)
+['a', '', 'b']
+&gt;&gt;&gt; msplit("a,,b,", remove_empty_tokens=False)
+['a', '', 'b', '']
+&gt;&gt;&gt; msplit("", remove_empty_tokens=False)
+[]
+&gt;&gt;&gt; msplit(",", remove_empty_tokens=False)
+['', '']
+</code></pre>
+<p>Degenerated cases:</p>
+<pre><code>&gt;&gt;&gt; msplit("")
+[]
+&gt;&gt;&gt; msplit(",,,", remove_empty_tokens=False, strip_linebreaks=True)
+['', '', '', '']
+&gt;&gt;&gt; msplit(",,,", remove_empty_tokens=False, strip_linebreaks=False)
+['', '', '', '']
+&gt;&gt;&gt; msplit(",,,", remove_empty_tokens=True)
+[]
+&gt;&gt;&gt; msplit(None)
+Traceback (most recent call last):
+</code></pre>
+<p>File "C:\EPD-6.2\lib\doctest.py", line 1248, in __run
+compileflags, 1) in test.globs
+File "<doctest __main__.msplit[27]>", line 1, in <module>
+msplit(5)
+File "F:
+esearch\python\csv_scripts\csv_convert2cvectorfile.py", line 139, in msplit
+raise TypeError("msplit() expects string as first argument.")
+TypeError: msplit() expects string as first argument.</p>
+<pre><code>&gt;&gt;&gt; msplit(5)
+Traceback (most recent call last):
+</code></pre>
+<p>File "C:\EPD-6.2\lib\doctest.py", line 1248, in __run
+compileflags, 1) in test.globs
+File "<doctest __main__.msplit[27]>", line 1, in <module>
+msplit(5)
+File "F:
+esearch\python\csv_scripts\csv_convert2cvectorfile.py", line 139, in msplit
+raise TypeError("msplit() expects string as first argument.")
+TypeError: msplit() expects string as first argument.</p>
+<dl>
+<dt><strong><code>Autor</code></strong> :&ensp;<code>Stefan</code> <code>Romberg</code>, <code>stefan.romberg</code>@<code>informatik.uni</code>-<code>augsburg.de</code></dt>
+<dd>&nbsp;</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def msplit(s, delimiters=&#34;;,\t&#34;, strip=True, remove_empty_tokens=False, strip_linebreaks=True):
+    &#34;&#34;&#34;Splits the given string by any of the given delimiters.
+    More sophisticated version of string.split() aka &#34;multisplit&#34;.
+
+    Usage examples:
+
+    &gt;&gt;&gt; msplit(&#34;abcd&#34;)
+    [&#39;abcd&#39;]
+    &gt;&gt;&gt; msplit(&#34;a,b,c,d&#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c,d&#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;]
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c;d e&#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d e&#39;]
+
+    The parameter delimiters denotes *all* delimiters that are used to split
+    the string into separate tokens. Delimiters *must be* single characters.
+    Note: By default msplit() does not split the string at spaces.
+
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c;d e&#34;, delimiters=&#34;;,\\t &#34;)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;e&#39;]
+    &gt;&gt;&gt; msplit(&#34;a\\tb,c;d e&#34;, delimiters=&#34;;&#34;)
+    [&#39;a\\tb,c&#39;, &#39;d e&#39;]
+
+    If strip is True (default) then split tokens will further be stripped
+    of leading and trailing whitespaces.
+    Examples:
+
+    &gt;&gt;&gt; msplit(&#34; a,     b    , c  &#34;, strip=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]
+    &gt;&gt;&gt; msplit(&#34; a,     b    , c  &#34;, strip=False)
+    [&#39; a&#39;, &#39;     b    &#39;, &#39; c  &#39;]
+
+    Note that if argument delimiter contains &#34; &#34; (space) as delimiter argument
+    strip has no effect when set to True. Whitespaces are stripped from tokens
+    *after* the original string has been split at delimiters. That means:
+
+    &gt;&gt;&gt; msplit(&#34;a b c &#34;, delimiters=&#34; &#34;, strip=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;&#39;]
+
+    If strip_linebreaks is True (default) then line breaks will be removed
+    before the string is split into tokens. This avoids trailing empty tokens:
+    Examples:
+
+    Note: strip=True swallows line breaks and so the last token will be empty:
+
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=True, strip_linebreaks=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=True, strip_linebreaks=False)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;&#39;]
+
+    Note: strip=False will preserve the trailing line break as extra token:
+
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=False, strip_linebreaks=True)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;a b c d \\n&#34;, delimiters=&#34; &#34;, strip=False, strip_linebreaks=False)
+    [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;, &#39;d&#39;, &#39;\\n&#39;]
+
+    If remove_empty_tokens is set to True then empty tokens are removed before
+    the list of tokens is returned. By default remove_empty_tokens is False.
+    Examples:
+
+    &gt;&gt;&gt; msplit(&#34;a,,b&#34;, remove_empty_tokens=True)
+    [&#39;a&#39;, &#39;b&#39;]
+    &gt;&gt;&gt; msplit(&#34;a,,b,&#34;, remove_empty_tokens=True)
+    [&#39;a&#39;, &#39;b&#39;]
+    &gt;&gt;&gt; msplit(&#34;&#34;, remove_empty_tokens=True)
+    []
+    &gt;&gt;&gt; msplit(&#34;,&#34;, remove_empty_tokens=True)
+    []
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=True)
+    []
+
+    &gt;&gt;&gt; msplit(&#34;a,,b&#34;, remove_empty_tokens=False)
+    [&#39;a&#39;, &#39;&#39;, &#39;b&#39;]
+    &gt;&gt;&gt; msplit(&#34;a,,b,&#34;, remove_empty_tokens=False)
+    [&#39;a&#39;, &#39;&#39;, &#39;b&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;&#34;, remove_empty_tokens=False)
+    []
+    &gt;&gt;&gt; msplit(&#34;,&#34;, remove_empty_tokens=False)
+    [&#39;&#39;, &#39;&#39;]
+
+    Degenerated cases:
+
+    &gt;&gt;&gt; msplit(&#34;&#34;)
+    []
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=False, strip_linebreaks=True)
+    [&#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=False, strip_linebreaks=False)
+    [&#39;&#39;, &#39;&#39;, &#39;&#39;, &#39;&#39;]
+    &gt;&gt;&gt; msplit(&#34;,,,&#34;, remove_empty_tokens=True)
+    []
+    &gt;&gt;&gt; msplit(None)
+    Traceback (most recent call last):
+      File &#34;C:\EPD-6.2\lib\doctest.py&#34;, line 1248, in __run
+        compileflags, 1) in test.globs
+      File &#34;&lt;doctest __main__.msplit[27]&gt;&#34;, line 1, in &lt;module&gt;
+        msplit(5)
+      File &#34;F:\research\python\csv_scripts\csv_convert2cvectorfile.py&#34;, line 139, in msplit
+        raise TypeError(&#34;msplit() expects string as first argument.&#34;)
+    TypeError: msplit() expects string as first argument.
+    &gt;&gt;&gt; msplit(5)
+    Traceback (most recent call last):
+      File &#34;C:\EPD-6.2\lib\doctest.py&#34;, line 1248, in __run
+        compileflags, 1) in test.globs
+      File &#34;&lt;doctest __main__.msplit[27]&gt;&#34;, line 1, in &lt;module&gt;
+        msplit(5)
+      File &#34;F:\research\python\csv_scripts\csv_convert2cvectorfile.py&#34;, line 139, in msplit
+        raise TypeError(&#34;msplit() expects string as first argument.&#34;)
+    TypeError: msplit() expects string as first argument.
+
+    Autor: Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de
+    &#34;&#34;&#34;
+    if isinstance(s, bytes):
+        s = s.decode(&#39;utf-8&#39;)
+    if not isinstance(s, str):
+        raise TypeError(&#34;msplit() expects string as first argument.&#34;)
+    if s is None or len(s) == 0:
+        return []
+
+    if strip_linebreaks:
+        if s[-2:] == &#34;\r\n&#34;:
+            s = s[0:len(s)-2]
+        else:
+            y = s[-1]
+            if y == &#34;\n&#34; or y == &#34;\r&#34;:
+                s = s[0:len(s)-1]
+
+    delim = delimiters[0]
+    for d in delimiters[1:]:
+        s = s.replace(d, delim)
+
+    tokens = s.split(delim)
+
+    if strip:
+        tokens = [ t.strip() for t in tokens ]
+
+    if remove_empty_tokens:
+        tokens = [ t for t in tokens if len(t) &gt; 0 ]
+
+    return tokens</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.read_compressed_file"><code class="name flex">
+<span>def <span class="ident">read_compressed_file</span></span>(<span>filename)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads zlib compressed strings from a file.</p>
+<div class="admonition seealso">
+<p class="admonition-title">Seealso</p>
+<p>:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.write_compressed_file" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.write_compressed_file"><code>write_compressed_file()</code></a>
+:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_read" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.csv_read"><code>csv_read()</code></a></p>
+</div></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def read_compressed_file(filename):
+    &#34;&#34;&#34;Reads zlib compressed strings from a file.
+
+    .. Seealso::
+        :func:`write_compressed_file`
+        :func:`csv_read`
+    &#34;&#34;&#34;
+    if not exists(filename) or not os.path.isfile(filename):
+        return None
+    with open(filename, &#34;rb&#34;) as f:
+        return zlib.decompress( f.read() ).decode(&#39;utf-8&#39;)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.savedump"><code class="name flex">
+<span>def <span class="ident">savedump</span></span>(<span>data, filename, silent=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Serializes data to a file using the built-in cPickle module.</p>
+<div class="admonition seealso">
+<p class="admonition-title">Seealso</p>
+<p>:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.loaddump" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.loaddump"><code>loaddump()</code></a></p>
+</div></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def savedump(data, filename, silent=False):
+    &#34;&#34;&#34;Serializes data to a file using the built-in cPickle module.
+
+    .. Seealso::
+        :func:`loaddump`
+    &#34;&#34;&#34;
+    assert filename is not None and filename != &#34;&#34; and filename != &#34;-&#34;, filename
+
+    if not silent:
+        print(&#34;savedump(): Saving data to &#39;&#34;+filename+&#34;&#39;...&#34;),
+    with open(filename, &#34;wb&#34;) as f:
+        pickle_dump(data, f, protocol=2)
+    if not silent:
+        print(&#34;Done&#34;)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.wildcards2regex"><code class="name flex">
+<span>def <span class="ident">wildcards2regex</span></span>(<span>wildcard_pattern)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Converts a wildcard pattern such as "*.txt" to a regular expression.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def wildcards2regex(wildcard_pattern):
+    &#34;&#34;&#34;Converts a wildcard pattern such as &#34;*.txt&#34; to a regular expression.&#34;&#34;&#34;
+    p = wildcard_pattern
+    p = p.replace(&#34;\\&#34;, &#34;\\\\&#34;)
+
+    p = p.replace(&#34;.&#34;, &#34;\\.&#34;)
+    p = p.replace(&#34;^&#34;, &#34;\\^&#34;)
+    p = p.replace(&#34;$&#34;, &#34;\\$&#34;)
+    p = p.replace(&#34;+&#34;, &#34;\\+&#34;)
+    p = p.replace(&#34;-&#34;, &#34;\\-&#34;)
+    p = p.replace(&#34;=&#34;, &#34;\\=&#34;) # ?
+    p = p.replace(&#34;,&#34;, &#34;\\,&#34;) # ?
+    p = p.replace(&#34;(&#34;, &#34;\\(&#34;)
+    p = p.replace(&#34;)&#34;, &#34;\\)&#34;)
+    p = p.replace(&#34;[&#34;, &#34;\\[&#34;)
+    p = p.replace(&#34;]&#34;, &#34;\\]&#34;)
+    p = p.replace(&#34;{&#34;, &#34;\\{&#34;)
+    p = p.replace(&#34;}&#34;, &#34;\\}&#34;)
+    p = p.replace(&#34;/&#34;, &#34;\/}&#34;) # ?
+
+    p = p.replace(&#34;*&#34;, &#34;.*&#34;)
+    p = p.replace(&#34;?&#34;, &#34;.&#34;)
+    return &#34;^&#34; + p + &#34;$&#34;</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.write_compressed_file"><code class="name flex">
+<span>def <span class="ident">write_compressed_file</span></span>(<span>filename, content, compression_level=9)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Writes the string <em>content</em> to the given file and compresses the data.</p>
+<pre><code>&gt;&gt;&gt; data_in = "Das ist \nein Test\n."
+&gt;&gt;&gt; write_compressed_file("testfile2", data_in)
+
+&gt;&gt;&gt; data_out = read_compressed_file("testfile2")
+&gt;&gt;&gt; data_in == data_out
+True
+</code></pre>
+<div class="admonition seealso">
+<p class="admonition-title">Seealso</p>
+<p>:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.read_compressed_file" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.read_compressed_file"><code>read_compressed_file()</code></a>
+:func:<a title="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_write" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.csv_write"><code>csv_write()</code></a></p>
+</div></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def write_compressed_file(filename, content, compression_level=9):
+    &#34;&#34;&#34;Writes the string *content* to the given file and compresses the data.
+
+    &gt;&gt;&gt; data_in = &#34;Das ist \\nein Test\\n.&#34;
+    &gt;&gt;&gt; write_compressed_file(&#34;testfile2&#34;, data_in)
+
+    &gt;&gt;&gt; data_out = read_compressed_file(&#34;testfile2&#34;)
+    &gt;&gt;&gt; data_in == data_out
+    True
+
+    .. Seealso::
+        :func:`read_compressed_file`
+        :func:`csv_write`
+    &#34;&#34;&#34;
+    assert isinstance(content, str), &#34;Can only write strings.&#34;
+    with open(filename, &#34;wb&#34;) as f:
+        f.write( zlib.compress(content.encode(&#39;utf-8&#39;), compression_level) )</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.Tee"><code class="flex name class">
+<span>class <span class="ident">Tee</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>Simulates the behaviour of the unix program 'tee' to write output
+both to stdout <em>and</em> a file.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Tee(object):
+    &#34;&#34;&#34;Simulates the behaviour of the unix program &#39;tee&#39; to write output
+    both to stdout *and* a file.
+    &#34;&#34;&#34;
+
+    def __init__(self, name, mode=&#34;w&#34;):
+        self.file = None
+        if name is not None and name != &#34;-&#34;:
+            print(&#34;Tee: Mirring stdout to file &#39;&#34;+name+&#34;&#39;&#34;)
+            self.file = open(name, mode)
+        self.stdout = sys.stdout
+        sys.stdout = self
+
+    def __del__(self):
+        if self.file is not None:
+            self.file.close()
+        sys.stdout = self.stdout
+
+    def write(self, data):
+        if self.file is not None:
+            self.file.write(data)
+            #self.file.flush()
+        self.stdout.write(data)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.Tee.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, name, mode=&#39;w&#39;)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize self.
+See help(type(self)) for accurate signature.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, name, mode=&#34;w&#34;):
+    self.file = None
+    if name is not None and name != &#34;-&#34;:
+        print(&#34;Tee: Mirring stdout to file &#39;&#34;+name+&#34;&#39;&#34;)
+        self.file = open(name, mode)
+    self.stdout = sys.stdout
+    sys.stdout = self</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.core_io.Tee.write"><code class="name flex">
+<span>def <span class="ident">write</span></span>(<span>self, data)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def write(self, data):
+    if self.file is not None:
+        self.file.write(data)
+        #self.file.flush()
+    self.stdout.write(data)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos" href="index.html">torchsight.evaluators.flickr32.flickrlogos</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.clean_string" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.clean_string">clean_string</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_read" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.csv_read">csv_read</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.csv_write" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.csv_write">csv_write</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.exclude_dot_files" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.exclude_dot_files">exclude_dot_files</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.filename" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.filename">filename</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.get_all_image_files" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.get_all_image_files">get_all_image_files</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.get_classes_by_dirnames" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.get_classes_by_dirnames">get_classes_by_dirnames</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.get_classes_by_filenames" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.get_classes_by_filenames">get_classes_by_filenames</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.get_files_per_class_by_pattern" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.get_files_per_class_by_pattern">get_files_per_class_by_pattern</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.grab_files" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.grab_files">grab_files</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.grab_files2" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.grab_files2">grab_files2</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.icount" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.icount">icount</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.is_image_file" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.is_image_file">is_image_file</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.loaddump" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.loaddump">loaddump</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.msplit" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.msplit">msplit</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.read_compressed_file" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.read_compressed_file">read_compressed_file</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.savedump" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.savedump">savedump</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.wildcards2regex" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.wildcards2regex">wildcards2regex</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.write_compressed_file" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.write_compressed_file">write_compressed_file</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.Tee" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.Tee">Tee</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.Tee.__init__" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.Tee.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.core_io.Tee.write" href="#torchsight.evaluators.flickr32.flickrlogos.core_io.Tee.write">write</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

@@ -26,65 +26,133 @@
 <pre><code class="python">&#34;&#34;&#34;CLI to train the DLDENet.&#34;&#34;&#34;
 import click
 
-from torchsight.trainers import DLDENetTrainer
+from torchsight.trainers import DLDENetTrainer, DLDENetWithTrackedMeansTrainer
 
 
 @click.command()
-@click.argument(&#39;dataset-root&#39;, type=click.Path(exists=True))
-# Currently we only have the COCO dataset for training
-@click.option(&#39;--dataset&#39;, default=&#39;COCO&#39;, show_default=True, type=click.Choice([&#39;COCO&#39;]))
+@click.option(&#39;--config&#39;, type=click.Path(exists=True), help=&#39;A JSON config file to load the configurations.&#39;
+              &#39;If you provide this options all the other options are not used (only --device can be used).&#39;)
+@click.option(&#39;--device&#39;, default=None, help=&#39;The device that the model must use.&#39;)
+@click.option(&#39;-d&#39;, &#39;--dataset&#39;, default=&#39;coco&#39;, show_default=True, type=click.Choice([&#39;coco&#39;, &#39;logo32plus&#39;, &#39;flickr32&#39;]))
+@click.option(&#39;-dr&#39;, &#39;--dataset-root&#39;, type=click.Path(exists=True))
 @click.option(&#39;-b&#39;, &#39;--batch-size&#39;, default=8, show_default=True)
 @click.option(&#39;--resnet&#39;, default=50, show_default=True, help=&#39;The resnet backbone that the model must use.&#39;)
-@click.option(&#39;--logs-dir&#39;, default=&#39;./logs&#39;, type=click.Path(exists=True), show_default=True,
+@click.option(&#39;--fixed-bias&#39;, default=-0.5, show_default=True, help=&#39;The fixed bias for the classification module.&#39;)
+@click.option(&#39;--logs-dir&#39;, default=&#39;./logs&#39;, type=click.Path(), show_default=True,
               help=&#39;Where to store the checkpoints and descriptions.&#39;)
-@click.option(&#39;-c&#39;, &#39;--checkpoint&#39;, type=click.Path(exists=True), help=&#39;A checkpoint to resume the training from it.&#39;)
 @click.option(&#39;--classes&#39;, default=&#39;&#39;,
               help=&#39;Indicate which classes (identified by its string label) must be used for the training. &#39;
               &#39;If no class is provided the trainer will use all the classes. Example: --classes &#34;bear sheep airplane&#34;&#39;)
 @click.option(&#39;--optimizer&#39;, default=&#39;adabound&#39;, type=click.Choice([&#39;adabound&#39;, &#39;sgd&#39;]), show_default=True,
               help=&#39;Set the optimizer that the trainer must use to train the model.&#39;)
+@click.option(&#39;--adabound-lr&#39;, default=1e-3, show_default=True, help=&#39;The learning rate for the starting in Adabound.&#39;)
+@click.option(&#39;--adabound-final-lr&#39;, default=1, show_default=True,
+              help=&#39;The final learning rate when Adabound transform to SGD.&#39;)
+@click.option(&#39;--scheduler-factor&#39;, default=0.1, show_default=True,
+              help=&#39;The factor to scale the LR.&#39;)
+@click.option(&#39;--scheduler-patience&#39;, default=5, show_default=True,
+              help=&#39;Hoy many epochs without relative improvement the scheduler must wait.&#39;)
+@click.option(&#39;--scheduler-threshold&#39;, default=0.01, show_default=True,
+              help=&#39;The relative threshold that indicates an improvement for the scheduler.&#39;)
+@click.option(&#39;--anchors-sizes&#39;, default=&#39;20 40 80 160 320&#39;, show_default=True)
 @click.option(&#39;--not-normalize&#39;, is_flag=True,
-              help=&#39;Avoid normalization of the embeddings in the classification module.&#39;)
-@click.option(&#39;--device&#39;, default=None, help=&#39;The device that the model must use.&#39;)
-def dldenet(dataset_root, dataset, batch_size, resnet, logs_dir, checkpoint, classes, optimizer, not_normalize,
-            device):
+              help=&#39;Avoid normalization of the embeddings in the classification module. Only available without tracked means.&#39;)
+@click.option(&#39;--tracked-means&#39;, is_flag=True, help=&#39;Use the version that tracks the means.&#39;)
+@click.option(&#39;--soft-criterion&#39;, is_flag=True, help=&#39;Use soft assignment in the Loss.&#39;)
+@click.option(&#39;--means-update&#39;, default=&#39;batch&#39;, type=click.Choice([&#39;batch&#39;, &#39;manual&#39;]), show_default=True,
+              help=&#39;Update type for the means in the tracked version. See DirectionalClassification module for more info.&#39;)
+@click.option(&#39;--means-lr&#39;, default=0.1, show_default=True, help=&#39;The learning rate for the &#34;batch&#34; means update method.&#39;)
+@click.option(&#39;--num-workers&#39;, default=8, show_default=True)
+@click.option(&#39;--epochs&#39;, default=100, show_default=True)
+def dldenet(config, device, dataset_root, dataset, batch_size, resnet, fixed_bias, logs_dir, classes, optimizer,
+            adabound_lr, adabound_final_lr, scheduler_factor, scheduler_patience, scheduler_threshold,
+            anchors_sizes, num_workers,
+            not_normalize, tracked_means, soft_criterion, epochs, means_update, means_lr):
     &#34;&#34;&#34;Train the DLDENet with weighted classification vectors using the indicated dataset that
     contains is data in DATASET_ROOT directory.
-
-    You can use a checkpoint to resume the training but is not a good practice, because you can change the hyperparams
-    of the model get in some troubles like changing the resnet backbone or the number of classes of the model.
-    To avoid this you can use the subcommand &#39;dldenet-from-checkpoint&#39; instead.
     &#34;&#34;&#34;
-    classes = classes.split()
-    n_classes = len(classes) if classes else 80
+    if config is not None:
+        import json
+        with open(config, &#39;r&#39;) as file:
+            hyperparameters = json.loads(file.read())
+    else:
+        classes = classes.split()
 
-    DLDENetTrainer(
-        hyperparameters={
-            &#39;model&#39;: {&#39;resnet&#39;: resnet, &#39;classes&#39;: n_classes, &#39;normalize&#39;: not not_normalize},
-            &#39;datasets&#39;: {&#39;root&#39;: dataset_root, &#39;class_names&#39;: classes},
-            &#39;dataloaders&#39;: {&#39;batch_size&#39;: batch_size},
+        if dataset_root is None:
+            print(&#39;Error: Option &#34;--dataset-root&#34; is required.&#39;)
+            exit()
+
+        hyperparameters = {
+            &#39;model&#39;: {
+                &#39;resnet&#39;: resnet,
+                &#39;normalize&#39;: not not_normalize,
+                &#39;means_update&#39;: means_update,
+                &#39;means_lr&#39;: means_lr,
+                &#39;fixed_bias&#39;: fixed_bias,
+                &#39;anchors&#39;: {
+                    &#39;sizes&#39;: [int(size) for size in anchors_sizes.split()],
+                },
+            },
+            &#39;criterion&#39;: {
+                &#39;soft&#39;: soft_criterion
+            },
+            &#39;datasets&#39;: {
+                &#39;use&#39;: dataset,
+                &#39;coco&#39;: {&#39;root&#39;: dataset_root, &#39;class_names&#39;: classes},
+                &#39;logo32plus&#39;: {&#39;root&#39;: dataset_root, &#39;classes&#39;: classes if classes else None},
+                &#39;flickr32&#39;: {&#39;root&#39;: dataset_root, &#39;classes&#39;: classes if classes else None}
+            },
+            &#39;dataloaders&#39;: {
+                &#39;batch_size&#39;: batch_size,
+                &#39;num_workers&#39;: num_workers,
+            },
             &#39;logger&#39;: {&#39;dir&#39;: logs_dir},
             &#39;checkpoint&#39;: {&#39;dir&#39;: logs_dir},
-            &#39;optimizer&#39;: {&#39;use&#39;: optimizer}
-        },
-        checkpoint=checkpoint,
-        device=device
-    ).train()
+            &#39;scheduler&#39;: {
+                &#39;factor&#39;: scheduler_factor,
+                &#39;patience&#39;: scheduler_patience,
+                &#39;threshold&#39;: scheduler_threshold,
+            },
+            &#39;optimizer&#39;: {
+                &#39;use&#39;: optimizer,
+                &#39;adabound&#39;: {
+                    &#39;lr&#39;: adabound_lr,
+                    &#39;final_lr&#39;: adabound_final_lr,
+                },
+            },
+        }
+
+    # Set the params for the trainers
+    params = {&#39;hyperparameters&#39;: hyperparameters, &#39;device&#39;: device}
+
+    if tracked_means:
+        DLDENetWithTrackedMeansTrainer(**params).train(epochs)
+    else:
+        DLDENetTrainer(**params).train(epochs)
 
 
 @click.command()
-@click.argument(&#39;dataset-root&#39;, type=click.Path(exists=True))
-@click.argument(&#39;checkpoint&#39;, type=click.Path(exists=True))
-@click.option(&#39;-b&#39;, &#39;--batch-size&#39;, type=click.INT)
-@click.option(&#39;--logs-dir&#39;, type=click.Path(exists=True), help=&#39;Where to store the checkpoints and descriptions.&#39;)
+@click.option(&#39;-c&#39;, &#39;--checkpoint&#39;, type=click.Path(exists=True), required=True)
+@click.option(&#39;-dr&#39;, &#39;--dataset-root&#39;, type=click.Path(exists=True), required=True)
+@click.option(&#39;-b&#39;, &#39;--batch-size&#39;, default=8, show_default=True, type=click.INT)
+@click.option(&#39;--logs-dir&#39;, default=&#39;./logs&#39;, show_default=True, type=click.Path(exists=True),
+              help=&#39;Where to store the checkpoints and descriptions.&#39;)
 @click.option(&#39;--device&#39;, help=&#39;The device that the model must use.&#39;)
-def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device):
+@click.option(&#39;--epochs&#39;, default=100, show_default=True)
+@click.option(&#39;--tracked-means&#39;, is_flag=True, help=&#39;Use the tracked means version.&#39;)
+def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device, epochs, tracked_means):
     &#34;&#34;&#34;Get an instance of the trainer from the checkpoint CHECKPOINT and resume the exact same training
     with the dataset that contains its data in DATASET_ROOT.
 
     You can only change things that will not affect the coherence of the training.
     &#34;&#34;&#34;
-    new_params = {&#39;datasets&#39;: {&#39;root&#39;: dataset_root}}
+    new_params = {
+        &#39;datasets&#39;: {
+            &#39;coco&#39;: {&#39;root&#39;: dataset_root},
+            &#39;logo32plus&#39;: {&#39;root&#39;: dataset_root},
+            &#39;flickr32&#39;: {&#39;root&#39;: dataset_root}
+        }
+    }
 
     if batch_size is not None:
         new_params[&#39;dataloaders&#39;] = {&#39;batch_size&#39;: batch_size}
@@ -92,7 +160,10 @@ def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, devi
         new_params[&#39;logger&#39;] = {&#39;dir&#39;: logs_dir}
         new_params[&#39;checkpoint&#39;] = {&#39;dir&#39;: logs_dir}
 
-    DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train()</code></pre>
+    if tracked_means:
+        DLDENetWithTrackedMeansTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)
+    else:
+        DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)</code></pre>
 </details>
 </section>
 <section>

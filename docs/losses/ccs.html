@@ -45,21 +45,29 @@ class CCSLoss(nn.Module):
     and normalizing by their norms.
 
     It will apply this loss term only to those embeddings that are assigned to an object.
+
+    As there could a be a lot of assigned anchors, it&#39;s a little naive to only have a threshold,
+    so this loss provide an option &#39;soft&#39; to compute the similarity according to the IoU between the
+    anchor and the real annotation.
+    Suppose that your iou_threshold for the objects is 0.5, if you have an anchor with IoU 0.51 and
+    another with 0.99, both weight the same for the loss?
+    A soft version of the loss will decrease the weight of the anchor in the final loss according
+    to its IoU, so the final loss of an anchor is it&#39;s IoU * similarity.
     &#34;&#34;&#34;
 
-    def __init__(self, iou_thresholds=None, device=None):
+    def __init__(self, iou_thresholds=None, soft=False):
         &#34;&#34;&#34;Initialize the loss.
 
         Arguments:
             iou_thresholds (dict, optional): Indicates the thresholds to assign an anchor as background or object.
-            device (str, optional): Indicates the device where to run the loss.
+            soft (bool, optional): Apply the soft version of the loss.
         &#34;&#34;&#34;
         super().__init__()
 
         if iou_thresholds is None:
             iou_thresholds = {&#39;background&#39;: 0.4, &#39;object&#39;: 0.5}
         self.iou_thresholds = iou_thresholds
-        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.soft = soft
 
     def forward(self, anchors, embeddings, weights, annotations):
         &#34;&#34;&#34;Get the mean CCS loss.
@@ -107,19 +115,20 @@ class CCSLoss(nn.Module):
 
             # Zero loss for this image if it does not have any annotation
             if annotations.shape[0] == 0:
-                losses.append(torch.zeros(1).mean().to(self.device))
+                losses.append(embeddings.new_zeros(1).mean())
                 continue
 
             # Get assignations of the annotations to the anchors
             # Get the assigned annotations (the i-th assigned annotation is the annotation assigned to the i-th
             # anchor)
             # Get the masks to select the anchors assigned to an object (IoU bigger than iou_object threshold)
+            # Also get the IoU value to weight their loss
             assignations = Anchors.assign(anchors, annotations, thresholds=self.iou_thresholds)
-            assigned_annotations, selected_anchors_objects, *_ = assignations
+            assigned_annotations, selected_anchors_objects, _, iou = assignations
 
             # Continue with the next image if there are no selected objects
             if selected_anchors_objects.sum() == 0:
-                losses.append(torch.zeros(1).mean().to(self.device))
+                losses.append(embeddings.new_zeros(1).mean())
                 continue
 
             # We must compute the cosine similarity between each embedding and its corresponding weight vector of its
@@ -142,6 +151,8 @@ class CCSLoss(nn.Module):
             loss = -1 * torch.matmul(embeddings, weights).view(-1)  # Shape (selected embeddings,)
             loss /= embeddings.squeeze(dim=1).norm(dim=1)  # Normalize by the embeddings&#39; norms
             loss /= weights.squeeze(dim=2).norm(dim=1)  # Normalize by the weights&#39; norms
+            if self.soft:
+                loss *= iou  # Weight each loss term according to its IoU
             # Add one to have a minimum loss of zero (because cosine similarity ranges from -1 to 1) and normalize
             # the value between 0 and 1 to have a more meaningfull loss
             loss = (loss + 1) / 2
@@ -170,7 +181,14 @@ between the embeddings (or features before the classification) and the weighted 
 the classification.</p>
 <p>This is done by simply doing a dot product between the embedding and the classification vector
 and normalizing by their norms.</p>
-<p>It will apply this loss term only to those embeddings that are assigned to an object.</p></section>
+<p>It will apply this loss term only to those embeddings that are assigned to an object.</p>
+<p>As there could a be a lot of assigned anchors, it's a little naive to only have a threshold,
+so this loss provide an option 'soft' to compute the similarity according to the IoU between the
+anchor and the real annotation.
+Suppose that your iou_threshold for the objects is 0.5, if you have an anchor with IoU 0.51 and
+another with 0.99, both weight the same for the loss?
+A soft version of the loss will decrease the weight of the anchor in the final loss according
+to its IoU, so the final loss of an anchor is it's IoU * similarity.</p></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">class CCSLoss(nn.Module):
@@ -184,21 +202,29 @@ and normalizing by their norms.</p>
     and normalizing by their norms.
 
     It will apply this loss term only to those embeddings that are assigned to an object.
+
+    As there could a be a lot of assigned anchors, it&#39;s a little naive to only have a threshold,
+    so this loss provide an option &#39;soft&#39; to compute the similarity according to the IoU between the
+    anchor and the real annotation.
+    Suppose that your iou_threshold for the objects is 0.5, if you have an anchor with IoU 0.51 and
+    another with 0.99, both weight the same for the loss?
+    A soft version of the loss will decrease the weight of the anchor in the final loss according
+    to its IoU, so the final loss of an anchor is it&#39;s IoU * similarity.
     &#34;&#34;&#34;
 
-    def __init__(self, iou_thresholds=None, device=None):
+    def __init__(self, iou_thresholds=None, soft=False):
         &#34;&#34;&#34;Initialize the loss.
 
         Arguments:
             iou_thresholds (dict, optional): Indicates the thresholds to assign an anchor as background or object.
-            device (str, optional): Indicates the device where to run the loss.
+            soft (bool, optional): Apply the soft version of the loss.
         &#34;&#34;&#34;
         super().__init__()
 
         if iou_thresholds is None:
             iou_thresholds = {&#39;background&#39;: 0.4, &#39;object&#39;: 0.5}
         self.iou_thresholds = iou_thresholds
-        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.soft = soft
 
     def forward(self, anchors, embeddings, weights, annotations):
         &#34;&#34;&#34;Get the mean CCS loss.
@@ -246,19 +272,20 @@ and normalizing by their norms.</p>
 
             # Zero loss for this image if it does not have any annotation
             if annotations.shape[0] == 0:
-                losses.append(torch.zeros(1).mean().to(self.device))
+                losses.append(embeddings.new_zeros(1).mean())
                 continue
 
             # Get assignations of the annotations to the anchors
             # Get the assigned annotations (the i-th assigned annotation is the annotation assigned to the i-th
             # anchor)
             # Get the masks to select the anchors assigned to an object (IoU bigger than iou_object threshold)
+            # Also get the IoU value to weight their loss
             assignations = Anchors.assign(anchors, annotations, thresholds=self.iou_thresholds)
-            assigned_annotations, selected_anchors_objects, *_ = assignations
+            assigned_annotations, selected_anchors_objects, _, iou = assignations
 
             # Continue with the next image if there are no selected objects
             if selected_anchors_objects.sum() == 0:
-                losses.append(torch.zeros(1).mean().to(self.device))
+                losses.append(embeddings.new_zeros(1).mean())
                 continue
 
             # We must compute the cosine similarity between each embedding and its corresponding weight vector of its
@@ -281,6 +308,8 @@ and normalizing by their norms.</p>
             loss = -1 * torch.matmul(embeddings, weights).view(-1)  # Shape (selected embeddings,)
             loss /= embeddings.squeeze(dim=1).norm(dim=1)  # Normalize by the embeddings&#39; norms
             loss /= weights.squeeze(dim=2).norm(dim=1)  # Normalize by the weights&#39; norms
+            if self.soft:
+                loss *= iou  # Weight each loss term according to its IoU
             # Add one to have a minimum loss of zero (because cosine similarity ranges from -1 to 1) and normalize
             # the value between 0 and 1 to have a more meaningfull loss
             loss = (loss + 1) / 2
@@ -291,7 +320,7 @@ and normalizing by their norms.</p>
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.losses.ccs.CCSLoss.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, iou_thresholds=None, device=None)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, iou_thresholds=None, soft=False)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the loss.</p>
@@ -299,24 +328,24 @@ and normalizing by their norms.</p>
 <dl>
 <dt><strong><code>iou_thresholds</code></strong> :&ensp;<code>dict</code>, optional</dt>
 <dd>Indicates the thresholds to assign an anchor as background or object.</dd>
-<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>Indicates the device where to run the loss.</dd>
+<dt><strong><code>soft</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Apply the soft version of the loss.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, iou_thresholds=None, device=None):
+<pre><code class="python">def __init__(self, iou_thresholds=None, soft=False):
     &#34;&#34;&#34;Initialize the loss.
 
     Arguments:
         iou_thresholds (dict, optional): Indicates the thresholds to assign an anchor as background or object.
-        device (str, optional): Indicates the device where to run the loss.
+        soft (bool, optional): Apply the soft version of the loss.
     &#34;&#34;&#34;
     super().__init__()
 
     if iou_thresholds is None:
         iou_thresholds = {&#39;background&#39;: 0.4, &#39;object&#39;: 0.5}
     self.iou_thresholds = iou_thresholds
-    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;</code></pre>
+    self.soft = soft</code></pre>
 </details>
 </dd>
 <dt id="torchsight.losses.ccs.CCSLoss.forward"><code class="name flex">
@@ -400,19 +429,20 @@ that it was to match the dimensions and have only one tensor.</p>
 
         # Zero loss for this image if it does not have any annotation
         if annotations.shape[0] == 0:
-            losses.append(torch.zeros(1).mean().to(self.device))
+            losses.append(embeddings.new_zeros(1).mean())
             continue
 
         # Get assignations of the annotations to the anchors
         # Get the assigned annotations (the i-th assigned annotation is the annotation assigned to the i-th
         # anchor)
         # Get the masks to select the anchors assigned to an object (IoU bigger than iou_object threshold)
+        # Also get the IoU value to weight their loss
         assignations = Anchors.assign(anchors, annotations, thresholds=self.iou_thresholds)
-        assigned_annotations, selected_anchors_objects, *_ = assignations
+        assigned_annotations, selected_anchors_objects, _, iou = assignations
 
         # Continue with the next image if there are no selected objects
         if selected_anchors_objects.sum() == 0:
-            losses.append(torch.zeros(1).mean().to(self.device))
+            losses.append(embeddings.new_zeros(1).mean())
             continue
 
         # We must compute the cosine similarity between each embedding and its corresponding weight vector of its
@@ -435,6 +465,8 @@ that it was to match the dimensions and have only one tensor.</p>
         loss = -1 * torch.matmul(embeddings, weights).view(-1)  # Shape (selected embeddings,)
         loss /= embeddings.squeeze(dim=1).norm(dim=1)  # Normalize by the embeddings&#39; norms
         loss /= weights.squeeze(dim=2).norm(dim=1)  # Normalize by the weights&#39; norms
+        if self.soft:
+            loss *= iou  # Weight each loss term according to its IoU
         # Add one to have a minimum loss of zero (because cosine similarity ranges from -1 to 1) and normalize
         # the value between 0 and 1 to have a more meaningfull loss
         loss = (loss + 1) / 2

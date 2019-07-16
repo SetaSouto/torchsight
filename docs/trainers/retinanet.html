@@ -26,13 +26,14 @@
 <pre><code class="python">&#34;&#34;&#34;RetinaNet Trainer.&#34;&#34;&#34;
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.data import DataLoader
-from torchvision import transforms
 
-from ..datasets import CocoDataset
+from torchsight import utils
+from torchsight.optimizers import AdaBound
+
+from ..datasets import CocoDataset, Flickr32Dataset, Logo32plusDataset
 from ..losses import FocalLoss
 from ..models import RetinaNet
-from ..transforms.detection import Normalize, Resize, ToTensor
+from ..transforms.augmentation import AugmentDetection
 from .trainer import Trainer
 
 
@@ -42,7 +43,6 @@ class RetinaNetTrainer(Trainer):
     # &gt;&gt;&gt; RetinaNetTrainer(hyperparameters={&#39;RetinaNet&#39;: {&#39;classes&#39;: 1}})
     hyperparameters = {
         &#39;model&#39;: {
-            &#39;classes&#39;: 80,
             &#39;resnet&#39;: 50,
             &#39;features&#39;: {
                 &#39;pyramid&#39;: 256,
@@ -67,14 +67,29 @@ class RetinaNetTrainer(Trainer):
                 &#39;background&#39;: 0.4,
                 &#39;object&#39;: 0.5
             },
+            &#39;increase_foreground_by&#39;: 1e3,
             # Weight of each loss. See train method.
-            &#39;weights&#39;: {&#39;classification&#39;: 1e5, &#39;regression&#39;: 1}
+            &#39;weights&#39;: {&#39;classification&#39;: 1e3, &#39;regression&#39;: 1}
         },
         &#39;datasets&#39;: {
-            &#39;root&#39;: &#39;./datasets/coco&#39;,
-            &#39;class_names&#39;: (),  # () indicates all classes
-            &#39;train&#39;: &#39;train2017&#39;,
-            &#39;validation&#39;: &#39;val2017&#39;
+            &#39;use&#39;: &#39;coco&#39;,
+            &#39;coco&#39;: {
+                &#39;root&#39;: &#39;./datasets/coco&#39;,
+                &#39;class_names&#39;: (),  # () indicates all classes
+                &#39;train&#39;: &#39;train2017&#39;,
+                &#39;validation&#39;: &#39;val2017&#39;
+            },
+            &#39;logo32plus&#39;: {
+                &#39;root&#39;: &#39;./datasets/logo32plus&#39;,
+                &#39;classes&#39;: None,
+            },
+            &#39;flickr32&#39;: {
+                &#39;root&#39;: &#39;./datasets/flickr32&#39;,
+                &#39;brands&#39;: None,
+                &#39;only_boxes&#39;: True,
+                &#39;training&#39;: &#39;trainval&#39;,  # The name of the dataset to use for training
+                &#39;validation&#39;: &#39;test&#39;  # The name of the dataset to use for validation
+            }
         },
         &#39;dataloaders&#39;: {
             &#39;batch_size&#39;: 1,
@@ -82,24 +97,50 @@ class RetinaNetTrainer(Trainer):
             &#39;num_workers&#39;: 1
         },
         &#39;optimizer&#39;: {
-            &#39;learning_rate&#39;: 1e-2,
-            &#39;momentum&#39;: 0.9,
-            &#39;weight_decay&#39;: 1e-4
+            &#39;use&#39;: &#39;sgd&#39;,  # Which optimizer the trainer must use
+            &#39;adabound&#39;: {
+                &#39;lr&#39;: 1e-3,  # Learning rate
+                &#39;final_lr&#39;: 1  # When the optimizer change from Adam to SGD
+            },
+            &#39;sgd&#39;: {
+                &#39;lr&#39;: 1e-2,
+                &#39;momentum&#39;: 0.9,
+                &#39;weight_decay&#39;: 1e-4
+            }
         },
         &#39;scheduler&#39;: {
             &#39;factor&#39;: 0.1,
-            &#39;patience&#39;: 2,
-            &#39;threshold&#39;: 0.1
+            &#39;patience&#39;: 5,
+            &#39;threshold&#39;: 0.01
         },
-        &#39;transforms&#39;: {
-            &#39;resize&#39;: {
-                &#39;min_side&#39;: 640,
-                &#39;max_side&#39;: 1024,
-                &#39;stride&#39;: 128
+        &#39;transform&#39;: {
+            &#39;GaussNoise&#39;: {
+                &#39;var_limit&#39;: (10, 50),
+                &#39;p&#39;: 0.5
             },
-            &#39;normalize&#39;: {
-                &#39;mean&#39;: [0.485, 0.456, 0.406],
-                &#39;std&#39;: [0.229, 0.224, 0.225]
+            &#39;GaussianBlur&#39;: {
+                &#39;blur_limit&#39;: 0.7,
+                &#39;p&#39;: 0.5
+            },
+            &#39;RandomBrightnessContrast&#39;: {
+                &#39;brightness_limit&#39;: 0.2,
+                &#39;contrast_limit&#39;: 0.2,
+                &#39;p&#39;: 0.5
+            },
+            &#39;Rotate&#39;: {
+                &#39;limit&#39;: 45,
+                &#39;p&#39;: 0.5
+            },
+            &#39;LongestMaxSize&#39;: {
+                &#39;max_size&#39;: 512
+            },
+            &#39;PadIfNeeded&#39;: {
+                &#39;min_height&#39;: 512,
+                &#39;min_width&#39;: 512
+            },
+            &#39;RandomSizedBBoxSafeCrop&#39;: {
+                &#39;height&#39;: 512,
+                &#39;width&#39;: 512
             }
         }
     }
@@ -111,15 +152,14 @@ class RetinaNetTrainer(Trainer):
     def get_transform(self):
         &#34;&#34;&#34;Initialize and get the transforms for the images.
 
+        Arguments:
+            params (dict): The dict with the params for the transforms.
+                It must have &#39;resize&#39; and &#39;normalize&#39; args values.
+
         Returns:
             torchvision.transform.Compose: The Compose of the transformations.
         &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;transforms&#39;]
-        return transforms.Compose([
-            Resize(**hyperparameters[&#39;resize&#39;]),
-            ToTensor(),
-            Normalize(**hyperparameters[&#39;normalize&#39;])
-        ])
+        return AugmentDetection(params=self.hyperparameters[&#39;transform&#39;])
 
     def get_datasets(self):
         &#34;&#34;&#34;Initialize and get the Coco datasets for training and evaluation.
@@ -129,29 +169,49 @@ class RetinaNetTrainer(Trainer):
         &#34;&#34;&#34;
         transform = self.get_transform()
 
-        model_classes = self.hyperparameters[&#39;model&#39;][&#39;classes&#39;]
-        hyperparameters = self.hyperparameters[&#39;datasets&#39;]
-        dataset_classes = len(hyperparameters[&#39;class_names&#39;])
+        params = self.hyperparameters[&#39;datasets&#39;]
+        dataset = params[&#39;use&#39;]
 
-        if dataset_classes &gt; 0 and model_classes != dataset_classes:
-            raise ValueError(&#39; &#39;.join([&#39;The amount of classes for the model ({})&#39;.format(model_classes),
-                                       &#39;must be the same to the length of &#34;class_names&#34; in&#39;,
-                                       &#39;the &#34;dataset&#34; hyperparameters ({}).&#39;.format(dataset_classes)]))
+        if dataset == &#39;coco&#39;:
+            params = params[&#39;coco&#39;]
 
-        return (
-            CocoDataset(
-                root=hyperparameters[&#39;root&#39;],
-                dataset=hyperparameters[&#39;train&#39;],
-                classes_names=hyperparameters[&#39;class_names&#39;],
-                transform=transform
-            ),
-            CocoDataset(
-                root=hyperparameters[&#39;root&#39;],
-                dataset=hyperparameters[&#39;validation&#39;],
-                classes_names=hyperparameters[&#39;class_names&#39;],
-                transform=transform
-            )
-        )
+            n_classes = len(params[&#39;class_names&#39;])
+            n_classes = 80 if n_classes == 0 else n_classes
+            self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = n_classes
+
+            return (CocoDataset(root=params[&#39;root&#39;],
+                                dataset=params[&#39;train&#39;],
+                                classes_names=params[&#39;class_names&#39;],
+                                transform=transform),
+                    CocoDataset(root=params[&#39;root&#39;],
+                                dataset=params[&#39;validation&#39;],
+                                classes_names=params[&#39;class_names&#39;],
+                                transform=transform))
+
+        if dataset == &#39;logo32plus&#39;:
+            params = params[&#39;logo32plus&#39;]
+            num_classes = len(params[&#39;classes&#39;]) if params[&#39;classes&#39;] is not None else 32
+
+            self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = num_classes
+
+            return (Logo32plusDataset(**params, dataset=&#39;training&#39;, transform=transform),
+                    Logo32plusDataset(**params, dataset=&#39;validation&#39;, transform=transform))
+
+        if dataset == &#39;flickr32&#39;:
+            params = params[&#39;flickr32&#39;]
+            num_classes = len(params[&#39;brands&#39;]) if params[&#39;brands&#39;] is not None else 32
+
+            self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = num_classes
+
+            kwargs = {
+                &#39;root&#39;: params[&#39;root&#39;],
+                &#39;brands&#39;: params[&#39;brands&#39;],
+                &#39;only_boxes&#39;: params[&#39;only_boxes&#39;],
+                &#39;transform&#39;: transform
+            }
+
+            return (Flickr32Dataset(**kwargs, dataset=params[&#39;training&#39;]),
+                    Flickr32Dataset(**kwargs, dataset=params[&#39;validation&#39;]))
 
     def get_dataloaders(self):
         &#34;&#34;&#34;Initialize and get the dataloaders for the datasets.
@@ -160,57 +220,7 @@ class RetinaNetTrainer(Trainer):
             torch.utils.data.Dataloaders: The dataloader for the training dataset.
             torch.utils.data.Dataloaders: The dataloader for the validation dataset.
         &#34;&#34;&#34;
-        def collate(data):
-            &#34;&#34;&#34;Custom collate function to join the different images with its different annotations.
-
-            Why is this important?
-            Because as each image could contain different amounts of annotated objects the tensor
-            for the batch could not be created, so we need to &#34;fill&#34; the annotations tensors with -1
-            to give them the same shapes and stack them.
-            Why -1?
-            Because the FocalLoss could interpret that label and ingore it for the loss.
-
-            Also it pads the images so all has the same size.
-
-            Arguments:
-                data (sequence): Sequence of tuples as (image, annotations, *_).
-
-            Returns:
-                torch.Tensor: The images.
-                    Shape:
-                        (batch size, channels, height, width)
-                torch.Tensor: The annotations.
-                    Shape:
-                        (batch size, biggest amount of annotations, 5)
-            &#34;&#34;&#34;
-            images = [image for image, *_ in data]
-            max_width = max([image.shape[-1] for image in images])
-            max_height = max([image.shape[-2] for image in images])
-
-            def pad_image(image):
-                aux = torch.zeros((image.shape[0], max_height, max_width))
-                aux[:, :image.shape[1], :image.shape[2]] = image
-                return aux
-
-            images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
-
-            max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
-
-            def fill_annotations(annotations):
-                aux = torch.ones((max_annotations, 5))
-                aux *= -1
-                aux[:annotations.shape[0], :] = annotations
-                return aux
-
-            annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
-            return images, annotations
-
-        hyperparameters = {**self.hyperparameters[&#39;dataloaders&#39;], &#39;collate_fn&#39;: collate}
-
-        return (
-            DataLoader(dataset=self.dataset, **hyperparameters),
-            DataLoader(dataset=self.valid_dataset, **hyperparameters)
-        )
+        return utils.get_dataloaders(self.hyperparameters[&#39;dataloaders&#39;], self.dataset, self.valid_dataset)
 
     def get_model(self):
         &#34;&#34;&#34;Initialize and get the RetinaNet.
@@ -240,26 +250,39 @@ class RetinaNetTrainer(Trainer):
             alpha=hyperparameters[&#39;alpha&#39;],
             gamma=hyperparameters[&#39;gamma&#39;],
             iou_thresholds=hyperparameters[&#39;iou_thresholds&#39;],
+            increase_foreground_by=hyperparameters[&#39;increase_foreground_by&#39;],
             device=self.device
         )
 
     def get_optimizer(self):
-        &#34;&#34;&#34;Returns the optimizer of the training.
+        &#34;&#34;&#34;Returns the optimizer for the training.
 
-        Stochastic Gradient Descent:
-        https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html
+        It has the classic SGD optimizer, but this trainer also
+        includes the [AdaBound optimizer](https://github.com/Luolc/AdaBound) that it&#39;s
+        supposed to be as fast as Adam and as good as SGD.
+
+        You can provide the optimizer that you want to use in the &#39;optimizer&#39; hyperparameter
+        changing the &#39;use&#39; parameter and providing the name of the one that
+        you want to use.
 
         Returns:
-            optimizer (torch.optim.Optimizer): The optimizer of the training.
-                For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+            AdaBound: The adabound optimizer for the training.
         &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;optimizer&#39;]
-        return torch.optim.SGD(
-            self.model.parameters(),
-            lr=hyperparameters[&#39;learning_rate&#39;],
-            momentum=hyperparameters[&#39;momentum&#39;],
-            weight_decay=hyperparameters[&#39;weight_decay&#39;]
-        )
+        params = self.hyperparameters[&#39;optimizer&#39;]
+        optimizer = params[&#39;use&#39;].lower()
+
+        if optimizer == &#39;adabound&#39;:
+            params = params[&#39;adabound&#39;]
+            return AdaBound(self.model.parameters(), lr=params[&#39;lr&#39;], final_lr=params[&#39;final_lr&#39;])
+
+        if optimizer == &#39;sgd&#39;:
+            params = params[&#39;sgd&#39;]
+            return torch.optim.SGD(self.model.parameters(),
+                                   lr=params[&#39;lr&#39;],
+                                   momentum=params[&#39;momentum&#39;],
+                                   weight_decay=params[&#39;weight_decay&#39;])
+
+        raise ValueError(&#39;Cannot find the parameters for the optimizer &#34;{}&#34;&#39;.format(params[&#39;use&#39;]))
 
     def get_scheduler(self):
         &#34;&#34;&#34;Get the learning rate scheduler.
@@ -303,8 +326,10 @@ class RetinaNetTrainer(Trainer):
         loss = classification_loss + regression_loss
 
         # Log the classification and regression loss too:
-        self.current_log[&#39;Class.&#39;] = float(classification_loss)
-        self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+        self.current_log[&#39;Class.&#39;] = &#39;{:.5f}&#39;.format(float(classification_loss))
+        self.current_log[&#39;Regr.&#39;] = &#39;{:.5f}&#39;.format(float(regression_loss))
+        self.current_log[&#39;Pos&#39;] = &#39;{:.4f}&#39;.format(float(self.criterion.pos_loss * weights[&#39;classification&#39;]))
+        self.current_log[&#39;Neg&#39;] = &#39;{:.4f}&#39;.format(float(self.criterion.neg_loss * weights[&#39;classification&#39;]))
 
         return loss
 
@@ -346,7 +371,6 @@ class RetinaNetTrainer(Trainer):
     # &gt;&gt;&gt; RetinaNetTrainer(hyperparameters={&#39;RetinaNet&#39;: {&#39;classes&#39;: 1}})
     hyperparameters = {
         &#39;model&#39;: {
-            &#39;classes&#39;: 80,
             &#39;resnet&#39;: 50,
             &#39;features&#39;: {
                 &#39;pyramid&#39;: 256,
@@ -371,14 +395,29 @@ class RetinaNetTrainer(Trainer):
                 &#39;background&#39;: 0.4,
                 &#39;object&#39;: 0.5
             },
+            &#39;increase_foreground_by&#39;: 1e3,
             # Weight of each loss. See train method.
-            &#39;weights&#39;: {&#39;classification&#39;: 1e5, &#39;regression&#39;: 1}
+            &#39;weights&#39;: {&#39;classification&#39;: 1e3, &#39;regression&#39;: 1}
         },
         &#39;datasets&#39;: {
-            &#39;root&#39;: &#39;./datasets/coco&#39;,
-            &#39;class_names&#39;: (),  # () indicates all classes
-            &#39;train&#39;: &#39;train2017&#39;,
-            &#39;validation&#39;: &#39;val2017&#39;
+            &#39;use&#39;: &#39;coco&#39;,
+            &#39;coco&#39;: {
+                &#39;root&#39;: &#39;./datasets/coco&#39;,
+                &#39;class_names&#39;: (),  # () indicates all classes
+                &#39;train&#39;: &#39;train2017&#39;,
+                &#39;validation&#39;: &#39;val2017&#39;
+            },
+            &#39;logo32plus&#39;: {
+                &#39;root&#39;: &#39;./datasets/logo32plus&#39;,
+                &#39;classes&#39;: None,
+            },
+            &#39;flickr32&#39;: {
+                &#39;root&#39;: &#39;./datasets/flickr32&#39;,
+                &#39;brands&#39;: None,
+                &#39;only_boxes&#39;: True,
+                &#39;training&#39;: &#39;trainval&#39;,  # The name of the dataset to use for training
+                &#39;validation&#39;: &#39;test&#39;  # The name of the dataset to use for validation
+            }
         },
         &#39;dataloaders&#39;: {
             &#39;batch_size&#39;: 1,
@@ -386,24 +425,50 @@ class RetinaNetTrainer(Trainer):
             &#39;num_workers&#39;: 1
         },
         &#39;optimizer&#39;: {
-            &#39;learning_rate&#39;: 1e-2,
-            &#39;momentum&#39;: 0.9,
-            &#39;weight_decay&#39;: 1e-4
+            &#39;use&#39;: &#39;sgd&#39;,  # Which optimizer the trainer must use
+            &#39;adabound&#39;: {
+                &#39;lr&#39;: 1e-3,  # Learning rate
+                &#39;final_lr&#39;: 1  # When the optimizer change from Adam to SGD
+            },
+            &#39;sgd&#39;: {
+                &#39;lr&#39;: 1e-2,
+                &#39;momentum&#39;: 0.9,
+                &#39;weight_decay&#39;: 1e-4
+            }
         },
         &#39;scheduler&#39;: {
             &#39;factor&#39;: 0.1,
-            &#39;patience&#39;: 2,
-            &#39;threshold&#39;: 0.1
+            &#39;patience&#39;: 5,
+            &#39;threshold&#39;: 0.01
         },
-        &#39;transforms&#39;: {
-            &#39;resize&#39;: {
-                &#39;min_side&#39;: 640,
-                &#39;max_side&#39;: 1024,
-                &#39;stride&#39;: 128
+        &#39;transform&#39;: {
+            &#39;GaussNoise&#39;: {
+                &#39;var_limit&#39;: (10, 50),
+                &#39;p&#39;: 0.5
             },
-            &#39;normalize&#39;: {
-                &#39;mean&#39;: [0.485, 0.456, 0.406],
-                &#39;std&#39;: [0.229, 0.224, 0.225]
+            &#39;GaussianBlur&#39;: {
+                &#39;blur_limit&#39;: 0.7,
+                &#39;p&#39;: 0.5
+            },
+            &#39;RandomBrightnessContrast&#39;: {
+                &#39;brightness_limit&#39;: 0.2,
+                &#39;contrast_limit&#39;: 0.2,
+                &#39;p&#39;: 0.5
+            },
+            &#39;Rotate&#39;: {
+                &#39;limit&#39;: 45,
+                &#39;p&#39;: 0.5
+            },
+            &#39;LongestMaxSize&#39;: {
+                &#39;max_size&#39;: 512
+            },
+            &#39;PadIfNeeded&#39;: {
+                &#39;min_height&#39;: 512,
+                &#39;min_width&#39;: 512
+            },
+            &#39;RandomSizedBBoxSafeCrop&#39;: {
+                &#39;height&#39;: 512,
+                &#39;width&#39;: 512
             }
         }
     }
@@ -415,15 +480,14 @@ class RetinaNetTrainer(Trainer):
     def get_transform(self):
         &#34;&#34;&#34;Initialize and get the transforms for the images.
 
+        Arguments:
+            params (dict): The dict with the params for the transforms.
+                It must have &#39;resize&#39; and &#39;normalize&#39; args values.
+
         Returns:
             torchvision.transform.Compose: The Compose of the transformations.
         &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;transforms&#39;]
-        return transforms.Compose([
-            Resize(**hyperparameters[&#39;resize&#39;]),
-            ToTensor(),
-            Normalize(**hyperparameters[&#39;normalize&#39;])
-        ])
+        return AugmentDetection(params=self.hyperparameters[&#39;transform&#39;])
 
     def get_datasets(self):
         &#34;&#34;&#34;Initialize and get the Coco datasets for training and evaluation.
@@ -433,29 +497,49 @@ class RetinaNetTrainer(Trainer):
         &#34;&#34;&#34;
         transform = self.get_transform()
 
-        model_classes = self.hyperparameters[&#39;model&#39;][&#39;classes&#39;]
-        hyperparameters = self.hyperparameters[&#39;datasets&#39;]
-        dataset_classes = len(hyperparameters[&#39;class_names&#39;])
+        params = self.hyperparameters[&#39;datasets&#39;]
+        dataset = params[&#39;use&#39;]
 
-        if dataset_classes &gt; 0 and model_classes != dataset_classes:
-            raise ValueError(&#39; &#39;.join([&#39;The amount of classes for the model ({})&#39;.format(model_classes),
-                                       &#39;must be the same to the length of &#34;class_names&#34; in&#39;,
-                                       &#39;the &#34;dataset&#34; hyperparameters ({}).&#39;.format(dataset_classes)]))
+        if dataset == &#39;coco&#39;:
+            params = params[&#39;coco&#39;]
 
-        return (
-            CocoDataset(
-                root=hyperparameters[&#39;root&#39;],
-                dataset=hyperparameters[&#39;train&#39;],
-                classes_names=hyperparameters[&#39;class_names&#39;],
-                transform=transform
-            ),
-            CocoDataset(
-                root=hyperparameters[&#39;root&#39;],
-                dataset=hyperparameters[&#39;validation&#39;],
-                classes_names=hyperparameters[&#39;class_names&#39;],
-                transform=transform
-            )
-        )
+            n_classes = len(params[&#39;class_names&#39;])
+            n_classes = 80 if n_classes == 0 else n_classes
+            self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = n_classes
+
+            return (CocoDataset(root=params[&#39;root&#39;],
+                                dataset=params[&#39;train&#39;],
+                                classes_names=params[&#39;class_names&#39;],
+                                transform=transform),
+                    CocoDataset(root=params[&#39;root&#39;],
+                                dataset=params[&#39;validation&#39;],
+                                classes_names=params[&#39;class_names&#39;],
+                                transform=transform))
+
+        if dataset == &#39;logo32plus&#39;:
+            params = params[&#39;logo32plus&#39;]
+            num_classes = len(params[&#39;classes&#39;]) if params[&#39;classes&#39;] is not None else 32
+
+            self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = num_classes
+
+            return (Logo32plusDataset(**params, dataset=&#39;training&#39;, transform=transform),
+                    Logo32plusDataset(**params, dataset=&#39;validation&#39;, transform=transform))
+
+        if dataset == &#39;flickr32&#39;:
+            params = params[&#39;flickr32&#39;]
+            num_classes = len(params[&#39;brands&#39;]) if params[&#39;brands&#39;] is not None else 32
+
+            self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = num_classes
+
+            kwargs = {
+                &#39;root&#39;: params[&#39;root&#39;],
+                &#39;brands&#39;: params[&#39;brands&#39;],
+                &#39;only_boxes&#39;: params[&#39;only_boxes&#39;],
+                &#39;transform&#39;: transform
+            }
+
+            return (Flickr32Dataset(**kwargs, dataset=params[&#39;training&#39;]),
+                    Flickr32Dataset(**kwargs, dataset=params[&#39;validation&#39;]))
 
     def get_dataloaders(self):
         &#34;&#34;&#34;Initialize and get the dataloaders for the datasets.
@@ -464,57 +548,7 @@ class RetinaNetTrainer(Trainer):
             torch.utils.data.Dataloaders: The dataloader for the training dataset.
             torch.utils.data.Dataloaders: The dataloader for the validation dataset.
         &#34;&#34;&#34;
-        def collate(data):
-            &#34;&#34;&#34;Custom collate function to join the different images with its different annotations.
-
-            Why is this important?
-            Because as each image could contain different amounts of annotated objects the tensor
-            for the batch could not be created, so we need to &#34;fill&#34; the annotations tensors with -1
-            to give them the same shapes and stack them.
-            Why -1?
-            Because the FocalLoss could interpret that label and ingore it for the loss.
-
-            Also it pads the images so all has the same size.
-
-            Arguments:
-                data (sequence): Sequence of tuples as (image, annotations, *_).
-
-            Returns:
-                torch.Tensor: The images.
-                    Shape:
-                        (batch size, channels, height, width)
-                torch.Tensor: The annotations.
-                    Shape:
-                        (batch size, biggest amount of annotations, 5)
-            &#34;&#34;&#34;
-            images = [image for image, *_ in data]
-            max_width = max([image.shape[-1] for image in images])
-            max_height = max([image.shape[-2] for image in images])
-
-            def pad_image(image):
-                aux = torch.zeros((image.shape[0], max_height, max_width))
-                aux[:, :image.shape[1], :image.shape[2]] = image
-                return aux
-
-            images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
-
-            max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
-
-            def fill_annotations(annotations):
-                aux = torch.ones((max_annotations, 5))
-                aux *= -1
-                aux[:annotations.shape[0], :] = annotations
-                return aux
-
-            annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
-            return images, annotations
-
-        hyperparameters = {**self.hyperparameters[&#39;dataloaders&#39;], &#39;collate_fn&#39;: collate}
-
-        return (
-            DataLoader(dataset=self.dataset, **hyperparameters),
-            DataLoader(dataset=self.valid_dataset, **hyperparameters)
-        )
+        return utils.get_dataloaders(self.hyperparameters[&#39;dataloaders&#39;], self.dataset, self.valid_dataset)
 
     def get_model(self):
         &#34;&#34;&#34;Initialize and get the RetinaNet.
@@ -544,26 +578,39 @@ class RetinaNetTrainer(Trainer):
             alpha=hyperparameters[&#39;alpha&#39;],
             gamma=hyperparameters[&#39;gamma&#39;],
             iou_thresholds=hyperparameters[&#39;iou_thresholds&#39;],
+            increase_foreground_by=hyperparameters[&#39;increase_foreground_by&#39;],
             device=self.device
         )
 
     def get_optimizer(self):
-        &#34;&#34;&#34;Returns the optimizer of the training.
+        &#34;&#34;&#34;Returns the optimizer for the training.
 
-        Stochastic Gradient Descent:
-        https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html
+        It has the classic SGD optimizer, but this trainer also
+        includes the [AdaBound optimizer](https://github.com/Luolc/AdaBound) that it&#39;s
+        supposed to be as fast as Adam and as good as SGD.
+
+        You can provide the optimizer that you want to use in the &#39;optimizer&#39; hyperparameter
+        changing the &#39;use&#39; parameter and providing the name of the one that
+        you want to use.
 
         Returns:
-            optimizer (torch.optim.Optimizer): The optimizer of the training.
-                For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+            AdaBound: The adabound optimizer for the training.
         &#34;&#34;&#34;
-        hyperparameters = self.hyperparameters[&#39;optimizer&#39;]
-        return torch.optim.SGD(
-            self.model.parameters(),
-            lr=hyperparameters[&#39;learning_rate&#39;],
-            momentum=hyperparameters[&#39;momentum&#39;],
-            weight_decay=hyperparameters[&#39;weight_decay&#39;]
-        )
+        params = self.hyperparameters[&#39;optimizer&#39;]
+        optimizer = params[&#39;use&#39;].lower()
+
+        if optimizer == &#39;adabound&#39;:
+            params = params[&#39;adabound&#39;]
+            return AdaBound(self.model.parameters(), lr=params[&#39;lr&#39;], final_lr=params[&#39;final_lr&#39;])
+
+        if optimizer == &#39;sgd&#39;:
+            params = params[&#39;sgd&#39;]
+            return torch.optim.SGD(self.model.parameters(),
+                                   lr=params[&#39;lr&#39;],
+                                   momentum=params[&#39;momentum&#39;],
+                                   weight_decay=params[&#39;weight_decay&#39;])
+
+        raise ValueError(&#39;Cannot find the parameters for the optimizer &#34;{}&#34;&#39;.format(params[&#39;use&#39;]))
 
     def get_scheduler(self):
         &#34;&#34;&#34;Get the learning rate scheduler.
@@ -607,8 +654,10 @@ class RetinaNetTrainer(Trainer):
         loss = classification_loss + regression_loss
 
         # Log the classification and regression loss too:
-        self.current_log[&#39;Class.&#39;] = float(classification_loss)
-        self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+        self.current_log[&#39;Class.&#39;] = &#39;{:.5f}&#39;.format(float(classification_loss))
+        self.current_log[&#39;Regr.&#39;] = &#39;{:.5f}&#39;.format(float(regression_loss))
+        self.current_log[&#39;Pos&#39;] = &#39;{:.4f}&#39;.format(float(self.criterion.pos_loss * weights[&#39;classification&#39;]))
+        self.current_log[&#39;Neg&#39;] = &#39;{:.4f}&#39;.format(float(self.criterion.neg_loss * weights[&#39;classification&#39;]))
 
         return loss
 
@@ -701,8 +750,10 @@ class RetinaNetTrainer(Trainer):
     loss = classification_loss + regression_loss
 
     # Log the classification and regression loss too:
-    self.current_log[&#39;Class.&#39;] = float(classification_loss)
-    self.current_log[&#39;Regr.&#39;] = float(regression_loss)
+    self.current_log[&#39;Class.&#39;] = &#39;{:.5f}&#39;.format(float(classification_loss))
+    self.current_log[&#39;Regr.&#39;] = &#39;{:.5f}&#39;.format(float(regression_loss))
+    self.current_log[&#39;Pos&#39;] = &#39;{:.4f}&#39;.format(float(self.criterion.pos_loss * weights[&#39;classification&#39;]))
+    self.current_log[&#39;Neg&#39;] = &#39;{:.4f}&#39;.format(float(self.criterion.neg_loss * weights[&#39;classification&#39;]))
 
     return loss</code></pre>
 </details>
@@ -728,6 +779,7 @@ class RetinaNetTrainer(Trainer):
         alpha=hyperparameters[&#39;alpha&#39;],
         gamma=hyperparameters[&#39;gamma&#39;],
         iou_thresholds=hyperparameters[&#39;iou_thresholds&#39;],
+        increase_foreground_by=hyperparameters[&#39;increase_foreground_by&#39;],
         device=self.device
     )</code></pre>
 </details>
@@ -749,57 +801,7 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
         torch.utils.data.Dataloaders: The dataloader for the training dataset.
         torch.utils.data.Dataloaders: The dataloader for the validation dataset.
     &#34;&#34;&#34;
-    def collate(data):
-        &#34;&#34;&#34;Custom collate function to join the different images with its different annotations.
-
-        Why is this important?
-        Because as each image could contain different amounts of annotated objects the tensor
-        for the batch could not be created, so we need to &#34;fill&#34; the annotations tensors with -1
-        to give them the same shapes and stack them.
-        Why -1?
-        Because the FocalLoss could interpret that label and ingore it for the loss.
-
-        Also it pads the images so all has the same size.
-
-        Arguments:
-            data (sequence): Sequence of tuples as (image, annotations, *_).
-
-        Returns:
-            torch.Tensor: The images.
-                Shape:
-                    (batch size, channels, height, width)
-            torch.Tensor: The annotations.
-                Shape:
-                    (batch size, biggest amount of annotations, 5)
-        &#34;&#34;&#34;
-        images = [image for image, *_ in data]
-        max_width = max([image.shape[-1] for image in images])
-        max_height = max([image.shape[-2] for image in images])
-
-        def pad_image(image):
-            aux = torch.zeros((image.shape[0], max_height, max_width))
-            aux[:, :image.shape[1], :image.shape[2]] = image
-            return aux
-
-        images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
-
-        max_annotations = max([annotations.shape[0] for _, annotations, *_ in data])
-
-        def fill_annotations(annotations):
-            aux = torch.ones((max_annotations, 5))
-            aux *= -1
-            aux[:annotations.shape[0], :] = annotations
-            return aux
-
-        annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
-        return images, annotations
-
-    hyperparameters = {**self.hyperparameters[&#39;dataloaders&#39;], &#39;collate_fn&#39;: collate}
-
-    return (
-        DataLoader(dataset=self.dataset, **hyperparameters),
-        DataLoader(dataset=self.valid_dataset, **hyperparameters)
-    )</code></pre>
+    return utils.get_dataloaders(self.hyperparameters[&#39;dataloaders&#39;], self.dataset, self.valid_dataset)</code></pre>
 </details>
 </dd>
 <dt id="torchsight.trainers.retinanet.RetinaNetTrainer.get_datasets"><code class="name flex">
@@ -822,29 +824,49 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
     &#34;&#34;&#34;
     transform = self.get_transform()
 
-    model_classes = self.hyperparameters[&#39;model&#39;][&#39;classes&#39;]
-    hyperparameters = self.hyperparameters[&#39;datasets&#39;]
-    dataset_classes = len(hyperparameters[&#39;class_names&#39;])
+    params = self.hyperparameters[&#39;datasets&#39;]
+    dataset = params[&#39;use&#39;]
 
-    if dataset_classes &gt; 0 and model_classes != dataset_classes:
-        raise ValueError(&#39; &#39;.join([&#39;The amount of classes for the model ({})&#39;.format(model_classes),
-                                   &#39;must be the same to the length of &#34;class_names&#34; in&#39;,
-                                   &#39;the &#34;dataset&#34; hyperparameters ({}).&#39;.format(dataset_classes)]))
+    if dataset == &#39;coco&#39;:
+        params = params[&#39;coco&#39;]
 
-    return (
-        CocoDataset(
-            root=hyperparameters[&#39;root&#39;],
-            dataset=hyperparameters[&#39;train&#39;],
-            classes_names=hyperparameters[&#39;class_names&#39;],
-            transform=transform
-        ),
-        CocoDataset(
-            root=hyperparameters[&#39;root&#39;],
-            dataset=hyperparameters[&#39;validation&#39;],
-            classes_names=hyperparameters[&#39;class_names&#39;],
-            transform=transform
-        )
-    )</code></pre>
+        n_classes = len(params[&#39;class_names&#39;])
+        n_classes = 80 if n_classes == 0 else n_classes
+        self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = n_classes
+
+        return (CocoDataset(root=params[&#39;root&#39;],
+                            dataset=params[&#39;train&#39;],
+                            classes_names=params[&#39;class_names&#39;],
+                            transform=transform),
+                CocoDataset(root=params[&#39;root&#39;],
+                            dataset=params[&#39;validation&#39;],
+                            classes_names=params[&#39;class_names&#39;],
+                            transform=transform))
+
+    if dataset == &#39;logo32plus&#39;:
+        params = params[&#39;logo32plus&#39;]
+        num_classes = len(params[&#39;classes&#39;]) if params[&#39;classes&#39;] is not None else 32
+
+        self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = num_classes
+
+        return (Logo32plusDataset(**params, dataset=&#39;training&#39;, transform=transform),
+                Logo32plusDataset(**params, dataset=&#39;validation&#39;, transform=transform))
+
+    if dataset == &#39;flickr32&#39;:
+        params = params[&#39;flickr32&#39;]
+        num_classes = len(params[&#39;brands&#39;]) if params[&#39;brands&#39;] is not None else 32
+
+        self.hyperparameters[&#39;model&#39;][&#39;classes&#39;] = num_classes
+
+        kwargs = {
+            &#39;root&#39;: params[&#39;root&#39;],
+            &#39;brands&#39;: params[&#39;brands&#39;],
+            &#39;only_boxes&#39;: params[&#39;only_boxes&#39;],
+            &#39;transform&#39;: transform
+        }
+
+        return (Flickr32Dataset(**kwargs, dataset=params[&#39;training&#39;]),
+                Flickr32Dataset(**kwargs, dataset=params[&#39;validation&#39;]))</code></pre>
 </details>
 </dd>
 <dt id="torchsight.trainers.retinanet.RetinaNetTrainer.get_model"><code class="name flex">
@@ -877,34 +899,49 @@ torch.utils.data.Dataloaders: The dataloader for the validation dataset.</p></se
 <span>def <span class="ident">get_optimizer</span></span>(<span>self)</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Returns the optimizer of the training.</p>
-<p>Stochastic Gradient Descent:
-<a href="https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html">https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html</a></p>
+<section class="desc"><p>Returns the optimizer for the training.</p>
+<p>It has the classic SGD optimizer, but this trainer also
+includes the <a href="https://github.com/Luolc/AdaBound">AdaBound optimizer</a> that it's
+supposed to be as fast as Adam and as good as SGD.</p>
+<p>You can provide the optimizer that you want to use in the 'optimizer' hyperparameter
+changing the 'use' parameter and providing the name of the one that
+you want to use.</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>optimizer</code></strong> :&ensp;<code>torch.optim.Optimizer</code></dt>
-<dd>The optimizer of the training.
-For the optimizer package see: <a href="https://pytorch.org/docs/stable/optim.html">https://pytorch.org/docs/stable/optim.html</a></dd>
+<dt><strong><code>AdaBound</code></strong></dt>
+<dd>The adabound optimizer for the training.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">def get_optimizer(self):
-    &#34;&#34;&#34;Returns the optimizer of the training.
+    &#34;&#34;&#34;Returns the optimizer for the training.
 
-    Stochastic Gradient Descent:
-    https://pytorch.org/docs/stable/_modules/torch/optim/sgd.html
+    It has the classic SGD optimizer, but this trainer also
+    includes the [AdaBound optimizer](https://github.com/Luolc/AdaBound) that it&#39;s
+    supposed to be as fast as Adam and as good as SGD.
+
+    You can provide the optimizer that you want to use in the &#39;optimizer&#39; hyperparameter
+    changing the &#39;use&#39; parameter and providing the name of the one that
+    you want to use.
 
     Returns:
-        optimizer (torch.optim.Optimizer): The optimizer of the training.
-            For the optimizer package see: https://pytorch.org/docs/stable/optim.html
+        AdaBound: The adabound optimizer for the training.
     &#34;&#34;&#34;
-    hyperparameters = self.hyperparameters[&#39;optimizer&#39;]
-    return torch.optim.SGD(
-        self.model.parameters(),
-        lr=hyperparameters[&#39;learning_rate&#39;],
-        momentum=hyperparameters[&#39;momentum&#39;],
-        weight_decay=hyperparameters[&#39;weight_decay&#39;]
-    )</code></pre>
+    params = self.hyperparameters[&#39;optimizer&#39;]
+    optimizer = params[&#39;use&#39;].lower()
+
+    if optimizer == &#39;adabound&#39;:
+        params = params[&#39;adabound&#39;]
+        return AdaBound(self.model.parameters(), lr=params[&#39;lr&#39;], final_lr=params[&#39;final_lr&#39;])
+
+    if optimizer == &#39;sgd&#39;:
+        params = params[&#39;sgd&#39;]
+        return torch.optim.SGD(self.model.parameters(),
+                               lr=params[&#39;lr&#39;],
+                               momentum=params[&#39;momentum&#39;],
+                               weight_decay=params[&#39;weight_decay&#39;])
+
+    raise ValueError(&#39;Cannot find the parameters for the optimizer &#34;{}&#34;&#39;.format(params[&#39;use&#39;]))</code></pre>
 </details>
 </dd>
 <dt id="torchsight.trainers.retinanet.RetinaNetTrainer.get_scheduler"><code class="name flex">
@@ -938,6 +975,12 @@ For the optimizer package see: <a href="https://pytorch.org/docs/stable/optim.ht
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize and get the transforms for the images.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>params</code></strong> :&ensp;<code>dict</code></dt>
+<dd>The dict with the params for the transforms.
+It must have 'resize' and 'normalize' args values.</dd>
+</dl>
 <h2 id="returns">Returns</h2>
 <p>torchvision.transform.Compose: The Compose of the transformations.</p></section>
 <details class="source">
@@ -945,15 +988,14 @@ For the optimizer package see: <a href="https://pytorch.org/docs/stable/optim.ht
 <pre><code class="python">def get_transform(self):
     &#34;&#34;&#34;Initialize and get the transforms for the images.
 
+    Arguments:
+        params (dict): The dict with the params for the transforms.
+            It must have &#39;resize&#39; and &#39;normalize&#39; args values.
+
     Returns:
         torchvision.transform.Compose: The Compose of the transformations.
     &#34;&#34;&#34;
-    hyperparameters = self.hyperparameters[&#39;transforms&#39;]
-    return transforms.Compose([
-        Resize(**hyperparameters[&#39;resize&#39;]),
-        ToTensor(),
-        Normalize(**hyperparameters[&#39;normalize&#39;])
-    ])</code></pre>
+    return AugmentDetection(params=self.hyperparameters[&#39;transform&#39;])</code></pre>
 </details>
 </dd>
 </dl>
@@ -965,6 +1007,7 @@ For the optimizer package see: <a href="https://pytorch.org/docs/stable/optim.ht
 <li><code><a title="torchsight.trainers.trainer.Trainer.batch_callback" href="trainer.html#torchsight.trainers.trainer.Trainer.batch_callback">batch_callback</a></code></li>
 <li><code><a title="torchsight.trainers.trainer.Trainer.epoch_callback" href="trainer.html#torchsight.trainers.trainer.Trainer.epoch_callback">epoch_callback</a></code></li>
 <li><code><a title="torchsight.trainers.trainer.Trainer.from_checkpoint" href="trainer.html#torchsight.trainers.trainer.Trainer.from_checkpoint">from_checkpoint</a></code></li>
+<li><code><a title="torchsight.trainers.trainer.Trainer.get_checkpoint_name" href="trainer.html#torchsight.trainers.trainer.Trainer.get_checkpoint_name">get_checkpoint_name</a></code></li>
 <li><code><a title="torchsight.trainers.trainer.Trainer.get_logger" href="trainer.html#torchsight.trainers.trainer.Trainer.get_logger">get_logger</a></code></li>
 <li><code><a title="torchsight.trainers.trainer.Trainer.resume" href="trainer.html#torchsight.trainers.trainer.Trainer.resume">resume</a></code></li>
 <li><code><a title="torchsight.trainers.trainer.Trainer.save" href="trainer.html#torchsight.trainers.trainer.Trainer.save">save</a></code></li>

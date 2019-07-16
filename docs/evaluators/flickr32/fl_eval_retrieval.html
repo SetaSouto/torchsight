@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.evaluators.flickr32.fl_eval_retrieval API documentation</title>
+<meta name="description" content="Evaluation script for the FlickrLogos-32 dataset.
+See http://www.multimedia-computing.de/flickrlogos/ for details …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.evaluators.flickr32.fl_eval_retrieval</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Evaluation script for the FlickrLogos-32 dataset.
+See <a href="http://www.multimedia-computing.de/flickrlogos/">http://www.multimedia-computing.de/flickrlogos/</a> for details.</p>
+<p>Please cite the following paper in your work:
+Scalable Logo Recognition in Real-World Images
+Stefan Romberg, Lluis Garcia Pueyo, Rainer Lienhart, Roelof van Zwol
+ACM International Conference on Multimedia Retrieval 2011 (ICMR11), Trento, April 2011.</p>
+<dl>
+<dt><strong><code>Author</code></strong> :&ensp;
+<code>Stefan</code> <code>Romberg</code>, <code>stefan.romberg</code>@<code>informatik.uni</code>-<code>augsburg.de</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>Notes:
+- Script was developed/tested on Windows with Python 2.7</p>
+<p>$Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+$Rev: 7621 $$Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+$HeadURL: <a href="https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/fl_eval_retrieval.py">https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/fl_eval_retrieval.py</a> $
+$Id: fl_eval_retrieval.py 7621 2013-11-18 10:15:33Z romberg $</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+ Evaluation script for the FlickrLogos-32 dataset.
+ See http://www.multimedia-computing.de/flickrlogos/ for details.
+
+ Please cite the following paper in your work:
+ Scalable Logo Recognition in Real-World Images
+ Stefan Romberg, Lluis Garcia Pueyo, Rainer Lienhart, Roelof van Zwol
+ ACM International Conference on Multimedia Retrieval 2011 (ICMR11), Trento, April 2011.
+
+ Author:   Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de
+
+ Notes:
+  - Script was developed/tested on Windows with Python 2.7
+
+ $Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+ $Rev: 7621 $$Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+ $HeadURL: https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/fl_eval_retrieval.py $
+ $Id: fl_eval_retrieval.py 7621 2013-11-18 10:15:33Z romberg $
+&#34;&#34;&#34;
+__version__ = &#34;$Id: fl_eval_retrieval.py 7621 2013-11-18 10:15:33Z romberg $&#34;
+__author__  = &#34;Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de&#34;
+
+# python built-in modules
+import sys
+from os.path import exists, basename, split, isdir
+from collections import defaultdict
+
+from .flickrlogos import fl_read_groundtruth, fl_read_csv, fl_ap, fl_mean, fl_sdev, Tee
+
+#==============================================================================
+#
+#==============================================================================
+
+def filename(x):
+    &#34;&#34;&#34;Returns the filename without the directory part including extension.&#34;&#34;&#34;
+    return split(x)[1]
+
+def sround(x, arg):
+    if isinstance(x, float):
+        return str(round(x, arg))
+    else:
+        return str(x)
+
+def fl_read_retrieval_results_format2(result_file):
+    &#34;&#34;&#34;
+    Reads the retrieval results from an ASCII file.
+
+    Format:
+    1st column:     Path to image file, should not contain spaces
+    2nd column:     Score/similarity, higher scores are better.
+    Other columns:  Ignored if present.
+    The first line contains the query image with an arbitrary score (i.e. 1.0).
+    &#34;&#34;&#34;
+    lines = fl_read_csv(result_file, delimiters=&#34; \t,;&#34;)
+
+    # remove first line, contains header = query image
+    lines = lines[1:]
+
+    if len(lines) &gt; 0:
+        assert len(lines[0]) &gt;= 2
+
+    # Returns a list: [ (score, file0, ), (score, file1), ... ]
+    return [ (float(x[1]), x[0]) for x in lines ]
+
+def fl_process_retrieval_results(results, sort, T_score):
+
+    # sort results
+    if sort == &#34;sort-desc&#34;:
+        results = list(reversed(sorted(results)))
+    elif sort == &#34;sort-asc&#34;:
+        results = sorted(results)
+    else:
+        pass
+
+    # keep all files with score &gt; T_score
+    results = [ (score, imfile) for (score, imfile) in results if score &gt; T_score ]
+
+    return results
+
+#==============================================================================
+#
+#==============================================================================
+
+def fl_eval_retrieval(indir, flickrlogos_dir, verbose):
+    #==========================================================================
+    # check input: --flickrlogos
+    #==========================================================================
+    if flickrlogos_dir == &#34;&#34;:
+        print(&#34;ERROR: fl_eval_retrieval(): Missing ground truth directory (Missing argument --flickrlogos).&#34;)
+        exit(1)
+
+    if not exists(flickrlogos_dir):
+        print(&#34;ERROR: fl_eval_retrieval(): Directory given by --flickrlogos does not exist: &#39;&#34;+str(flickrlogos_dir)+&#34;&#39;&#34;)
+        exit(1)
+
+    if not flickrlogos_dir.endswith(&#39;/&#39;) and not flickrlogos_dir.endswith(&#39;\\&#39;):
+        flickrlogos_dir += &#39;/&#39;
+
+    gt_trainvalset        = flickrlogos_dir + &#34;trainvalset.txt&#34;
+    gt_testset_logosonly  = flickrlogos_dir + &#34;testset-logosonly.txt&#34;
+
+    if not exists(gt_trainvalset):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+
+              str(gt_trainvalset)+&#34;&#39; \nWrong directory given by --flickrlogos?&#34;)
+        exit(1)
+
+    if not exists(gt_testset_logosonly):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+
+              str(gt_testset_logosonly)+&#34;&#39;\nWrong directory given by --flickrlogos?&#34;)
+        exit(1)
+
+    #==========================================================================
+    # check input: --indir
+    #==========================================================================
+    if indir.startswith(&#34;file:///&#34;): # for copy-pasting stuff from browser into console
+        indir = indir[8:]
+
+    if not exists(indir):
+        print(&#34;ERROR: fl_eval_retrieval(): Directory given by --indir does not exist: &#39;&#34;+str(indir)+&#34;&#39;&#34;)
+        exit(1)
+
+    #==========================================================================
+    # read and process ground truth
+    #==========================================================================
+
+    gt_indexed, class_names = fl_read_groundtruth(gt_trainvalset)
+    assert len(class_names) == 33   # 32 logo classes + &#34;no-logo&#34;
+    assert len(gt_indexed) == 4280  # 32*10 (training set) + 32*30 (validation set)
+
+    numImagesIndexed = len(gt_indexed)
+
+    gt_queries, class_names = fl_read_groundtruth(gt_testset_logosonly)
+    assert len(class_names) == 32   # 32 logo classes, logos only
+    assert len(gt_queries) == 960   # 32*30 (test set)
+    numQueries = len(gt_queries)
+
+    gt_images_per_class = defaultdict(set)
+    for (im_file, logoclass) in gt_indexed.items():
+        gt_images_per_class[logoclass].add( basename(im_file) )
+
+    #==========================================================================
+    # now loop over all queries:
+    #    - fetch result list/ranking
+    #    - compute AP, P, R, etc..
+    #==========================================================================
+    APs      = []
+    RRs      = []
+    top4s    = []
+    numEmpty = 0
+    TP       = 0
+    TP_FP    = 0
+    TP_FN    = 0
+
+    for no, (query_file, logoclass) in enumerate(gt_queries.items()):
+        query       = basename(query_file)
+        result_file = indir + &#34;/&#34; + query + &#34;.result2.txt&#34;
+
+        # current class
+        cur_class = gt_queries[query]
+        #print(&#34;cur_class:&#34; + cur_class)
+
+        if not exists(result_file):
+            print(&#34;ERROR: Missing result file: &#39;&#34;+str(result_file)+&#34;&#39;! Exit.\n&#34;)
+            exit(1)
+
+        #----------------------------------------------------------------------
+        # - read retrieval results
+        # - sort by descending score
+        # - remove results with score &lt;= T_score
+        #----------------------------------------------------------------------
+        results = fl_read_retrieval_results_format2(result_file)
+
+        T_score = 0
+        results = fl_process_retrieval_results(results, &#34;sort-desc&#34;, T_score)
+
+        #----------------------------------------------------------------------
+        # save rank of each item
+        #----------------------------------------------------------------------
+        ranked_list = []
+        for (score, im_file) in results:
+            ranked_list.append( filename(im_file) )
+
+        if len(ranked_list) == 0:
+            numEmpty += 1
+
+        #----------------------------------------------------------------------
+        # compute mAP
+        #----------------------------------------------------------------------
+        pos  = gt_images_per_class[cur_class]
+        assert len(pos) == 40
+        amb  = set() # empty set, no images are ignored
+        AP   = fl_ap(pos, amb, ranked_list)
+        APs.append(AP)
+
+        #----------------------------------------------------------------------
+        # compute precision + recall, count TP, FP, FN for now
+        #----------------------------------------------------------------------
+        tp_set = set(ranked_list).intersection(pos)
+
+        P = 0.0
+        if len(ranked_list) != 0:
+            P = float(len(tp_set)) / float(len(ranked_list))
+
+        R = 0.0
+        if len(pos) != 0:
+            R =  float(len(tp_set)) / float(len(pos))
+
+        TP    += len(tp_set)
+        TP_FP += len(ranked_list)
+        TP_FN += len(pos)
+
+        #----------------------------------------------------------------------
+        # compute AverageTop4 score, i.e. P@4 * 4.0
+        #----------------------------------------------------------------------
+        count4 = 0
+        for x in ranked_list[0:4]:
+            if x in pos:
+                count4 += 1
+
+        top4s.append(count4)
+
+        #----------------------------------------------------------------------
+        # compute response ratio (RR)
+        #----------------------------------------------------------------------
+        RR = float(len(results)) / float(numImagesIndexed)
+        RRs.append(RR)
+        
+        if verbose:
+            sys.stderr.write(&#34;\r Processing retrieval result file &#34;+str(no+1)+&#34;/&#34;+str(len(gt_queries))+&#34; ...&#34;)
+
+    if verbose:
+        print(&#34; Done&#34;)
+    #==========================================================================
+    # DONE
+    #==========================================================================
+    assert len(APs)   == numQueries, (len(APs), numQueries)
+    assert len(top4s) == numQueries, (len(top4s), numQueries)
+    assert len(RRs)   == numQueries, (len(RRs), numQueries)
+
+    print(&#34;-&#34;*79)
+    print(&#34; Results &#34;)
+    print(&#34;-&#34;*79)
+    print(&#34; indir: &#39;&#34;+str(indir)+&#34;&#39;&#34;)    
+    print(&#34;&#34;)
+    print(&#34; Number of queries:                 &#34;+str(numQueries))
+    print(&#34; Number of empty result lists:      &#34;+str(numEmpty))
+    prec = 4
+
+    mAP    = fl_mean(APs)
+    mAP_sd = fl_sdev(APs)
+    print(&#34; ==&gt; mean average precision (mAP):  &#34;+sround(mAP, prec).ljust(8)+&#34; (stddev: &#34;+sround(mAP_sd, prec)+&#34;)&#34;)
+
+    avgTop4    = fl_mean(top4s)
+    avgTop4_sd = fl_sdev(top4s)
+    print(&#34; ==&gt; Avg. top 4 score (4*P@4):      &#34;+sround(avgTop4, prec).ljust(8)+&#34; (stddev: &#34;+sround(avgTop4_sd, prec)+&#34;)&#34;)
+
+    mP    = float(TP) / float(TP_FP)
+    print(&#34; ==&gt; mean precision (mP):           &#34;+sround(mP, prec).ljust(8))
+
+    mR    = float(TP) / float(TP_FN)
+    print(&#34; ==&gt; mean recall (mR)::             &#34;+sround(mR, prec).ljust(8))
+
+    RR    = fl_mean(RRs)
+    RR_sd = fl_sdev(RRs)
+    print(&#34; ==&gt; response ratio (RR):           &#34;+sround(RR, prec).ljust(8)+&#34; (stddev: &#34;+sround(RR_sd, prec)+&#34;)&#34;)
+
+#==============================================================================
+if __name__ == &#39;__main__&#39;: # MAIN
+#==============================================================================    
+    from optparse import OptionParser
+    usage = &#34;Usage: %prog --flickrlogos=&lt;dataset root dir&gt; --indir=&lt;directory with result files&gt; &#34;
+    parser = OptionParser(usage=usage)
+
+    parser.add_option(&#34;--flickrlogos&#34;, dest=&#34;flickrlogos&#34;, type=str, default=None,
+                      help=&#34;Root directory of the FlickrLogos-32 dataset.\n&#34;)
+    parser.add_option(&#34;--indir&#34;, dest=&#34;indir&#34;, type=str, default=None,
+                      help=&#34;Directory holding the retrieval result files (*.results2.txt).&#34;)
+    parser.add_option(&#34;-o&#34;,&#34;--output&#34;, dest=&#34;output&#34;, type=str, default=&#34;-&#34;,
+                      help=&#34;Optional: Output file, may be &#39;-&#39; for stdout. Default: stdout \n&#34;&#34;&#34;)
+    parser.add_option(&#34;-v&#34;,&#34;--verbose&#34;, dest=&#34;verbose&#34;, action=&#34;store_true&#34;, default=False, 
+                      help=&#34;Optional: Flag for verbose output. Default: False\n&#34;&#34;&#34;)
+    (options, args) = parser.parse_args()
+
+    if len(sys.argv) &lt; 2:
+        parser.print_help()
+        exit(1)
+
+    #==========================================================================
+    # show passed args
+    #==========================================================================
+    if options.verbose:
+        print(&#34;fl_eval_retrieval.py\n&#34;+__version__)
+        print(&#34;-&#34;*79)
+        print(&#34;ARGS:&#34;)
+        print(&#34;FlickrLogos root dir (--flickrlogos):&#34;)
+        print(&#34;  &gt; &#39;&#34;+options.flickrlogos+&#34;&#39;&#34;)
+        print(&#34;Directory with result files (--indir):&#34;)
+        print(&#34;  &gt; &#39;&#34;+options.indir+&#34;&#39;&#34;)
+        print(&#34;Output file ( --output):&#34;)
+        print(&#34;  &gt; &#39;&#34;+options.output+&#34;&#39;&#34;)
+        print(&#34;-&#34;*79)
+
+    if options.flickrlogos is None or options.flickrlogos == &#34;&#34;:
+        print(&#34;Missing argument: --flickrlogos=&lt;FlickrLogos-32 root directory&gt;. Exit.&#34;)
+        exit(1)
+
+    if options.indir is None or options.indir == &#34;&#34;:
+        print(&#34;Missing argument: --indir=&lt;directory with result files&gt;. Exit.&#34;)
+        exit(1)
+
+    #==========================================================================
+    # if output is a file and not &#34;-&#34; then all print() statements are redirected
+    # to *both* stdout and a file.
+    #==========================================================================
+    if options.output is not None and options.output != &#34;&#34; and options.output != &#34;-&#34;:
+        if isdir(options.output):
+            print(&#34;Invalid argument: Arg --output must denote a file. Exit.&#34;)
+            exit(1)
+
+        Tee(options.output, &#34;w&#34;)
+
+    #==========================================================================
+    # compute scores
+    #==========================================================================
+    fl_eval_retrieval(options.indir, options.flickrlogos, options.verbose)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="torchsight.evaluators.flickr32.fl_eval_retrieval.filename"><code class="name flex">
+<span>def <span class="ident">filename</span></span>(<span>x)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns the filename without the directory part including extension.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def filename(x):
+    &#34;&#34;&#34;Returns the filename without the directory part including extension.&#34;&#34;&#34;
+    return split(x)[1]</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.fl_eval_retrieval.fl_eval_retrieval"><code class="name flex">
+<span>def <span class="ident">fl_eval_retrieval</span></span>(<span>indir, flickrlogos_dir, verbose)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_eval_retrieval(indir, flickrlogos_dir, verbose):
+    #==========================================================================
+    # check input: --flickrlogos
+    #==========================================================================
+    if flickrlogos_dir == &#34;&#34;:
+        print(&#34;ERROR: fl_eval_retrieval(): Missing ground truth directory (Missing argument --flickrlogos).&#34;)
+        exit(1)
+
+    if not exists(flickrlogos_dir):
+        print(&#34;ERROR: fl_eval_retrieval(): Directory given by --flickrlogos does not exist: &#39;&#34;+str(flickrlogos_dir)+&#34;&#39;&#34;)
+        exit(1)
+
+    if not flickrlogos_dir.endswith(&#39;/&#39;) and not flickrlogos_dir.endswith(&#39;\\&#39;):
+        flickrlogos_dir += &#39;/&#39;
+
+    gt_trainvalset        = flickrlogos_dir + &#34;trainvalset.txt&#34;
+    gt_testset_logosonly  = flickrlogos_dir + &#34;testset-logosonly.txt&#34;
+
+    if not exists(gt_trainvalset):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+
+              str(gt_trainvalset)+&#34;&#39; \nWrong directory given by --flickrlogos?&#34;)
+        exit(1)
+
+    if not exists(gt_testset_logosonly):
+        print(&#34;ERROR: fl_eval_retrieval(): Ground truth file does not exist: &#39;&#34;+
+              str(gt_testset_logosonly)+&#34;&#39;\nWrong directory given by --flickrlogos?&#34;)
+        exit(1)
+
+    #==========================================================================
+    # check input: --indir
+    #==========================================================================
+    if indir.startswith(&#34;file:///&#34;): # for copy-pasting stuff from browser into console
+        indir = indir[8:]
+
+    if not exists(indir):
+        print(&#34;ERROR: fl_eval_retrieval(): Directory given by --indir does not exist: &#39;&#34;+str(indir)+&#34;&#39;&#34;)
+        exit(1)
+
+    #==========================================================================
+    # read and process ground truth
+    #==========================================================================
+
+    gt_indexed, class_names = fl_read_groundtruth(gt_trainvalset)
+    assert len(class_names) == 33   # 32 logo classes + &#34;no-logo&#34;
+    assert len(gt_indexed) == 4280  # 32*10 (training set) + 32*30 (validation set)
+
+    numImagesIndexed = len(gt_indexed)
+
+    gt_queries, class_names = fl_read_groundtruth(gt_testset_logosonly)
+    assert len(class_names) == 32   # 32 logo classes, logos only
+    assert len(gt_queries) == 960   # 32*30 (test set)
+    numQueries = len(gt_queries)
+
+    gt_images_per_class = defaultdict(set)
+    for (im_file, logoclass) in gt_indexed.items():
+        gt_images_per_class[logoclass].add( basename(im_file) )
+
+    #==========================================================================
+    # now loop over all queries:
+    #    - fetch result list/ranking
+    #    - compute AP, P, R, etc..
+    #==========================================================================
+    APs      = []
+    RRs      = []
+    top4s    = []
+    numEmpty = 0
+    TP       = 0
+    TP_FP    = 0
+    TP_FN    = 0
+
+    for no, (query_file, logoclass) in enumerate(gt_queries.items()):
+        query       = basename(query_file)
+        result_file = indir + &#34;/&#34; + query + &#34;.result2.txt&#34;
+
+        # current class
+        cur_class = gt_queries[query]
+        #print(&#34;cur_class:&#34; + cur_class)
+
+        if not exists(result_file):
+            print(&#34;ERROR: Missing result file: &#39;&#34;+str(result_file)+&#34;&#39;! Exit.\n&#34;)
+            exit(1)
+
+        #----------------------------------------------------------------------
+        # - read retrieval results
+        # - sort by descending score
+        # - remove results with score &lt;= T_score
+        #----------------------------------------------------------------------
+        results = fl_read_retrieval_results_format2(result_file)
+
+        T_score = 0
+        results = fl_process_retrieval_results(results, &#34;sort-desc&#34;, T_score)
+
+        #----------------------------------------------------------------------
+        # save rank of each item
+        #----------------------------------------------------------------------
+        ranked_list = []
+        for (score, im_file) in results:
+            ranked_list.append( filename(im_file) )
+
+        if len(ranked_list) == 0:
+            numEmpty += 1
+
+        #----------------------------------------------------------------------
+        # compute mAP
+        #----------------------------------------------------------------------
+        pos  = gt_images_per_class[cur_class]
+        assert len(pos) == 40
+        amb  = set() # empty set, no images are ignored
+        AP   = fl_ap(pos, amb, ranked_list)
+        APs.append(AP)
+
+        #----------------------------------------------------------------------
+        # compute precision + recall, count TP, FP, FN for now
+        #----------------------------------------------------------------------
+        tp_set = set(ranked_list).intersection(pos)
+
+        P = 0.0
+        if len(ranked_list) != 0:
+            P = float(len(tp_set)) / float(len(ranked_list))
+
+        R = 0.0
+        if len(pos) != 0:
+            R =  float(len(tp_set)) / float(len(pos))
+
+        TP    += len(tp_set)
+        TP_FP += len(ranked_list)
+        TP_FN += len(pos)
+
+        #----------------------------------------------------------------------
+        # compute AverageTop4 score, i.e. P@4 * 4.0
+        #----------------------------------------------------------------------
+        count4 = 0
+        for x in ranked_list[0:4]:
+            if x in pos:
+                count4 += 1
+
+        top4s.append(count4)
+
+        #----------------------------------------------------------------------
+        # compute response ratio (RR)
+        #----------------------------------------------------------------------
+        RR = float(len(results)) / float(numImagesIndexed)
+        RRs.append(RR)
+        
+        if verbose:
+            sys.stderr.write(&#34;\r Processing retrieval result file &#34;+str(no+1)+&#34;/&#34;+str(len(gt_queries))+&#34; ...&#34;)
+
+    if verbose:
+        print(&#34; Done&#34;)
+    #==========================================================================
+    # DONE
+    #==========================================================================
+    assert len(APs)   == numQueries, (len(APs), numQueries)
+    assert len(top4s) == numQueries, (len(top4s), numQueries)
+    assert len(RRs)   == numQueries, (len(RRs), numQueries)
+
+    print(&#34;-&#34;*79)
+    print(&#34; Results &#34;)
+    print(&#34;-&#34;*79)
+    print(&#34; indir: &#39;&#34;+str(indir)+&#34;&#39;&#34;)    
+    print(&#34;&#34;)
+    print(&#34; Number of queries:                 &#34;+str(numQueries))
+    print(&#34; Number of empty result lists:      &#34;+str(numEmpty))
+    prec = 4
+
+    mAP    = fl_mean(APs)
+    mAP_sd = fl_sdev(APs)
+    print(&#34; ==&gt; mean average precision (mAP):  &#34;+sround(mAP, prec).ljust(8)+&#34; (stddev: &#34;+sround(mAP_sd, prec)+&#34;)&#34;)
+
+    avgTop4    = fl_mean(top4s)
+    avgTop4_sd = fl_sdev(top4s)
+    print(&#34; ==&gt; Avg. top 4 score (4*P@4):      &#34;+sround(avgTop4, prec).ljust(8)+&#34; (stddev: &#34;+sround(avgTop4_sd, prec)+&#34;)&#34;)
+
+    mP    = float(TP) / float(TP_FP)
+    print(&#34; ==&gt; mean precision (mP):           &#34;+sround(mP, prec).ljust(8))
+
+    mR    = float(TP) / float(TP_FN)
+    print(&#34; ==&gt; mean recall (mR)::             &#34;+sround(mR, prec).ljust(8))
+
+    RR    = fl_mean(RRs)
+    RR_sd = fl_sdev(RRs)
+    print(&#34; ==&gt; response ratio (RR):           &#34;+sround(RR, prec).ljust(8)+&#34; (stddev: &#34;+sround(RR_sd, prec)+&#34;)&#34;)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.fl_eval_retrieval.fl_process_retrieval_results"><code class="name flex">
+<span>def <span class="ident">fl_process_retrieval_results</span></span>(<span>results, sort, T_score)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_process_retrieval_results(results, sort, T_score):
+
+    # sort results
+    if sort == &#34;sort-desc&#34;:
+        results = list(reversed(sorted(results)))
+    elif sort == &#34;sort-asc&#34;:
+        results = sorted(results)
+    else:
+        pass
+
+    # keep all files with score &gt; T_score
+    results = [ (score, imfile) for (score, imfile) in results if score &gt; T_score ]
+
+    return results</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.fl_eval_retrieval.fl_read_retrieval_results_format2"><code class="name flex">
+<span>def <span class="ident">fl_read_retrieval_results_format2</span></span>(<span>result_file)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads the retrieval results from an ASCII file.</p>
+<p>Format:
+1st column:
+Path to image file, should not contain spaces
+2nd column:
+Score/similarity, higher scores are better.
+Other columns:
+Ignored if present.
+The first line contains the query image with an arbitrary score (i.e. 1.0).</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_read_retrieval_results_format2(result_file):
+    &#34;&#34;&#34;
+    Reads the retrieval results from an ASCII file.
+
+    Format:
+    1st column:     Path to image file, should not contain spaces
+    2nd column:     Score/similarity, higher scores are better.
+    Other columns:  Ignored if present.
+    The first line contains the query image with an arbitrary score (i.e. 1.0).
+    &#34;&#34;&#34;
+    lines = fl_read_csv(result_file, delimiters=&#34; \t,;&#34;)
+
+    # remove first line, contains header = query image
+    lines = lines[1:]
+
+    if len(lines) &gt; 0:
+        assert len(lines[0]) &gt;= 2
+
+    # Returns a list: [ (score, file0, ), (score, file1), ... ]
+    return [ (float(x[1]), x[0]) for x in lines ]</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.fl_eval_retrieval.sround"><code class="name flex">
+<span>def <span class="ident">sround</span></span>(<span>x, arg)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def sround(x, arg):
+    if isinstance(x, float):
+        return str(round(x, arg))
+    else:
+        return str(x)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.evaluators.flickr32" href="index.html">torchsight.evaluators.flickr32</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_retrieval.filename" href="#torchsight.evaluators.flickr32.fl_eval_retrieval.filename">filename</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_retrieval.fl_eval_retrieval" href="#torchsight.evaluators.flickr32.fl_eval_retrieval.fl_eval_retrieval">fl_eval_retrieval</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_retrieval.fl_process_retrieval_results" href="#torchsight.evaluators.flickr32.fl_eval_retrieval.fl_process_retrieval_results">fl_process_retrieval_results</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_retrieval.fl_read_retrieval_results_format2" href="#torchsight.evaluators.flickr32.fl_eval_retrieval.fl_read_retrieval_results_format2">fl_read_retrieval_results_format2</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.fl_eval_retrieval.sround" href="#torchsight.evaluators.flickr32.fl_eval_retrieval.sround">sround</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

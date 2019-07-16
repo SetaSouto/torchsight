@@ -30,11 +30,10 @@ Resize(), ToTensor(), Normalize().</p>
 The recomendation is to compose the transforms in the order that are written:
 Resize(), ToTensor(), Normalize().
 &#34;&#34;&#34;
-
 import numpy as np
+import skimage
 import torch
-from skimage.transform import resize
-
+from PIL.Image import Image
 from torchvision.transforms.functional import normalize, to_tensor
 
 
@@ -54,13 +53,21 @@ class Resize():
         self.max_side = max_side
         self.stride = stride
 
-    def __call__(self, data):
-        &#34;&#34;&#34;Resize the image and scale the bounding boxes.
+    def resize_image(self, image):
+        &#34;&#34;&#34;Resize the given image.
 
-        Args:
-            data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
+        Arguments:
+            image (PIL Image or np.array): the image to resize.
+
+        Returns:
+            np.array: The resized image.
         &#34;&#34;&#34;
-        image, bounding_boxes, info = data
+        if isinstance(image, Image):
+            image = np.array(image)
+
+        if len(image.shape) == 2:
+            image = skimage.color.gray2rgb(image)
+
         height, width, channels = image.shape
 
         smallest_side = height if height &lt; width else width
@@ -77,16 +84,37 @@ class Resize():
         padding_height = self.stride - (new_height % self.stride)
         padding_height = 0 if padding_height == self.stride else padding_height
 
-        image = resize(image, (new_height, new_width), mode=&#39;constant&#39;, anti_aliasing=True)
+        image = skimage.transform.resize(image, (new_height, new_width), mode=&#39;constant&#39;, anti_aliasing=True)
         height, width, channels = image.shape
 
         final = np.zeros((new_height + padding_height, new_width + padding_width, channels))
         final[:height, :width, :] = image
 
-        bounding_boxes[:, :4] *= scale
-        info[&#39;resize_scale&#39;] = scale
+        return final, scale
 
-        return final, bounding_boxes, info
+    def __call__(self, data):
+        &#34;&#34;&#34;Resize the image and scale the bounding boxes.
+
+        Args:
+            data (PIL Image or tuple): The image to resize or a tuple with a PIL image and
+                the bounding boxes as numpy arrays.
+        &#34;&#34;&#34;
+        if isinstance(data, Image):
+            image, _ = self.resize_image(data)
+            return image
+
+        image, bounding_boxes, *rest = data
+        image, scale = self.resize_image(image)
+
+        if bounding_boxes.shape[0] &gt; 0:
+            bounding_boxes[:, :4] *= scale
+
+        if rest and isinstance(rest[0], dict):
+            info = rest[0]
+            info[&#39;resize_scale&#39;] = scale
+            return image, bounding_boxes, info
+
+        return image, bounding_boxes
 
 
 class ToTensor():
@@ -105,7 +133,14 @@ class ToTensor():
             torch.Tensor: The image.
             torch.Tensor: The annotations.
         &#34;&#34;&#34;
-        return (to_tensor(data[0]), torch.from_numpy(data[1]), *data[2:])
+        image, boxes, *rest = data
+
+        image = to_tensor(image)
+
+        if not torch.is_tensor(boxes):
+            boxes = torch.from_numpy(boxes)
+
+        return (image, boxes, *rest)
 
 
 class Normalize():
@@ -249,13 +284,21 @@ better the feature map.</p></section>
         self.max_side = max_side
         self.stride = stride
 
-    def __call__(self, data):
-        &#34;&#34;&#34;Resize the image and scale the bounding boxes.
+    def resize_image(self, image):
+        &#34;&#34;&#34;Resize the given image.
 
-        Args:
-            data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
+        Arguments:
+            image (PIL Image or np.array): the image to resize.
+
+        Returns:
+            np.array: The resized image.
         &#34;&#34;&#34;
-        image, bounding_boxes, info = data
+        if isinstance(image, Image):
+            image = np.array(image)
+
+        if len(image.shape) == 2:
+            image = skimage.color.gray2rgb(image)
+
         height, width, channels = image.shape
 
         smallest_side = height if height &lt; width else width
@@ -272,16 +315,37 @@ better the feature map.</p></section>
         padding_height = self.stride - (new_height % self.stride)
         padding_height = 0 if padding_height == self.stride else padding_height
 
-        image = resize(image, (new_height, new_width), mode=&#39;constant&#39;, anti_aliasing=True)
+        image = skimage.transform.resize(image, (new_height, new_width), mode=&#39;constant&#39;, anti_aliasing=True)
         height, width, channels = image.shape
 
         final = np.zeros((new_height + padding_height, new_width + padding_width, channels))
         final[:height, :width, :] = image
 
-        bounding_boxes[:, :4] *= scale
-        info[&#39;resize_scale&#39;] = scale
+        return final, scale
 
-        return final, bounding_boxes, info</code></pre>
+    def __call__(self, data):
+        &#34;&#34;&#34;Resize the image and scale the bounding boxes.
+
+        Args:
+            data (PIL Image or tuple): The image to resize or a tuple with a PIL image and
+                the bounding boxes as numpy arrays.
+        &#34;&#34;&#34;
+        if isinstance(data, Image):
+            image, _ = self.resize_image(data)
+            return image
+
+        image, bounding_boxes, *rest = data
+        image, scale = self.resize_image(image)
+
+        if bounding_boxes.shape[0] &gt; 0:
+            bounding_boxes[:, :4] *= scale
+
+        if rest and isinstance(rest[0], dict):
+            info = rest[0]
+            info[&#39;resize_scale&#39;] = scale
+            return image, bounding_boxes, info
+
+        return image, bounding_boxes</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
@@ -297,6 +361,60 @@ See help(type(self)) for accurate signature.</p></section>
     self.min_side = min_side
     self.max_side = max_side
     self.stride = stride</code></pre>
+</details>
+</dd>
+<dt id="torchsight.transforms.detection.Resize.resize_image"><code class="name flex">
+<span>def <span class="ident">resize_image</span></span>(<span>self, image)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Resize the given image.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>image</code></strong> :&ensp;<code>PIL</code> <code>Image</code> or <code>np.array</code></dt>
+<dd>the image to resize.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>np.array: The resized image.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def resize_image(self, image):
+    &#34;&#34;&#34;Resize the given image.
+
+    Arguments:
+        image (PIL Image or np.array): the image to resize.
+
+    Returns:
+        np.array: The resized image.
+    &#34;&#34;&#34;
+    if isinstance(image, Image):
+        image = np.array(image)
+
+    if len(image.shape) == 2:
+        image = skimage.color.gray2rgb(image)
+
+    height, width, channels = image.shape
+
+    smallest_side = height if height &lt; width else width
+    biggest_side = height if height &gt; width else width
+
+    scale = self.min_side / smallest_side
+    scale = self.max_side / biggest_side if scale * biggest_side &gt; self.max_side else scale
+
+    new_width = round(width * scale)
+    new_height = round(height * scale)
+
+    padding_width = self.stride - (new_width % self.stride)
+    padding_width = 0 if padding_width == self.stride else padding_width
+    padding_height = self.stride - (new_height % self.stride)
+    padding_height = 0 if padding_height == self.stride else padding_height
+
+    image = skimage.transform.resize(image, (new_height, new_width), mode=&#39;constant&#39;, anti_aliasing=True)
+    height, width, channels = image.shape
+
+    final = np.zeros((new_height + padding_height, new_width + padding_width, channels))
+    final[:height, :width, :] = image
+
+    return final, scale</code></pre>
 </details>
 </dd>
 </dl>
@@ -328,7 +446,14 @@ See help(type(self)) for accurate signature.</p></section>
             torch.Tensor: The image.
             torch.Tensor: The annotations.
         &#34;&#34;&#34;
-        return (to_tensor(data[0]), torch.from_numpy(data[1]), *data[2:])</code></pre>
+        image, boxes, *rest = data
+
+        image = to_tensor(image)
+
+        if not torch.is_tensor(boxes):
+            boxes = torch.from_numpy(boxes)
+
+        return (image, boxes, *rest)</code></pre>
 </details>
 </dd>
 </dl>
@@ -357,6 +482,7 @@ See help(type(self)) for accurate signature.</p></section>
 <h4><code><a title="torchsight.transforms.detection.Resize" href="#torchsight.transforms.detection.Resize">Resize</a></code></h4>
 <ul class="">
 <li><code><a title="torchsight.transforms.detection.Resize.__init__" href="#torchsight.transforms.detection.Resize.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.transforms.detection.Resize.resize_image" href="#torchsight.transforms.detection.Resize.resize_image">resize_image</a></code></li>
 </ul>
 </li>
 <li>

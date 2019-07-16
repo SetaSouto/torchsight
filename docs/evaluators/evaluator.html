@@ -29,10 +29,10 @@ import time
 import torch
 
 from torchsight.loggers import PrintLogger
-from torchsight.utils import merge_dicts
+from torchsight.utils import PrintMixin, merge_dicts
 
 
-class Evaluator():
+class Evaluator(PrintMixin):
     &#34;&#34;&#34;An evaluator base class.
 
     The evaluator is an interface to evaluate different models. You can override the methods to get the dataset,
@@ -42,7 +42,6 @@ class Evaluator():
     This class is intended to avoid boilerplate code and only focus on compute the metric or evaluation that you
     want to have.
     &#34;&#34;&#34;
-    params = {}
 
     def __init__(self, checkpoint, params=None, device=None):
         &#34;&#34;&#34;Initialize the evaluator, get the dataset and the model to evaluate.
@@ -52,16 +51,32 @@ class Evaluator():
             params (dict): A dict to replace the base params of the evaluator.
             device (str, optional): The device to use for the evaluation.
         &#34;&#34;&#34;
-        self.params = merge_dicts(self.params, params, verbose=True)
+        self.params = merge_dicts(self.get_base_params(), params, verbose=True)
         self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
-        self.checkpoint = checkpoint
+        self.print(&#39;Using device &#34;{}&#34;&#39;.format(self.device))
+
+        self.checkpoint_path = checkpoint
+        self.print(&#39;Loading checkpoint ...&#39;)
+        self.checkpoint = torch.load(checkpoint, map_location=self.device)
+
+        self.print(&#39;Loading dataset ...&#39;)
         self.dataset = self.get_dataset()
+        self.print(&#39;Loading dataloader ...&#39;)
         self.dataloader = self.get_dataloader()
+        self.print(&#39;Loading model ...&#39;)
         self.model = self.get_model()
         self.logger = self.get_logger()
 
         # Keep a dict with the key-value pairs to log after each batch
         self.current_log = {}
+
+        # Avoid memory leaks by removing the loaded checkpoint but keep the path to it
+        self.checkpoint = None
+
+    @staticmethod
+    def get_base_params():
+        &#34;&#34;&#34;Get the base parameters of the evaluator.&#34;&#34;&#34;
+        return {}
 
     ###############################
     ###         GETTERS         ###
@@ -105,7 +120,7 @@ class Evaluator():
     ###         METHODS         ###
     ###############################
 
-    def eval(self):
+    def eval_mode(self):
         &#34;&#34;&#34;Put the model in evaluation mode.
 
         You can override this method to pass arguments to the eval() method of the model
@@ -115,8 +130,9 @@ class Evaluator():
 
     def evaluate(self):
         &#34;&#34;&#34;Run the model over the entire dataset and compute the evaluation metric.&#34;&#34;&#34;
+        self.print(&#39;Starting evaluation ...&#39;)
         self.model.to(self.device)
-        self.eval()
+        self.eval_mode()
 
         # The number of batches that the dataset has
         n_batches = len(self.dataloader)
@@ -134,6 +150,7 @@ class Evaluator():
                 last_endtime = time.time()
 
                 self.logger.log(merge_dicts({
+                    self.__class__.__name__: None,
                     &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
                     &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
                     &#39;Total&#39;: &#39;{:.1f} s&#39;.format(total_time)
@@ -176,6 +193,7 @@ class Evaluator():
 <dl>
 <dt id="torchsight.evaluators.evaluator.Evaluator"><code class="flex name class">
 <span>class <span class="ident">Evaluator</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.utils.print.PrintMixin" href="../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a>)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>An evaluator base class.</p>
@@ -186,7 +204,7 @@ metric that you want to track.</p>
 want to have.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">class Evaluator():
+<pre><code class="python">class Evaluator(PrintMixin):
     &#34;&#34;&#34;An evaluator base class.
 
     The evaluator is an interface to evaluate different models. You can override the methods to get the dataset,
@@ -196,7 +214,6 @@ want to have.</p></section>
     This class is intended to avoid boilerplate code and only focus on compute the metric or evaluation that you
     want to have.
     &#34;&#34;&#34;
-    params = {}
 
     def __init__(self, checkpoint, params=None, device=None):
         &#34;&#34;&#34;Initialize the evaluator, get the dataset and the model to evaluate.
@@ -206,16 +223,32 @@ want to have.</p></section>
             params (dict): A dict to replace the base params of the evaluator.
             device (str, optional): The device to use for the evaluation.
         &#34;&#34;&#34;
-        self.params = merge_dicts(self.params, params, verbose=True)
+        self.params = merge_dicts(self.get_base_params(), params, verbose=True)
         self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
-        self.checkpoint = checkpoint
+        self.print(&#39;Using device &#34;{}&#34;&#39;.format(self.device))
+
+        self.checkpoint_path = checkpoint
+        self.print(&#39;Loading checkpoint ...&#39;)
+        self.checkpoint = torch.load(checkpoint, map_location=self.device)
+
+        self.print(&#39;Loading dataset ...&#39;)
         self.dataset = self.get_dataset()
+        self.print(&#39;Loading dataloader ...&#39;)
         self.dataloader = self.get_dataloader()
+        self.print(&#39;Loading model ...&#39;)
         self.model = self.get_model()
         self.logger = self.get_logger()
 
         # Keep a dict with the key-value pairs to log after each batch
         self.current_log = {}
+
+        # Avoid memory leaks by removing the loaded checkpoint but keep the path to it
+        self.checkpoint = None
+
+    @staticmethod
+    def get_base_params():
+        &#34;&#34;&#34;Get the base parameters of the evaluator.&#34;&#34;&#34;
+        return {}
 
     ###############################
     ###         GETTERS         ###
@@ -259,7 +292,7 @@ want to have.</p></section>
     ###         METHODS         ###
     ###############################
 
-    def eval(self):
+    def eval_mode(self):
         &#34;&#34;&#34;Put the model in evaluation mode.
 
         You can override this method to pass arguments to the eval() method of the model
@@ -269,8 +302,9 @@ want to have.</p></section>
 
     def evaluate(self):
         &#34;&#34;&#34;Run the model over the entire dataset and compute the evaluation metric.&#34;&#34;&#34;
+        self.print(&#39;Starting evaluation ...&#39;)
         self.model.to(self.device)
-        self.eval()
+        self.eval_mode()
 
         # The number of batches that the dataset has
         n_batches = len(self.dataloader)
@@ -288,6 +322,7 @@ want to have.</p></section>
                 last_endtime = time.time()
 
                 self.logger.log(merge_dicts({
+                    self.__class__.__name__: None,
                     &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
                     &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
                     &#39;Total&#39;: &#39;{:.1f} s&#39;.format(total_time)
@@ -318,11 +353,24 @@ want to have.</p></section>
     def evaluate_callback(self):
         &#34;&#34;&#34;A callback that is called at the end of the evaluation.&#34;&#34;&#34;</code></pre>
 </details>
-<h3>Class variables</h3>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator" href="flickr32/evaluator.html#torchsight.evaluators.flickr32.evaluator.Flickr32Evaluator">Flickr32Evaluator</a></li>
+</ul>
+<h3>Static methods</h3>
 <dl>
-<dt id="torchsight.evaluators.evaluator.Evaluator.params"><code class="name">var <span class="ident">params</span></code></dt>
+<dt id="torchsight.evaluators.evaluator.Evaluator.get_base_params"><code class="name flex">
+<span>def <span class="ident">get_base_params</span></span>(<span>)</span>
+</code></dt>
 <dd>
-<section class="desc"></section>
+<section class="desc"><p>Get the base parameters of the evaluator.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def get_base_params():
+    &#34;&#34;&#34;Get the base parameters of the evaluator.&#34;&#34;&#34;
+    return {}</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -351,16 +399,27 @@ want to have.</p></section>
         params (dict): A dict to replace the base params of the evaluator.
         device (str, optional): The device to use for the evaluation.
     &#34;&#34;&#34;
-    self.params = merge_dicts(self.params, params, verbose=True)
+    self.params = merge_dicts(self.get_base_params(), params, verbose=True)
     self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
-    self.checkpoint = checkpoint
+    self.print(&#39;Using device &#34;{}&#34;&#39;.format(self.device))
+
+    self.checkpoint_path = checkpoint
+    self.print(&#39;Loading checkpoint ...&#39;)
+    self.checkpoint = torch.load(checkpoint, map_location=self.device)
+
+    self.print(&#39;Loading dataset ...&#39;)
     self.dataset = self.get_dataset()
+    self.print(&#39;Loading dataloader ...&#39;)
     self.dataloader = self.get_dataloader()
+    self.print(&#39;Loading model ...&#39;)
     self.model = self.get_model()
     self.logger = self.get_logger()
 
     # Keep a dict with the key-value pairs to log after each batch
-    self.current_log = {}</code></pre>
+    self.current_log = {}
+
+    # Avoid memory leaks by removing the loaded checkpoint but keep the path to it
+    self.checkpoint = None</code></pre>
 </details>
 </dd>
 <dt id="torchsight.evaluators.evaluator.Evaluator.batch_callback"><code class="name flex">
@@ -383,8 +442,8 @@ want to have.</p></section>
     &#34;&#34;&#34;</code></pre>
 </details>
 </dd>
-<dt id="torchsight.evaluators.evaluator.Evaluator.eval"><code class="name flex">
-<span>def <span class="ident">eval</span></span>(<span>self)</span>
+<dt id="torchsight.evaluators.evaluator.Evaluator.eval_mode"><code class="name flex">
+<span>def <span class="ident">eval_mode</span></span>(<span>self)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Put the model in evaluation mode.</p>
@@ -392,7 +451,7 @@ want to have.</p></section>
 or do anything what you want.</p></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def eval(self):
+<pre><code class="python">def eval_mode(self):
     &#34;&#34;&#34;Put the model in evaluation mode.
 
     You can override this method to pass arguments to the eval() method of the model
@@ -410,8 +469,9 @@ or do anything what you want.</p></section>
 <summary>Source code</summary>
 <pre><code class="python">def evaluate(self):
     &#34;&#34;&#34;Run the model over the entire dataset and compute the evaluation metric.&#34;&#34;&#34;
+    self.print(&#39;Starting evaluation ...&#39;)
     self.model.to(self.device)
-    self.eval()
+    self.eval_mode()
 
     # The number of batches that the dataset has
     n_batches = len(self.dataloader)
@@ -429,6 +489,7 @@ or do anything what you want.</p></section>
             last_endtime = time.time()
 
             self.logger.log(merge_dicts({
+                self.__class__.__name__: None,
                 &#39;Batch&#39;: &#39;{}/{}&#39;.format(batch + 1, n_batches),
                 &#39;Time&#39;: &#39;{:.3f} s&#39;.format(batch_time),
                 &#39;Total&#39;: &#39;{:.1f} s&#39;.format(total_time)
@@ -547,6 +608,14 @@ some metrics and do the evaluation.</p></section>
 </details>
 </dd>
 </dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.utils.print.PrintMixin" href="../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.utils.print.PrintMixin.print" href="../utils/print.html#torchsight.utils.print.PrintMixin.print">print</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 </dl>
 </section>
@@ -569,15 +638,15 @@ some metrics and do the evaluation.</p></section>
 <ul class="two-column">
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.__init__" href="#torchsight.evaluators.evaluator.Evaluator.__init__">__init__</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.batch_callback" href="#torchsight.evaluators.evaluator.Evaluator.batch_callback">batch_callback</a></code></li>
-<li><code><a title="torchsight.evaluators.evaluator.Evaluator.eval" href="#torchsight.evaluators.evaluator.Evaluator.eval">eval</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.eval_mode" href="#torchsight.evaluators.evaluator.Evaluator.eval_mode">eval_mode</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.evaluate" href="#torchsight.evaluators.evaluator.Evaluator.evaluate">evaluate</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.evaluate_callback" href="#torchsight.evaluators.evaluator.Evaluator.evaluate_callback">evaluate_callback</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.forward" href="#torchsight.evaluators.evaluator.Evaluator.forward">forward</a></code></li>
+<li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_base_params" href="#torchsight.evaluators.evaluator.Evaluator.get_base_params">get_base_params</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_dataloader" href="#torchsight.evaluators.evaluator.Evaluator.get_dataloader">get_dataloader</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_dataset" href="#torchsight.evaluators.evaluator.Evaluator.get_dataset">get_dataset</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_logger" href="#torchsight.evaluators.evaluator.Evaluator.get_logger">get_logger</a></code></li>
 <li><code><a title="torchsight.evaluators.evaluator.Evaluator.get_model" href="#torchsight.evaluators.evaluator.Evaluator.get_model">get_model</a></code></li>
-<li><code><a title="torchsight.evaluators.evaluator.Evaluator.params" href="#torchsight.evaluators.evaluator.Evaluator.params">params</a></code></li>
 </ul>
 </li>
 </ul>

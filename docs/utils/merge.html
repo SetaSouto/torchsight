@@ -41,6 +41,9 @@ def merge_dicts(dict1, dict2, verbose=False):
     Returns:
         dict: The deeply merged dict.
     &#34;&#34;&#34;
+    if dict2 is None:
+        return dict1
+
     for key in dict2:
         if key in dict1:
             if isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
@@ -55,6 +58,7 @@ def merge_dicts(dict1, dict2, verbose=False):
             if verbose:
                 print(&#39;Adding &#34;{}&#34; with value &#34;{}&#34;&#39;.format(key, dict2[key]))
             dict1[key] = dict2[key]
+
     return dict1</code></pre>
 </details>
 </section>
@@ -103,6 +107,9 @@ the two dict values.</p>
     Returns:
         dict: The deeply merged dict.
     &#34;&#34;&#34;
+    if dict2 is None:
+        return dict1
+
     for key in dict2:
         if key in dict1:
             if isinstance(dict1[key], dict) and isinstance(dict2[key], dict):
@@ -117,6 +124,7 @@ the two dict values.</p>
             if verbose:
                 print(&#39;Adding &#34;{}&#34; with value &#34;{}&#34;&#39;.format(key, dict2[key]))
             dict1[key] = dict2[key]
+
     return dict1</code></pre>
 </details>
 </dd>

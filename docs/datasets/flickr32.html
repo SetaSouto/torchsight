@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.datasets.flickr32 API documentation</title>
+<meta name="description" content="A dataset interface for the Flickr32 dataset …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.datasets.flickr32</code> module</h1>
+</header>
+<section id="section-intro">
+<p>A dataset interface for the Flickr32 dataset.</p>
+<p>Original web page for more information:
+<a href="http://www.multimedia-computing.de/flickrlogos/">http://www.multimedia-computing.de/flickrlogos/</a></p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;A dataset interface for the Flickr32 dataset.
+
+Original web page for more information:
+http://www.multimedia-computing.de/flickrlogos/
+&#34;&#34;&#34;
+import os
+
+import torch
+from PIL import Image
+
+from torchsight.utils import describe_boxes, visualize_boxes
+
+from .mixins import VisualizeMixin
+
+
+class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
+    &#34;&#34;&#34;Dataset to get the images and annotations of the Flickr32 dataset.
+
+    Download the dataset:
+    - Request the dataset zip file in the original web page:
+      http://www.multimedia-computing.de/flickrlogos/
+    - Unzip the dataset in any directory.
+    - Provide the path to the root* directory of the dataset in the initialization.
+
+    *: The root directory is the one that contains the &#39;classes&#39; and &#39;scripts&#39; directories
+    and the `.txt` files with the split of the data (training, validation and test sets). 
+    &#34;&#34;&#34;
+
+    def __init__(self, root, dataset=&#39;training&#39;, transform=None, brands=None, only_boxes=False):
+        &#34;&#34;&#34;Initialize the dataset.
+
+        Arguments:
+            root (str): The path to the root directory that contains the data.
+            dataset (str, optional): The dataset that you want to load.
+                Options available: &#39;training&#39;, &#39;validation&#39;, &#39;test&#39;, &#39;trainval&#39;.
+            transform (callable, optional): A callable to transform the images and
+                bounding boxes.
+            brands (list, optional): A list with the brands to load. If None is provided it will load
+                all the classes.
+            only_boxes (bool, optional): If True, it will load images that only contains bounding boxes.
+                This is an option because in the validation and test set there are images without logos,
+                but for training we probably don&#39;t want to train with that images.
+        &#34;&#34;&#34;
+        self.root = self.validate_root(root)
+        self.dataset = self.validate_dataset(dataset)
+        self.transform = transform
+        self.brands = brands
+        self.only_boxes = only_boxes
+        self.paths = self.get_paths()
+        self.label_to_class, self.class_to_label = self.generate_labels()
+
+        if self.brands is None:
+            self.brands = list(self.class_to_label.keys())
+
+    def __len__(self):
+        &#34;&#34;&#34;Returns the length of the dataset.
+
+        Returns:
+            int: The length of the dataset.
+        &#34;&#34;&#34;
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        &#34;&#34;&#34;Get the image and bounding boxes at the given index.
+
+        Arguments:
+            i (int): The index of the element that you want to get.
+
+        Returns:
+            any: The transformed image.
+            torch.Tensor: The bounding boxes with x1, y1, x2, y2, label.
+                Shape: `(num of boxes, 5)`
+            dict: A dict with more info about the item like the brand name and the
+                path to the image.
+        &#34;&#34;&#34;
+        brand, image, boxes = self.paths[i]
+
+        info = {&#39;brand&#39;: brand, &#39;image&#39;: image}
+
+        image = Image.open(image)
+        boxes = self.get_boxes(boxes, brand)
+
+        if self.transform is not None:
+            image, boxes = self.transform({&#39;image&#39;: image, &#39;boxes&#39;: boxes})
+
+        return image, boxes, info
+
+    ################################
+    ###        VALIDATION        ###
+    ################################
+
+    @staticmethod
+    def validate_root(path):
+        &#34;&#34;&#34;Validate that the given path exists and return it.
+
+        Arguments:
+            path (str): The path to validate that exists.
+
+        Returns:
+            str: The given path if its valid.
+
+        Raises:
+            ValueError: if the given path does not exists.
+        &#34;&#34;&#34;
+        if not os.path.exists(path):
+            raise ValueError(&#39;&#34;{}&#34; does not exists.&#39;.format(path))
+
+        return path
+
+    @staticmethod
+    def validate_dataset(name):
+        &#34;&#34;&#34;Check that the given name of the dataset is a correct one.
+
+        Arguments:
+            name (str): The name of the dataset to check.
+
+        Returns:
+            str: The name if its valid.
+
+        Raises:
+            ValueError: if the given name is not a valid one.
+        &#34;&#34;&#34;
+        if name not in [&#39;training&#39;, &#39;validation&#39;, &#39;test&#39;, &#39;trainval&#39;]:
+            raise ValueError(&#39;&#34;{}&#34; is not a valid dataset name.&#39;.format(name))
+
+        return name
+
+    ############################
+    ###       GETTERS        ###
+    ############################
+
+    def get_paths(self):
+        &#34;&#34;&#34;Load the absolute paths to the files that are in the dataset.
+
+        Returns:
+            list of tuples of str: Each tuple containing the class&#39; name, the
+                path to the image and the path to its bounding boxes.
+                Example:
+                (&#39;google&#39;,
+                 &#39;/datasets/flickr32/classes/jpg/google/2240784196.jpg&#39;,
+                 &#39;/datasets/flickr32/classes/masks/google/2240784196.jpg.bboxes.txt&#39;)
+                If the image has no brand it set the brand as &#39;no-logo&#39;.
+        &#34;&#34;&#34;
+        if self.dataset == &#39;training&#39;:
+            file = &#39;trainset.txt&#39;
+        if self.dataset == &#39;validation&#39;:
+            file = &#39;valset.txt&#39;
+        if self.dataset == &#39;test&#39;:
+            file = &#39;testset.txt&#39;
+        if self.dataset == &#39;trainval&#39;:
+            file = &#39;trainvalset.txt&#39;
+
+        file = os.path.join(self.root, file)
+
+        with open(file, &#39;r&#39;) as file:
+            tuples = []
+
+            for line in file.readlines():
+                brand, image = line.split(&#39;,&#39;)
+
+                if self.brands is not None and brand not in self.brands:
+                    continue
+
+                image = image.replace(&#39;\n&#39;, &#39;&#39;)
+                boxes = os.path.join(
+                    self.root, &#39;classes/masks/{}/{}.bboxes.txt&#39;.format(brand if brand != &#39;HP&#39; else &#39;hp&#39;, image))
+                image = os.path.join(self.root, &#39;classes/jpg/{}/{}&#39;.format(brand, image))
+
+                if not os.path.exists(boxes) and self.only_boxes:
+                    continue
+
+                tuples.append((brand, image, boxes))
+
+            return tuples
+
+    def generate_labels(self):
+        &#34;&#34;&#34;Generate the labels for the classes.
+
+        Returns:
+            dict: A dict with the label (int) -&gt; brand (str) map.
+            dict: A dict with the brand (str) -&gt; label (int) map.
+        &#34;&#34;&#34;
+        brands = list({brand for brand, *_ in self.paths if brand != &#39;no-logo&#39;})
+        brands.sort()
+
+        label_to_class = {i: brand for i, brand in enumerate(brands)}
+        class_to_label = {brand: i for i, brand in enumerate(brands)}
+
+        label_to_class[-1] = &#39;no-logo&#39;
+        class_to_label[&#39;no-logo&#39;] = -1
+
+        return label_to_class, class_to_label
+
+    def get_boxes(self, file, brand):
+        &#34;&#34;&#34;Get the boxes from the given file.
+
+        Arguments:
+            file (str): The path to the file that contains the annotations.
+            brand (str): The name of the brand for the boxes.
+
+        Returns:
+            torch.Tensor: The bounding boxes for the given image.
+                Shape: `(num of boxes, 5)`
+        &#34;&#34;&#34;
+        label = self.class_to_label[brand]
+
+        try:
+            with open(file, &#39;r&#39;) as file:
+                boxes = []
+
+                for line in file.readlines()[1:]:  # The first line contains &#34;x y width height&#34;
+                    x, y, w, h = (int(val) for val in line.split())
+                    x1, y1 = x - 1, y - 1
+                    x2, y2 = x1 + w, y1 + h
+                    boxes.append(torch.Tensor([x1, y1, x2, y2, label]))
+
+                return torch.stack(boxes)
+        except FileNotFoundError:
+            return torch.Tensor([])
+
+    ##########################
+    ###       STATS        ###
+    ##########################
+
+    def describe_boxes(self):
+        &#34;&#34;&#34;Describe the boxes of the dataset.
+
+        See torchsight.utils.describe_boxes docs for more information.
+        &#34;&#34;&#34;
+        if self.transform is not None:
+            boxes = []
+            for i, (_, bxs, *_) in enumerate(self):
+                print(&#39;Loading boxes ... ({}/{})&#39;.format(i + 1, len(self)))
+                boxes.append(bxs)
+        else:
+            boxes = [self.get_boxes(boxes, brand) for brand, _, boxes in self.paths]
+
+        return describe_boxes(torch.cat(boxes, dim=0))</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset"><code class="flex name class">
+<span>class <span class="ident">Flickr32Dataset</span></span>
+<span>(</span><span><small>ancestors:</small> torch.utils.data.dataset.Dataset, <a title="torchsight.datasets.mixins.VisualizeMixin" href="mixins.html#torchsight.datasets.mixins.VisualizeMixin">VisualizeMixin</a>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Dataset to get the images and annotations of the Flickr32 dataset.</p>
+<p>Download the dataset:
+- Request the dataset zip file in the original web page:
+<a href="http://www.multimedia-computing.de/flickrlogos/">http://www.multimedia-computing.de/flickrlogos/</a>
+- Unzip the dataset in any directory.
+- Provide the path to the root* directory of the dataset in the initialization.</p>
+<dl>
+<dt><strong><code>*</code></strong> :&ensp;<code>The</code> <code>root</code> <code>directory</code> <code>is</code> <code>the</code> <code>one</code> <code>that</code> <code>contains</code> <code>the</code> <code>'classes'</code> <code>and</code> <code>'scripts'</code> <code>directories</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>and the <code>.txt</code> files with the split of the data (training, validation and test sets).</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
+    &#34;&#34;&#34;Dataset to get the images and annotations of the Flickr32 dataset.
+
+    Download the dataset:
+    - Request the dataset zip file in the original web page:
+      http://www.multimedia-computing.de/flickrlogos/
+    - Unzip the dataset in any directory.
+    - Provide the path to the root* directory of the dataset in the initialization.
+
+    *: The root directory is the one that contains the &#39;classes&#39; and &#39;scripts&#39; directories
+    and the `.txt` files with the split of the data (training, validation and test sets). 
+    &#34;&#34;&#34;
+
+    def __init__(self, root, dataset=&#39;training&#39;, transform=None, brands=None, only_boxes=False):
+        &#34;&#34;&#34;Initialize the dataset.
+
+        Arguments:
+            root (str): The path to the root directory that contains the data.
+            dataset (str, optional): The dataset that you want to load.
+                Options available: &#39;training&#39;, &#39;validation&#39;, &#39;test&#39;, &#39;trainval&#39;.
+            transform (callable, optional): A callable to transform the images and
+                bounding boxes.
+            brands (list, optional): A list with the brands to load. If None is provided it will load
+                all the classes.
+            only_boxes (bool, optional): If True, it will load images that only contains bounding boxes.
+                This is an option because in the validation and test set there are images without logos,
+                but for training we probably don&#39;t want to train with that images.
+        &#34;&#34;&#34;
+        self.root = self.validate_root(root)
+        self.dataset = self.validate_dataset(dataset)
+        self.transform = transform
+        self.brands = brands
+        self.only_boxes = only_boxes
+        self.paths = self.get_paths()
+        self.label_to_class, self.class_to_label = self.generate_labels()
+
+        if self.brands is None:
+            self.brands = list(self.class_to_label.keys())
+
+    def __len__(self):
+        &#34;&#34;&#34;Returns the length of the dataset.
+
+        Returns:
+            int: The length of the dataset.
+        &#34;&#34;&#34;
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        &#34;&#34;&#34;Get the image and bounding boxes at the given index.
+
+        Arguments:
+            i (int): The index of the element that you want to get.
+
+        Returns:
+            any: The transformed image.
+            torch.Tensor: The bounding boxes with x1, y1, x2, y2, label.
+                Shape: `(num of boxes, 5)`
+            dict: A dict with more info about the item like the brand name and the
+                path to the image.
+        &#34;&#34;&#34;
+        brand, image, boxes = self.paths[i]
+
+        info = {&#39;brand&#39;: brand, &#39;image&#39;: image}
+
+        image = Image.open(image)
+        boxes = self.get_boxes(boxes, brand)
+
+        if self.transform is not None:
+            image, boxes = self.transform({&#39;image&#39;: image, &#39;boxes&#39;: boxes})
+
+        return image, boxes, info
+
+    ################################
+    ###        VALIDATION        ###
+    ################################
+
+    @staticmethod
+    def validate_root(path):
+        &#34;&#34;&#34;Validate that the given path exists and return it.
+
+        Arguments:
+            path (str): The path to validate that exists.
+
+        Returns:
+            str: The given path if its valid.
+
+        Raises:
+            ValueError: if the given path does not exists.
+        &#34;&#34;&#34;
+        if not os.path.exists(path):
+            raise ValueError(&#39;&#34;{}&#34; does not exists.&#39;.format(path))
+
+        return path
+
+    @staticmethod
+    def validate_dataset(name):
+        &#34;&#34;&#34;Check that the given name of the dataset is a correct one.
+
+        Arguments:
+            name (str): The name of the dataset to check.
+
+        Returns:
+            str: The name if its valid.
+
+        Raises:
+            ValueError: if the given name is not a valid one.
+        &#34;&#34;&#34;
+        if name not in [&#39;training&#39;, &#39;validation&#39;, &#39;test&#39;, &#39;trainval&#39;]:
+            raise ValueError(&#39;&#34;{}&#34; is not a valid dataset name.&#39;.format(name))
+
+        return name
+
+    ############################
+    ###       GETTERS        ###
+    ############################
+
+    def get_paths(self):
+        &#34;&#34;&#34;Load the absolute paths to the files that are in the dataset.
+
+        Returns:
+            list of tuples of str: Each tuple containing the class&#39; name, the
+                path to the image and the path to its bounding boxes.
+                Example:
+                (&#39;google&#39;,
+                 &#39;/datasets/flickr32/classes/jpg/google/2240784196.jpg&#39;,
+                 &#39;/datasets/flickr32/classes/masks/google/2240784196.jpg.bboxes.txt&#39;)
+                If the image has no brand it set the brand as &#39;no-logo&#39;.
+        &#34;&#34;&#34;
+        if self.dataset == &#39;training&#39;:
+            file = &#39;trainset.txt&#39;
+        if self.dataset == &#39;validation&#39;:
+            file = &#39;valset.txt&#39;
+        if self.dataset == &#39;test&#39;:
+            file = &#39;testset.txt&#39;
+        if self.dataset == &#39;trainval&#39;:
+            file = &#39;trainvalset.txt&#39;
+
+        file = os.path.join(self.root, file)
+
+        with open(file, &#39;r&#39;) as file:
+            tuples = []
+
+            for line in file.readlines():
+                brand, image = line.split(&#39;,&#39;)
+
+                if self.brands is not None and brand not in self.brands:
+                    continue
+
+                image = image.replace(&#39;\n&#39;, &#39;&#39;)
+                boxes = os.path.join(
+                    self.root, &#39;classes/masks/{}/{}.bboxes.txt&#39;.format(brand if brand != &#39;HP&#39; else &#39;hp&#39;, image))
+                image = os.path.join(self.root, &#39;classes/jpg/{}/{}&#39;.format(brand, image))
+
+                if not os.path.exists(boxes) and self.only_boxes:
+                    continue
+
+                tuples.append((brand, image, boxes))
+
+            return tuples
+
+    def generate_labels(self):
+        &#34;&#34;&#34;Generate the labels for the classes.
+
+        Returns:
+            dict: A dict with the label (int) -&gt; brand (str) map.
+            dict: A dict with the brand (str) -&gt; label (int) map.
+        &#34;&#34;&#34;
+        brands = list({brand for brand, *_ in self.paths if brand != &#39;no-logo&#39;})
+        brands.sort()
+
+        label_to_class = {i: brand for i, brand in enumerate(brands)}
+        class_to_label = {brand: i for i, brand in enumerate(brands)}
+
+        label_to_class[-1] = &#39;no-logo&#39;
+        class_to_label[&#39;no-logo&#39;] = -1
+
+        return label_to_class, class_to_label
+
+    def get_boxes(self, file, brand):
+        &#34;&#34;&#34;Get the boxes from the given file.
+
+        Arguments:
+            file (str): The path to the file that contains the annotations.
+            brand (str): The name of the brand for the boxes.
+
+        Returns:
+            torch.Tensor: The bounding boxes for the given image.
+                Shape: `(num of boxes, 5)`
+        &#34;&#34;&#34;
+        label = self.class_to_label[brand]
+
+        try:
+            with open(file, &#39;r&#39;) as file:
+                boxes = []
+
+                for line in file.readlines()[1:]:  # The first line contains &#34;x y width height&#34;
+                    x, y, w, h = (int(val) for val in line.split())
+                    x1, y1 = x - 1, y - 1
+                    x2, y2 = x1 + w, y1 + h
+                    boxes.append(torch.Tensor([x1, y1, x2, y2, label]))
+
+                return torch.stack(boxes)
+        except FileNotFoundError:
+            return torch.Tensor([])
+
+    ##########################
+    ###       STATS        ###
+    ##########################
+
+    def describe_boxes(self):
+        &#34;&#34;&#34;Describe the boxes of the dataset.
+
+        See torchsight.utils.describe_boxes docs for more information.
+        &#34;&#34;&#34;
+        if self.transform is not None:
+            boxes = []
+            for i, (_, bxs, *_) in enumerate(self):
+                print(&#39;Loading boxes ... ({}/{})&#39;.format(i + 1, len(self)))
+                boxes.append(bxs)
+        else:
+            boxes = [self.get_boxes(boxes, brand) for brand, _, boxes in self.paths]
+
+        return describe_boxes(torch.cat(boxes, dim=0))</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset.validate_dataset"><code class="name flex">
+<span>def <span class="ident">validate_dataset</span></span>(<span>name)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Check that the given name of the dataset is a correct one.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>The name of the dataset to check.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>str</code></strong></dt>
+<dd>The name if its valid.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><strong><code>ValueError</code></strong></dt>
+<dd>if the given name is not a valid one.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def validate_dataset(name):
+    &#34;&#34;&#34;Check that the given name of the dataset is a correct one.
+
+    Arguments:
+        name (str): The name of the dataset to check.
+
+    Returns:
+        str: The name if its valid.
+
+    Raises:
+        ValueError: if the given name is not a valid one.
+    &#34;&#34;&#34;
+    if name not in [&#39;training&#39;, &#39;validation&#39;, &#39;test&#39;, &#39;trainval&#39;]:
+        raise ValueError(&#39;&#34;{}&#34; is not a valid dataset name.&#39;.format(name))
+
+    return name</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset.validate_root"><code class="name flex">
+<span>def <span class="ident">validate_root</span></span>(<span>path)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Validate that the given path exists and return it.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>path</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to validate that exists.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>str</code></strong></dt>
+<dd>The given path if its valid.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><strong><code>ValueError</code></strong></dt>
+<dd>if the given path does not exists.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def validate_root(path):
+    &#34;&#34;&#34;Validate that the given path exists and return it.
+
+    Arguments:
+        path (str): The path to validate that exists.
+
+    Returns:
+        str: The given path if its valid.
+
+    Raises:
+        ValueError: if the given path does not exists.
+    &#34;&#34;&#34;
+    if not os.path.exists(path):
+        raise ValueError(&#39;&#34;{}&#34; does not exists.&#39;.format(path))
+
+    return path</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, root, dataset=&#39;training&#39;, transform=None, brands=None, only_boxes=False)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the dataset.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>root</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to the root directory that contains the data.</dd>
+<dt><strong><code>dataset</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The dataset that you want to load.
+Options available: 'training', 'validation', 'test', 'trainval'.</dd>
+<dt><strong><code>transform</code></strong> :&ensp;<code>callable</code>, optional</dt>
+<dd>A callable to transform the images and
+bounding boxes.</dd>
+<dt><strong><code>brands</code></strong> :&ensp;<code>list</code>, optional</dt>
+<dd>A list with the brands to load. If None is provided it will load
+all the classes.</dd>
+<dt><strong><code>only_boxes</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True, it will load images that only contains bounding boxes.
+This is an option because in the validation and test set there are images without logos,
+but for training we probably don't want to train with that images.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, root, dataset=&#39;training&#39;, transform=None, brands=None, only_boxes=False):
+    &#34;&#34;&#34;Initialize the dataset.
+
+    Arguments:
+        root (str): The path to the root directory that contains the data.
+        dataset (str, optional): The dataset that you want to load.
+            Options available: &#39;training&#39;, &#39;validation&#39;, &#39;test&#39;, &#39;trainval&#39;.
+        transform (callable, optional): A callable to transform the images and
+            bounding boxes.
+        brands (list, optional): A list with the brands to load. If None is provided it will load
+            all the classes.
+        only_boxes (bool, optional): If True, it will load images that only contains bounding boxes.
+            This is an option because in the validation and test set there are images without logos,
+            but for training we probably don&#39;t want to train with that images.
+    &#34;&#34;&#34;
+    self.root = self.validate_root(root)
+    self.dataset = self.validate_dataset(dataset)
+    self.transform = transform
+    self.brands = brands
+    self.only_boxes = only_boxes
+    self.paths = self.get_paths()
+    self.label_to_class, self.class_to_label = self.generate_labels()
+
+    if self.brands is None:
+        self.brands = list(self.class_to_label.keys())</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset.describe_boxes"><code class="name flex">
+<span>def <span class="ident">describe_boxes</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Describe the boxes of the dataset.</p>
+<p>See torchsight.utils.describe_boxes docs for more information.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def describe_boxes(self):
+    &#34;&#34;&#34;Describe the boxes of the dataset.
+
+    See torchsight.utils.describe_boxes docs for more information.
+    &#34;&#34;&#34;
+    if self.transform is not None:
+        boxes = []
+        for i, (_, bxs, *_) in enumerate(self):
+            print(&#39;Loading boxes ... ({}/{})&#39;.format(i + 1, len(self)))
+            boxes.append(bxs)
+    else:
+        boxes = [self.get_boxes(boxes, brand) for brand, _, boxes in self.paths]
+
+    return describe_boxes(torch.cat(boxes, dim=0))</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset.generate_labels"><code class="name flex">
+<span>def <span class="ident">generate_labels</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate the labels for the classes.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>A dict with the label (int) -&gt; brand (str) map.</dd>
+<dt><strong><code>dict</code></strong></dt>
+<dd>A dict with the brand (str) -&gt; label (int) map.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def generate_labels(self):
+    &#34;&#34;&#34;Generate the labels for the classes.
+
+    Returns:
+        dict: A dict with the label (int) -&gt; brand (str) map.
+        dict: A dict with the brand (str) -&gt; label (int) map.
+    &#34;&#34;&#34;
+    brands = list({brand for brand, *_ in self.paths if brand != &#39;no-logo&#39;})
+    brands.sort()
+
+    label_to_class = {i: brand for i, brand in enumerate(brands)}
+    class_to_label = {brand: i for i, brand in enumerate(brands)}
+
+    label_to_class[-1] = &#39;no-logo&#39;
+    class_to_label[&#39;no-logo&#39;] = -1
+
+    return label_to_class, class_to_label</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset.get_boxes"><code class="name flex">
+<span>def <span class="ident">get_boxes</span></span>(<span>self, file, brand)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the boxes from the given file.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>file</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to the file that contains the annotations.</dd>
+<dt><strong><code>brand</code></strong> :&ensp;<code>str</code></dt>
+<dd>The name of the brand for the boxes.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: The bounding boxes for the given image.
+Shape: <code>(num of boxes, 5)</code></p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_boxes(self, file, brand):
+    &#34;&#34;&#34;Get the boxes from the given file.
+
+    Arguments:
+        file (str): The path to the file that contains the annotations.
+        brand (str): The name of the brand for the boxes.
+
+    Returns:
+        torch.Tensor: The bounding boxes for the given image.
+            Shape: `(num of boxes, 5)`
+    &#34;&#34;&#34;
+    label = self.class_to_label[brand]
+
+    try:
+        with open(file, &#39;r&#39;) as file:
+            boxes = []
+
+            for line in file.readlines()[1:]:  # The first line contains &#34;x y width height&#34;
+                x, y, w, h = (int(val) for val in line.split())
+                x1, y1 = x - 1, y - 1
+                x2, y2 = x1 + w, y1 + h
+                boxes.append(torch.Tensor([x1, y1, x2, y2, label]))
+
+            return torch.stack(boxes)
+    except FileNotFoundError:
+        return torch.Tensor([])</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.flickr32.Flickr32Dataset.get_paths"><code class="name flex">
+<span>def <span class="ident">get_paths</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Load the absolute paths to the files that are in the dataset.</p>
+<h2 id="returns">Returns</h2>
+<p>list of tuples of str: Each tuple containing the class' name, the
+path to the image and the path to its bounding boxes.
+Example:
+('google',
+'/datasets/flickr32/classes/jpg/google/2240784196.jpg',
+'/datasets/flickr32/classes/masks/google/2240784196.jpg.bboxes.txt')
+If the image has no brand it set the brand as 'no-logo'.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_paths(self):
+    &#34;&#34;&#34;Load the absolute paths to the files that are in the dataset.
+
+    Returns:
+        list of tuples of str: Each tuple containing the class&#39; name, the
+            path to the image and the path to its bounding boxes.
+            Example:
+            (&#39;google&#39;,
+             &#39;/datasets/flickr32/classes/jpg/google/2240784196.jpg&#39;,
+             &#39;/datasets/flickr32/classes/masks/google/2240784196.jpg.bboxes.txt&#39;)
+            If the image has no brand it set the brand as &#39;no-logo&#39;.
+    &#34;&#34;&#34;
+    if self.dataset == &#39;training&#39;:
+        file = &#39;trainset.txt&#39;
+    if self.dataset == &#39;validation&#39;:
+        file = &#39;valset.txt&#39;
+    if self.dataset == &#39;test&#39;:
+        file = &#39;testset.txt&#39;
+    if self.dataset == &#39;trainval&#39;:
+        file = &#39;trainvalset.txt&#39;
+
+    file = os.path.join(self.root, file)
+
+    with open(file, &#39;r&#39;) as file:
+        tuples = []
+
+        for line in file.readlines():
+            brand, image = line.split(&#39;,&#39;)
+
+            if self.brands is not None and brand not in self.brands:
+                continue
+
+            image = image.replace(&#39;\n&#39;, &#39;&#39;)
+            boxes = os.path.join(
+                self.root, &#39;classes/masks/{}/{}.bboxes.txt&#39;.format(brand if brand != &#39;HP&#39; else &#39;hp&#39;, image))
+            image = os.path.join(self.root, &#39;classes/jpg/{}/{}&#39;.format(brand, image))
+
+            if not os.path.exists(boxes) and self.only_boxes:
+                continue
+
+            tuples.append((brand, image, boxes))
+
+        return tuples</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.datasets.mixins.VisualizeMixin" href="mixins.html#torchsight.datasets.mixins.VisualizeMixin">VisualizeMixin</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.datasets.mixins.VisualizeMixin.visualize" href="mixins.html#torchsight.datasets.mixins.VisualizeMixin.visualize">visualize</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.datasets" href="index.html">torchsight.datasets</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.datasets.flickr32.Flickr32Dataset" href="#torchsight.datasets.flickr32.Flickr32Dataset">Flickr32Dataset</a></code></h4>
+<ul class="two-column">
+<li><code><a title="torchsight.datasets.flickr32.Flickr32Dataset.__init__" href="#torchsight.datasets.flickr32.Flickr32Dataset.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.datasets.flickr32.Flickr32Dataset.describe_boxes" href="#torchsight.datasets.flickr32.Flickr32Dataset.describe_boxes">describe_boxes</a></code></li>
+<li><code><a title="torchsight.datasets.flickr32.Flickr32Dataset.generate_labels" href="#torchsight.datasets.flickr32.Flickr32Dataset.generate_labels">generate_labels</a></code></li>
+<li><code><a title="torchsight.datasets.flickr32.Flickr32Dataset.get_boxes" href="#torchsight.datasets.flickr32.Flickr32Dataset.get_boxes">get_boxes</a></code></li>
+<li><code><a title="torchsight.datasets.flickr32.Flickr32Dataset.get_paths" href="#torchsight.datasets.flickr32.Flickr32Dataset.get_paths">get_paths</a></code></li>
+<li><code><a title="torchsight.datasets.flickr32.Flickr32Dataset.validate_dataset" href="#torchsight.datasets.flickr32.Flickr32Dataset.validate_dataset">validate_dataset</a></code></li>
+<li><code><a title="torchsight.datasets.flickr32.Flickr32Dataset.validate_root" href="#torchsight.datasets.flickr32.Flickr32Dataset.validate_root">validate_root</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

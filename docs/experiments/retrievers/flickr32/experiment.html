@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.experiments.retrievers.flickr32.experiment API documentation</title>
+<meta name="description" content="A module with an experiment for the retrievers using the Flickr32 dataset." />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.experiments.retrievers.flickr32.experiment</code> module</h1>
+</header>
+<section id="section-intro">
+<p>A module with an experiment for the retrievers using the Flickr32 dataset.</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;A module with an experiment for the retrievers using the Flickr32 dataset.&#34;&#34;&#34;
+import os
+import random
+
+import torch
+from PIL import Image
+
+from torchsight.datasets import Flickr32Dataset
+from torchsight.metrics.retrieval import AveragePrecision
+from torchsight.retrievers.dldenet import DLDENetRetriever
+from torchsight.utils import JsonObject, PrintMixin
+
+
+class Flickr32RetrieverExperiment(PrintMixin):
+    &#34;&#34;&#34;An experiment to measure the precision, recall and F1 metrics using different retrivers over
+    the Flickr32 dataset.
+
+    The experiment consist that given some logo queries (images + bounding boxes) we need to retrieve
+    all the instances of that logo. A perfect experiment will be to retrieve all the instances of all
+    of the queries in the first place, without false positives.
+
+    The experiment is not very strict, it takes a true positive if the image contains an instance, so
+    if the retriever produced a very poor bounding box for the instance it does not matter. It focus
+    on the finding of the instance.
+    &#34;&#34;&#34;
+
+    def __init__(self, params=None, device=None):
+        &#34;&#34;&#34;Initialize the experiment.
+
+        Arguments:
+            params (dict, optional): a dict to modify the base parameters.
+            device (str, optional): where to run the experiments. 
+        &#34;&#34;&#34;
+        self.params = self.get_params().merge(params)
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.print(&#39;Loading dataset ...&#39;)
+        self.dataset = self.get_dataset()
+        self.print(&#39;Loading retriever ...&#39;)
+        self.retriver = self.get_retriver()
+        self.print(&#39;Loading metric ...&#39;)
+        self.average_precision = AveragePrecision()
+
+    ###########################
+    ###       GETTERS       ###
+    ###########################
+
+    @staticmethod
+    def get_params():
+        &#34;&#34;&#34;Get the base parameters for the experiment.
+
+        Returns:
+            JsonObject: with the parameters.
+        &#34;&#34;&#34;
+        return JsonObject({
+            &#39;dataset&#39;: {
+                &#39;root&#39;: None,
+                &#39;dataset&#39;: &#39;test&#39;,
+            },
+            &#39;k&#39;: 500,  # The amount of results to retrieve
+            &#39;queries_file&#39;: &#39;./queries.csv&#39;,
+            &#39;results_file&#39;: &#39;./results.csv&#39;,
+            &#39;retriever&#39;: {
+                &#39;use&#39;: &#39;dldenet&#39;,
+                &#39;dldenet&#39;: {
+                    &#39;checkpoint&#39;: None,
+                    &#39;paths&#39;: None,
+                    &#39;extensions&#39;: None,
+                    &#39;batch_size&#39;: 8,
+                    &#39;num_workers&#39;: 8,
+                    &#39;verbose&#39;: True,
+                    &#39;params&#39;: {&#39;transform&#39;: {}}
+                }
+            }
+        })
+
+    def get_dataset(self):
+        &#34;&#34;&#34;Get the Flickr32 dataset.
+
+        Returns:
+            Flickr32Dataset: initialized and with its attributes.
+        &#34;&#34;&#34;
+        return Flickr32Dataset(**self.params.dataset)
+
+    def get_retriver(self):
+        &#34;&#34;&#34;Initialize and return the retriver to use in the experiment.
+
+        Return:
+            InstanceRetriver: the retriever to use.
+        &#34;&#34;&#34;
+        retriever = self.params.retriever.use
+
+        if retriever == &#39;dldenet&#39;:
+            params = self.params.retriever.dldenet
+            params.paths = [t[1] for t in self.dataset.paths]  # Paths are tuples like (brand, image path, boxes path)
+            params.device = self.device
+
+            if params.checkpoint is None:
+                raise ValueError(&#39;Please provide a checkpoint for the DLDENet retriever.&#39;)
+
+            params.checkpoint = torch.load(params.checkpoint, map_location=self.device)
+            params.params.transform = params.checkpoint[&#39;hyperparameters&#39;][&#39;transform&#39;]
+
+            return DLDENetRetriever(**params)
+
+        raise NotImplementedError(&#39;There is no implementation for the &#34;{}&#34; retriever.&#39;.format(retriever))
+
+    def generate_queries(self):
+        &#34;&#34;&#34;Generate a file with a random path to an image for each brand.
+
+        It will store the file in the self.params.queries_file path.
+        &#34;&#34;&#34;
+        results = []
+        for brand in self.dataset.brands:
+            if brand == &#39;no-logo&#39;:
+                continue
+            # Each path tuple contains (brand, image path, boxes path)
+            results.append(random.choice([path for path in self.dataset.paths if path[0] == brand]))
+
+        with open(self.params.queries_file, &#39;w&#39;) as file:
+            file.write(&#39;\n&#39;.join(&#39;,&#39;.join(line) for line in results))
+
+    def load_queries(self):
+        &#34;&#34;&#34;Load the images and their bounding boxes to use as queries.
+
+        It knows which images to use using the self.params.queries_file, if no one exists it generates a new one.
+
+        Returns:
+            list of str: with the brand of each image.
+            list of PIL Image: with the images.
+            list of torch.Tensor: with the first bounding box only to query. Shape `(1, 4)` with the
+                x1, y1 for the top-left corner and the x2, y2 for the bottom-right corner.
+        &#34;&#34;&#34;
+        if not os.path.exists(self.params.queries_file):
+            self.generate_queries()
+
+        brands, images, boxes = [], [], []
+        with open(self.params.queries_file, &#39;r&#39;) as file:
+            for brand, image, annot in [line.split(&#39;,&#39;) for line in file.read().split(&#39;\n&#39;)]:
+                brands.append(brand)
+                images.append(Image.open(image))
+                with open(annot, &#39;r&#39;) as file:
+                    line = file.readlines()[1]  # The first line contains &#34;x y width height&#34;
+                    x, y, w, h = (int(val) for val in line.split())
+                    x1, y1 = x - 1, y - 1
+                    x2, y2 = x1 + w, y1 + h
+                    boxes.append(torch.Tensor([[x1, y1, x2, y2]]))
+
+        return brands, images, boxes
+
+    ############################
+    ###       METHODS        ###
+    ############################
+
+    def run(self):
+        &#34;&#34;&#34;Run the experiment and compute the mean average precision over the entire test dataset.&#34;&#34;&#34;
+        self.print(&#39;Loading queries ...&#39;)
+        brands, images, query_boxes = self.load_queries()
+
+        self.print(&#39;Retrieving instances ...&#39;)
+        _, _, paths, _ = self.retriver.query(images=images, boxes=query_boxes, k=self.params.k)
+        paths = self.unique_paths(paths)
+
+        self.print(&#39;Getting average precision for each query ...&#39;)
+        average_precisions = self.average_precision(*self.results_tensors(brands, paths))
+
+        self.print(&#39;Storing results ...&#39;)
+        self.store_results(brands, paths, average_precisions)
+
+        self.print(&#39;Mean Average Precision: {}&#39;.format(float(average_precisions.mean())))
+
+    def unique_paths(self, paths):
+        &#34;&#34;&#34;Make the resulting paths unique.
+
+        As each image could have more than one embedding similar to the query there could be images
+        more than one time in the results, but we are want to count each image only one time.
+        For this, we are going to remove the duplicates paths for each query.
+
+        Arguments:
+            paths (list of list of str): with the paths of the retrieved images.
+
+        Returns:
+            list of list of str: with the unique paths for each query.
+        &#34;&#34;&#34;
+        for i in range(len(paths)):
+            seen = set()
+            paths[i] = [path for path in paths[i] if not (path in seen or seen.add(path))]
+
+        return paths
+
+    def results_tensors(self, brands, paths):
+        &#34;&#34;&#34;Generate the results tensor of the retrieval task for the metric and amount of relevant results.
+
+        Arguments:
+            brands (list of str): with the brand corresponding to each query.
+            paths (list of list of str): with the resulting paths of the retrieved images for each query.
+
+        Returns:
+            torch.Tensor: with the 1s indicating the true positives. Shape `(q, k)`.
+                Where `q` is the number of queries and `k` the number of instances retrieved.
+            torch.Tensor: with the amount of relevant images for each query (true positives).
+        &#34;&#34;&#34;
+        results = torch.zeros(len(brands), self.params.k)
+        for i, brand in enumerate(brands):
+            for j, path in enumerate(paths[i]):
+                if brand in path:
+                    results[i, j] = 1
+
+        relevant = {brand: 0 for brand in brands}
+        for brand, *_ in self.dataset.paths:
+            if brand not in relevant:
+                continue
+            relevant[brand] += 1
+        relevant = torch.Tensor(list(relevant.values()))
+
+        return results, relevant
+
+    def store_results(self, brands, paths, average_precisions):
+        &#34;&#34;&#34;Store the results in a CSV file with columns: Brand, Average Precision, result paths.
+
+        Arguments:
+            brands (list of str): with the brand of each query.
+            paths (list of list of str): with the paths of the images retrieved.
+            average_precisions (torch.Tensor): with the average precision for each query.
+        &#34;&#34;&#34;
+        with open(self.params.results_file, &#39;w&#39;) as file:
+            for i, brand in brands:
+                line = &#39;{},{},&#39;.format(brand, float(average_precisions[i]))
+                line += &#39;,&#39;.join(paths[i])
+                file.write(line + &#39;\n&#39;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment"><code class="flex name class">
+<span>class <span class="ident">Flickr32RetrieverExperiment</span></span>
+<span>(</span><span><small>ancestors:</small> <a title="torchsight.utils.print.PrintMixin" href="../../../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>An experiment to measure the precision, recall and F1 metrics using different retrivers over
+the Flickr32 dataset.</p>
+<p>The experiment consist that given some logo queries (images + bounding boxes) we need to retrieve
+all the instances of that logo. A perfect experiment will be to retrieve all the instances of all
+of the queries in the first place, without false positives.</p>
+<p>The experiment is not very strict, it takes a true positive if the image contains an instance, so
+if the retriever produced a very poor bounding box for the instance it does not matter. It focus
+on the finding of the instance.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Flickr32RetrieverExperiment(PrintMixin):
+    &#34;&#34;&#34;An experiment to measure the precision, recall and F1 metrics using different retrivers over
+    the Flickr32 dataset.
+
+    The experiment consist that given some logo queries (images + bounding boxes) we need to retrieve
+    all the instances of that logo. A perfect experiment will be to retrieve all the instances of all
+    of the queries in the first place, without false positives.
+
+    The experiment is not very strict, it takes a true positive if the image contains an instance, so
+    if the retriever produced a very poor bounding box for the instance it does not matter. It focus
+    on the finding of the instance.
+    &#34;&#34;&#34;
+
+    def __init__(self, params=None, device=None):
+        &#34;&#34;&#34;Initialize the experiment.
+
+        Arguments:
+            params (dict, optional): a dict to modify the base parameters.
+            device (str, optional): where to run the experiments. 
+        &#34;&#34;&#34;
+        self.params = self.get_params().merge(params)
+        self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+        self.print(&#39;Loading dataset ...&#39;)
+        self.dataset = self.get_dataset()
+        self.print(&#39;Loading retriever ...&#39;)
+        self.retriver = self.get_retriver()
+        self.print(&#39;Loading metric ...&#39;)
+        self.average_precision = AveragePrecision()
+
+    ###########################
+    ###       GETTERS       ###
+    ###########################
+
+    @staticmethod
+    def get_params():
+        &#34;&#34;&#34;Get the base parameters for the experiment.
+
+        Returns:
+            JsonObject: with the parameters.
+        &#34;&#34;&#34;
+        return JsonObject({
+            &#39;dataset&#39;: {
+                &#39;root&#39;: None,
+                &#39;dataset&#39;: &#39;test&#39;,
+            },
+            &#39;k&#39;: 500,  # The amount of results to retrieve
+            &#39;queries_file&#39;: &#39;./queries.csv&#39;,
+            &#39;results_file&#39;: &#39;./results.csv&#39;,
+            &#39;retriever&#39;: {
+                &#39;use&#39;: &#39;dldenet&#39;,
+                &#39;dldenet&#39;: {
+                    &#39;checkpoint&#39;: None,
+                    &#39;paths&#39;: None,
+                    &#39;extensions&#39;: None,
+                    &#39;batch_size&#39;: 8,
+                    &#39;num_workers&#39;: 8,
+                    &#39;verbose&#39;: True,
+                    &#39;params&#39;: {&#39;transform&#39;: {}}
+                }
+            }
+        })
+
+    def get_dataset(self):
+        &#34;&#34;&#34;Get the Flickr32 dataset.
+
+        Returns:
+            Flickr32Dataset: initialized and with its attributes.
+        &#34;&#34;&#34;
+        return Flickr32Dataset(**self.params.dataset)
+
+    def get_retriver(self):
+        &#34;&#34;&#34;Initialize and return the retriver to use in the experiment.
+
+        Return:
+            InstanceRetriver: the retriever to use.
+        &#34;&#34;&#34;
+        retriever = self.params.retriever.use
+
+        if retriever == &#39;dldenet&#39;:
+            params = self.params.retriever.dldenet
+            params.paths = [t[1] for t in self.dataset.paths]  # Paths are tuples like (brand, image path, boxes path)
+            params.device = self.device
+
+            if params.checkpoint is None:
+                raise ValueError(&#39;Please provide a checkpoint for the DLDENet retriever.&#39;)
+
+            params.checkpoint = torch.load(params.checkpoint, map_location=self.device)
+            params.params.transform = params.checkpoint[&#39;hyperparameters&#39;][&#39;transform&#39;]
+
+            return DLDENetRetriever(**params)
+
+        raise NotImplementedError(&#39;There is no implementation for the &#34;{}&#34; retriever.&#39;.format(retriever))
+
+    def generate_queries(self):
+        &#34;&#34;&#34;Generate a file with a random path to an image for each brand.
+
+        It will store the file in the self.params.queries_file path.
+        &#34;&#34;&#34;
+        results = []
+        for brand in self.dataset.brands:
+            if brand == &#39;no-logo&#39;:
+                continue
+            # Each path tuple contains (brand, image path, boxes path)
+            results.append(random.choice([path for path in self.dataset.paths if path[0] == brand]))
+
+        with open(self.params.queries_file, &#39;w&#39;) as file:
+            file.write(&#39;\n&#39;.join(&#39;,&#39;.join(line) for line in results))
+
+    def load_queries(self):
+        &#34;&#34;&#34;Load the images and their bounding boxes to use as queries.
+
+        It knows which images to use using the self.params.queries_file, if no one exists it generates a new one.
+
+        Returns:
+            list of str: with the brand of each image.
+            list of PIL Image: with the images.
+            list of torch.Tensor: with the first bounding box only to query. Shape `(1, 4)` with the
+                x1, y1 for the top-left corner and the x2, y2 for the bottom-right corner.
+        &#34;&#34;&#34;
+        if not os.path.exists(self.params.queries_file):
+            self.generate_queries()
+
+        brands, images, boxes = [], [], []
+        with open(self.params.queries_file, &#39;r&#39;) as file:
+            for brand, image, annot in [line.split(&#39;,&#39;) for line in file.read().split(&#39;\n&#39;)]:
+                brands.append(brand)
+                images.append(Image.open(image))
+                with open(annot, &#39;r&#39;) as file:
+                    line = file.readlines()[1]  # The first line contains &#34;x y width height&#34;
+                    x, y, w, h = (int(val) for val in line.split())
+                    x1, y1 = x - 1, y - 1
+                    x2, y2 = x1 + w, y1 + h
+                    boxes.append(torch.Tensor([[x1, y1, x2, y2]]))
+
+        return brands, images, boxes
+
+    ############################
+    ###       METHODS        ###
+    ############################
+
+    def run(self):
+        &#34;&#34;&#34;Run the experiment and compute the mean average precision over the entire test dataset.&#34;&#34;&#34;
+        self.print(&#39;Loading queries ...&#39;)
+        brands, images, query_boxes = self.load_queries()
+
+        self.print(&#39;Retrieving instances ...&#39;)
+        _, _, paths, _ = self.retriver.query(images=images, boxes=query_boxes, k=self.params.k)
+        paths = self.unique_paths(paths)
+
+        self.print(&#39;Getting average precision for each query ...&#39;)
+        average_precisions = self.average_precision(*self.results_tensors(brands, paths))
+
+        self.print(&#39;Storing results ...&#39;)
+        self.store_results(brands, paths, average_precisions)
+
+        self.print(&#39;Mean Average Precision: {}&#39;.format(float(average_precisions.mean())))
+
+    def unique_paths(self, paths):
+        &#34;&#34;&#34;Make the resulting paths unique.
+
+        As each image could have more than one embedding similar to the query there could be images
+        more than one time in the results, but we are want to count each image only one time.
+        For this, we are going to remove the duplicates paths for each query.
+
+        Arguments:
+            paths (list of list of str): with the paths of the retrieved images.
+
+        Returns:
+            list of list of str: with the unique paths for each query.
+        &#34;&#34;&#34;
+        for i in range(len(paths)):
+            seen = set()
+            paths[i] = [path for path in paths[i] if not (path in seen or seen.add(path))]
+
+        return paths
+
+    def results_tensors(self, brands, paths):
+        &#34;&#34;&#34;Generate the results tensor of the retrieval task for the metric and amount of relevant results.
+
+        Arguments:
+            brands (list of str): with the brand corresponding to each query.
+            paths (list of list of str): with the resulting paths of the retrieved images for each query.
+
+        Returns:
+            torch.Tensor: with the 1s indicating the true positives. Shape `(q, k)`.
+                Where `q` is the number of queries and `k` the number of instances retrieved.
+            torch.Tensor: with the amount of relevant images for each query (true positives).
+        &#34;&#34;&#34;
+        results = torch.zeros(len(brands), self.params.k)
+        for i, brand in enumerate(brands):
+            for j, path in enumerate(paths[i]):
+                if brand in path:
+                    results[i, j] = 1
+
+        relevant = {brand: 0 for brand in brands}
+        for brand, *_ in self.dataset.paths:
+            if brand not in relevant:
+                continue
+            relevant[brand] += 1
+        relevant = torch.Tensor(list(relevant.values()))
+
+        return results, relevant
+
+    def store_results(self, brands, paths, average_precisions):
+        &#34;&#34;&#34;Store the results in a CSV file with columns: Brand, Average Precision, result paths.
+
+        Arguments:
+            brands (list of str): with the brand of each query.
+            paths (list of list of str): with the paths of the images retrieved.
+            average_precisions (torch.Tensor): with the average precision for each query.
+        &#34;&#34;&#34;
+        with open(self.params.results_file, &#39;w&#39;) as file:
+            for i, brand in brands:
+                line = &#39;{},{},&#39;.format(brand, float(average_precisions[i]))
+                line += &#39;,&#39;.join(paths[i])
+                file.write(line + &#39;\n&#39;)</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_params"><code class="name flex">
+<span>def <span class="ident">get_params</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the base parameters for the experiment.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>JsonObject</code></strong></dt>
+<dd>with the parameters.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def get_params():
+    &#34;&#34;&#34;Get the base parameters for the experiment.
+
+    Returns:
+        JsonObject: with the parameters.
+    &#34;&#34;&#34;
+    return JsonObject({
+        &#39;dataset&#39;: {
+            &#39;root&#39;: None,
+            &#39;dataset&#39;: &#39;test&#39;,
+        },
+        &#39;k&#39;: 500,  # The amount of results to retrieve
+        &#39;queries_file&#39;: &#39;./queries.csv&#39;,
+        &#39;results_file&#39;: &#39;./results.csv&#39;,
+        &#39;retriever&#39;: {
+            &#39;use&#39;: &#39;dldenet&#39;,
+            &#39;dldenet&#39;: {
+                &#39;checkpoint&#39;: None,
+                &#39;paths&#39;: None,
+                &#39;extensions&#39;: None,
+                &#39;batch_size&#39;: 8,
+                &#39;num_workers&#39;: 8,
+                &#39;verbose&#39;: True,
+                &#39;params&#39;: {&#39;transform&#39;: {}}
+            }
+        }
+    })</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, params=None, device=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the experiment.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>params</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>a dict to modify the base parameters.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>where to run the experiments.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, params=None, device=None):
+    &#34;&#34;&#34;Initialize the experiment.
+
+    Arguments:
+        params (dict, optional): a dict to modify the base parameters.
+        device (str, optional): where to run the experiments. 
+    &#34;&#34;&#34;
+    self.params = self.get_params().merge(params)
+    self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+    self.print(&#39;Loading dataset ...&#39;)
+    self.dataset = self.get_dataset()
+    self.print(&#39;Loading retriever ...&#39;)
+    self.retriver = self.get_retriver()
+    self.print(&#39;Loading metric ...&#39;)
+    self.average_precision = AveragePrecision()</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.generate_queries"><code class="name flex">
+<span>def <span class="ident">generate_queries</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate a file with a random path to an image for each brand.</p>
+<p>It will store the file in the self.params.queries_file path.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def generate_queries(self):
+    &#34;&#34;&#34;Generate a file with a random path to an image for each brand.
+
+    It will store the file in the self.params.queries_file path.
+    &#34;&#34;&#34;
+    results = []
+    for brand in self.dataset.brands:
+        if brand == &#39;no-logo&#39;:
+            continue
+        # Each path tuple contains (brand, image path, boxes path)
+        results.append(random.choice([path for path in self.dataset.paths if path[0] == brand]))
+
+    with open(self.params.queries_file, &#39;w&#39;) as file:
+        file.write(&#39;\n&#39;.join(&#39;,&#39;.join(line) for line in results))</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_dataset"><code class="name flex">
+<span>def <span class="ident">get_dataset</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the Flickr32 dataset.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>Flickr32Dataset</code></strong></dt>
+<dd>initialized and with its attributes.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_dataset(self):
+    &#34;&#34;&#34;Get the Flickr32 dataset.
+
+    Returns:
+        Flickr32Dataset: initialized and with its attributes.
+    &#34;&#34;&#34;
+    return Flickr32Dataset(**self.params.dataset)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_retriver"><code class="name flex">
+<span>def <span class="ident">get_retriver</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize and return the retriver to use in the experiment.</p>
+<h2 id="return">Return</h2>
+<dl>
+<dt><strong><code>InstanceRetriver</code></strong></dt>
+<dd>the retriever to use.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_retriver(self):
+    &#34;&#34;&#34;Initialize and return the retriver to use in the experiment.
+
+    Return:
+        InstanceRetriver: the retriever to use.
+    &#34;&#34;&#34;
+    retriever = self.params.retriever.use
+
+    if retriever == &#39;dldenet&#39;:
+        params = self.params.retriever.dldenet
+        params.paths = [t[1] for t in self.dataset.paths]  # Paths are tuples like (brand, image path, boxes path)
+        params.device = self.device
+
+        if params.checkpoint is None:
+            raise ValueError(&#39;Please provide a checkpoint for the DLDENet retriever.&#39;)
+
+        params.checkpoint = torch.load(params.checkpoint, map_location=self.device)
+        params.params.transform = params.checkpoint[&#39;hyperparameters&#39;][&#39;transform&#39;]
+
+        return DLDENetRetriever(**params)
+
+    raise NotImplementedError(&#39;There is no implementation for the &#34;{}&#34; retriever.&#39;.format(retriever))</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.load_queries"><code class="name flex">
+<span>def <span class="ident">load_queries</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Load the images and their bounding boxes to use as queries.</p>
+<p>It knows which images to use using the self.params.queries_file, if no one exists it generates a new one.</p>
+<h2 id="returns">Returns</h2>
+<p>list of str: with the brand of each image.
+list of PIL Image: with the images.
+list of torch.Tensor: with the first bounding box only to query. Shape <code>(1, 4)</code> with the
+x1, y1 for the top-left corner and the x2, y2 for the bottom-right corner.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def load_queries(self):
+    &#34;&#34;&#34;Load the images and their bounding boxes to use as queries.
+
+    It knows which images to use using the self.params.queries_file, if no one exists it generates a new one.
+
+    Returns:
+        list of str: with the brand of each image.
+        list of PIL Image: with the images.
+        list of torch.Tensor: with the first bounding box only to query. Shape `(1, 4)` with the
+            x1, y1 for the top-left corner and the x2, y2 for the bottom-right corner.
+    &#34;&#34;&#34;
+    if not os.path.exists(self.params.queries_file):
+        self.generate_queries()
+
+    brands, images, boxes = [], [], []
+    with open(self.params.queries_file, &#39;r&#39;) as file:
+        for brand, image, annot in [line.split(&#39;,&#39;) for line in file.read().split(&#39;\n&#39;)]:
+            brands.append(brand)
+            images.append(Image.open(image))
+            with open(annot, &#39;r&#39;) as file:
+                line = file.readlines()[1]  # The first line contains &#34;x y width height&#34;
+                x, y, w, h = (int(val) for val in line.split())
+                x1, y1 = x - 1, y - 1
+                x2, y2 = x1 + w, y1 + h
+                boxes.append(torch.Tensor([[x1, y1, x2, y2]]))
+
+    return brands, images, boxes</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.results_tensors"><code class="name flex">
+<span>def <span class="ident">results_tensors</span></span>(<span>self, brands, paths)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate the results tensor of the retrieval task for the metric and amount of relevant results.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>brands</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>with the brand corresponding to each query.</dd>
+<dt><strong><code>paths</code></strong> :&ensp;<code>list</code> of <code>list</code> of <code>str</code></dt>
+<dd>with the resulting paths of the retrieved images for each query.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: with the 1s indicating the true positives. Shape <code>(q, k)</code>.
+Where <code>q</code> is the number of queries and <code>k</code> the number of instances retrieved.
+torch.Tensor: with the amount of relevant images for each query (true positives).</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def results_tensors(self, brands, paths):
+    &#34;&#34;&#34;Generate the results tensor of the retrieval task for the metric and amount of relevant results.
+
+    Arguments:
+        brands (list of str): with the brand corresponding to each query.
+        paths (list of list of str): with the resulting paths of the retrieved images for each query.
+
+    Returns:
+        torch.Tensor: with the 1s indicating the true positives. Shape `(q, k)`.
+            Where `q` is the number of queries and `k` the number of instances retrieved.
+        torch.Tensor: with the amount of relevant images for each query (true positives).
+    &#34;&#34;&#34;
+    results = torch.zeros(len(brands), self.params.k)
+    for i, brand in enumerate(brands):
+        for j, path in enumerate(paths[i]):
+            if brand in path:
+                results[i, j] = 1
+
+    relevant = {brand: 0 for brand in brands}
+    for brand, *_ in self.dataset.paths:
+        if brand not in relevant:
+            continue
+        relevant[brand] += 1
+    relevant = torch.Tensor(list(relevant.values()))
+
+    return results, relevant</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.run"><code class="name flex">
+<span>def <span class="ident">run</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Run the experiment and compute the mean average precision over the entire test dataset.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def run(self):
+    &#34;&#34;&#34;Run the experiment and compute the mean average precision over the entire test dataset.&#34;&#34;&#34;
+    self.print(&#39;Loading queries ...&#39;)
+    brands, images, query_boxes = self.load_queries()
+
+    self.print(&#39;Retrieving instances ...&#39;)
+    _, _, paths, _ = self.retriver.query(images=images, boxes=query_boxes, k=self.params.k)
+    paths = self.unique_paths(paths)
+
+    self.print(&#39;Getting average precision for each query ...&#39;)
+    average_precisions = self.average_precision(*self.results_tensors(brands, paths))
+
+    self.print(&#39;Storing results ...&#39;)
+    self.store_results(brands, paths, average_precisions)
+
+    self.print(&#39;Mean Average Precision: {}&#39;.format(float(average_precisions.mean())))</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.store_results"><code class="name flex">
+<span>def <span class="ident">store_results</span></span>(<span>self, brands, paths, average_precisions)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Store the results in a CSV file with columns: Brand, Average Precision, result paths.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>brands</code></strong> :&ensp;<code>list</code> of <code>str</code></dt>
+<dd>with the brand of each query.</dd>
+<dt><strong><code>paths</code></strong> :&ensp;<code>list</code> of <code>list</code> of <code>str</code></dt>
+<dd>with the paths of the images retrieved.</dd>
+<dt><strong><code>average_precisions</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>with the average precision for each query.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def store_results(self, brands, paths, average_precisions):
+    &#34;&#34;&#34;Store the results in a CSV file with columns: Brand, Average Precision, result paths.
+
+    Arguments:
+        brands (list of str): with the brand of each query.
+        paths (list of list of str): with the paths of the images retrieved.
+        average_precisions (torch.Tensor): with the average precision for each query.
+    &#34;&#34;&#34;
+    with open(self.params.results_file, &#39;w&#39;) as file:
+        for i, brand in brands:
+            line = &#39;{},{},&#39;.format(brand, float(average_precisions[i]))
+            line += &#39;,&#39;.join(paths[i])
+            file.write(line + &#39;\n&#39;)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.unique_paths"><code class="name flex">
+<span>def <span class="ident">unique_paths</span></span>(<span>self, paths)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Make the resulting paths unique.</p>
+<p>As each image could have more than one embedding similar to the query there could be images
+more than one time in the results, but we are want to count each image only one time.
+For this, we are going to remove the duplicates paths for each query.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>paths</code></strong> :&ensp;<code>list</code> of <code>list</code> of <code>str</code></dt>
+<dd>with the paths of the retrieved images.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>list of list of str: with the unique paths for each query.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def unique_paths(self, paths):
+    &#34;&#34;&#34;Make the resulting paths unique.
+
+    As each image could have more than one embedding similar to the query there could be images
+    more than one time in the results, but we are want to count each image only one time.
+    For this, we are going to remove the duplicates paths for each query.
+
+    Arguments:
+        paths (list of list of str): with the paths of the retrieved images.
+
+    Returns:
+        list of list of str: with the unique paths for each query.
+    &#34;&#34;&#34;
+    for i in range(len(paths)):
+        seen = set()
+        paths[i] = [path for path in paths[i] if not (path in seen or seen.add(path))]
+
+    return paths</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.utils.print.PrintMixin" href="../../../utils/print.html#torchsight.utils.print.PrintMixin">PrintMixin</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.utils.print.PrintMixin.print" href="../../../utils/print.html#torchsight.utils.print.PrintMixin.print">print</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.experiments.retrievers.flickr32" href="index.html">torchsight.experiments.retrievers.flickr32</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment">Flickr32RetrieverExperiment</a></code></h4>
+<ul class="two-column">
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.__init__" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.generate_queries" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.generate_queries">generate_queries</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_dataset" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_dataset">get_dataset</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_params" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_params">get_params</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_retriver" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.get_retriver">get_retriver</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.load_queries" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.load_queries">load_queries</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.results_tensors" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.results_tensors">results_tensors</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.run" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.run">run</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.store_results" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.store_results">store_results</a></code></li>
+<li><code><a title="torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.unique_paths" href="#torchsight.experiments.retrievers.flickr32.experiment.Flickr32RetrieverExperiment.unique_paths">unique_paths</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

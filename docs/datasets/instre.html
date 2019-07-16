@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.datasets.instre API documentation</title>
+<meta name="description" content="A dataset interface for the INSTRE dataset …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.datasets.instre</code> module</h1>
+</header>
+<section id="section-intro">
+<p>A dataset interface for the INSTRE dataset.</p>
+<p>See official webpage:
+<a href="http://isia.ict.ac.cn/dataset/instre.html">http://isia.ict.ac.cn/dataset/instre.html</a></p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">&#34;&#34;&#34;A dataset interface for the INSTRE dataset.
+
+See official webpage:
+http://isia.ict.ac.cn/dataset/instre.html
+&#34;&#34;&#34;
+import json
+import os
+import random
+
+import torch
+from PIL import Image
+from torch.utils.data import Dataset
+
+from .mixins import VisualizeMixin
+
+
+class InstreDataset(Dataset, VisualizeMixin):
+    &#34;&#34;&#34;INSTRE dataset class to get the images with their bounding boxes.
+
+    Instructions:
+    - Download the dataset from the original web page.
+    - Unzip the dataset to any directory.
+    - The root directory is the one that has the 3 directories of the 3 datasets inside.
+    &#34;&#34;&#34;
+
+    def __init__(self, root, name=&#39;S2&#39;, dataset=&#39;training&#39;, transform=None):
+        &#34;&#34;&#34;Initialize the dataset.
+
+        Arguments:
+            root (str): The path to the root of the directory.
+            name (str, optional): The name of the dataset to load.
+            dataset (str, optional): The portion of the dataset to load.
+            transform (callable, optional): The transformation to apply to the image and bounding boxes.
+        &#34;&#34;&#34;
+        self.name = self.validate_name(name)
+        self.dataset = self.validate_dataset(dataset)
+        self.root = self.validate_root(root)
+        self.split = self.get_split()
+        self.class_to_label, self.label_to_class = self.generate_labels()
+        self.paths = self.generate_paths()
+        self.transform = transform
+
+    def __len__(self):
+        &#34;&#34;&#34;Return the length of the dataset.&#34;&#34;&#34;
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        &#34;&#34;&#34;Get the image, bounding boxes and an info dict for the item at the given index.
+
+        Returns:
+            any: The transformed image.
+            torch.Tensor: The bounding boxes for the image.
+                Shape: `(num of boxes, 4)` with x1,y1,x2,y2.
+            dict: A dict with additional info.
+        &#34;&#34;&#34;
+        image, boxes, name = self.paths[i]
+
+        info = {&#39;image&#39;: image, &#39;class&#39;: name}
+
+        image = Image.open(image)
+        boxes = self.get_boxes(boxes, name)
+
+        if self.transform is not None:
+            image, boxes, info = self.transform((image, boxes, info))
+
+        return image, boxes, info
+
+    def get_boxes(self, file, class_name):
+        &#34;&#34;&#34;Read the file and parse the bounding boxes.
+
+        Return:
+            torch.Tensor: The bounding boxes loaded from the file.
+                Shape: `(num of boxes, 4)` with x1,y1,x2,y2.
+        &#34;&#34;&#34;
+        boxes = []
+        label = self.class_to_label[class_name]
+
+        with open(file, &#39;r&#39;) as file:
+            for line in file.readlines():
+                x, y, w, h = [int(val) for val in line.split()]
+                x2, y2 = x + w, y + h
+                boxes.append(torch.Tensor([x, y, x2, y2, label]))
+
+        return torch.stack(boxes)
+
+    @staticmethod
+    def validate_name(name):
+        if name not in [&#39;S1&#39;, &#39;S2&#39;, &#39;M&#39;]:
+            raise ValueError(&#39;You must indicate a valid name. Options: S1, S2 and M. Value: {}&#39;.format(name))
+
+        return &#39;INSTRE-&#39; + name
+
+    @staticmethod
+    def validate_dataset(dataset):
+        if dataset not in [&#39;training&#39;, &#39;validation&#39;, &#39;trainval&#39;]:
+            raise ValueError(&#39;Please provide a valid dataset. Options: &#34;training&#34;, &#34;validation&#34; and &#34;trainval&#34;.&#39;)
+
+        return dataset
+
+    def validate_root(self, root):
+        if not os.path.exists(root):
+            raise ValueError(&#39;&#34;{}&#34; does not exists.&#39;.format(root))
+
+        if self.name not in os.listdir(root):
+            raise ValueError(&#39;The dataset &#34;{}&#34; is not the root directory. &#39;
+                             &#39;Are you sure that is the correct directory?&#39;.format(self.name))
+
+        return os.path.join(root, self.name)
+
+    def get_split(self):
+        &#34;&#34;&#34;Get the split file or generate a new one.
+
+        Returns:
+            dict: A dict with all the class names with a &#39;training&#39; and a &#39;validation&#39;
+                list of of images paths.
+        &#34;&#34;&#34;
+        file = os.path.join(self.root, &#39;split.json&#39;)
+
+        if not os.path.exists(file):
+            print(&#39;There is no split for the dataset, generating a new random one.&#39;)
+            return self.split()
+
+        with open(file, &#39;r&#39;) as file:
+            return json.loads(file.read())
+
+    def generate_labels(self):
+        &#34;&#34;&#34;Generate the dicts to map the labels with the classes.
+
+        Returns:
+            dict: A dict that maps the class (str) -&gt; label (int).
+            dict: A dict that maps the label (int) -&gt; class (str).
+        &#34;&#34;&#34;
+        classes = [name.replace(&#39;_&#39;, &#39; &#39;) for name in self.split.keys()]
+        classes.sort()
+
+        return (
+            {name: i for i, name in enumerate(classes)},
+            {i: name for i, name in enumerate(classes)}
+        )
+
+    def generate_paths(self):
+        &#34;&#34;&#34;Generate tuples with (image file, boxes file, class name) for each image in the dataset.
+
+        Returns:
+            list of tuples: A list with tuples like (image file, boxes file, class name).
+        &#34;&#34;&#34;
+        paths = []
+
+        for name in self.split.keys():
+            images = []
+
+            if self.dataset in [&#39;training&#39;, &#39;trainval&#39;]:
+                images += self.split[name][&#39;training&#39;]
+            if self.dataset in [&#39;validation&#39;, &#39;trainval&#39;]:
+                images += self.split[name][&#39;validation&#39;]
+
+            for image in images:
+                boxes = image[:-3] + &#39;txt&#39;
+                paths.append((image, boxes, name.replace(&#39;_&#39;, &#39; &#39;)))
+
+        return paths
+
+    def make_split(self, proportion=0.8):
+        &#34;&#34;&#34;Make a random split of the given dataset.
+
+        It will look for all the images inside each class and will generate a JSON file with
+        the training images and the validation images for each class.
+
+        Arguments:
+            proportion (float, optional): The proportion of training images to select from the total
+                number of images.
+        &#34;&#34;&#34;
+        classes = [directory for directory in os.listdir(self.root)
+                   if os.path.isdir(os.path.join(self.root, directory))]
+
+        split = {}
+
+        for class_name in classes:
+            images = [os.path.join(self.root, class_name, file)
+                      for file in os.listdir(os.path.join(self.root, class_name))
+                      if file[-4:] == &#39;.jpg&#39;]
+
+            training = random.sample(images, int(len(images) * proportion))
+            validation = list(set(images) - set(training))
+
+            split[class_name] = {
+                &#39;training&#39;: training,
+                &#39;validation&#39;: validation
+            }
+
+        split_file = os.path.join(self.root, &#39;split.json&#39;)
+        with open(split_file, &#39;w&#39;) as file:
+            file.write(json.dumps(split))
+
+        self.split = split
+        self.print_stats()
+
+        return split
+
+    def print_stats(self):
+        &#34;&#34;&#34;Print the distribution of the classes in the given split json file.&#34;&#34;&#34;
+        classes = [class_name for class_name in self.split]
+
+        print(&#39;Classes: {}&#39;.format(len(classes)))
+
+        for name in classes:
+            print(&#39;{} {} {}&#39;.format(
+                name.ljust(30, &#39;.&#39;),
+                str(len(self.split[name][&#39;training&#39;])).rjust(3),
+                str(len(self.split[name][&#39;validation&#39;])).rjust(3)))</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.datasets.instre.InstreDataset"><code class="flex name class">
+<span>class <span class="ident">InstreDataset</span></span>
+<span>(</span><span><small>ancestors:</small> torch.utils.data.dataset.Dataset, <a title="torchsight.datasets.mixins.VisualizeMixin" href="mixins.html#torchsight.datasets.mixins.VisualizeMixin">VisualizeMixin</a>)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>INSTRE dataset class to get the images with their bounding boxes.</p>
+<p>Instructions:
+- Download the dataset from the original web page.
+- Unzip the dataset to any directory.
+- The root directory is the one that has the 3 directories of the 3 datasets inside.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class InstreDataset(Dataset, VisualizeMixin):
+    &#34;&#34;&#34;INSTRE dataset class to get the images with their bounding boxes.
+
+    Instructions:
+    - Download the dataset from the original web page.
+    - Unzip the dataset to any directory.
+    - The root directory is the one that has the 3 directories of the 3 datasets inside.
+    &#34;&#34;&#34;
+
+    def __init__(self, root, name=&#39;S2&#39;, dataset=&#39;training&#39;, transform=None):
+        &#34;&#34;&#34;Initialize the dataset.
+
+        Arguments:
+            root (str): The path to the root of the directory.
+            name (str, optional): The name of the dataset to load.
+            dataset (str, optional): The portion of the dataset to load.
+            transform (callable, optional): The transformation to apply to the image and bounding boxes.
+        &#34;&#34;&#34;
+        self.name = self.validate_name(name)
+        self.dataset = self.validate_dataset(dataset)
+        self.root = self.validate_root(root)
+        self.split = self.get_split()
+        self.class_to_label, self.label_to_class = self.generate_labels()
+        self.paths = self.generate_paths()
+        self.transform = transform
+
+    def __len__(self):
+        &#34;&#34;&#34;Return the length of the dataset.&#34;&#34;&#34;
+        return len(self.paths)
+
+    def __getitem__(self, i):
+        &#34;&#34;&#34;Get the image, bounding boxes and an info dict for the item at the given index.
+
+        Returns:
+            any: The transformed image.
+            torch.Tensor: The bounding boxes for the image.
+                Shape: `(num of boxes, 4)` with x1,y1,x2,y2.
+            dict: A dict with additional info.
+        &#34;&#34;&#34;
+        image, boxes, name = self.paths[i]
+
+        info = {&#39;image&#39;: image, &#39;class&#39;: name}
+
+        image = Image.open(image)
+        boxes = self.get_boxes(boxes, name)
+
+        if self.transform is not None:
+            image, boxes, info = self.transform((image, boxes, info))
+
+        return image, boxes, info
+
+    def get_boxes(self, file, class_name):
+        &#34;&#34;&#34;Read the file and parse the bounding boxes.
+
+        Return:
+            torch.Tensor: The bounding boxes loaded from the file.
+                Shape: `(num of boxes, 4)` with x1,y1,x2,y2.
+        &#34;&#34;&#34;
+        boxes = []
+        label = self.class_to_label[class_name]
+
+        with open(file, &#39;r&#39;) as file:
+            for line in file.readlines():
+                x, y, w, h = [int(val) for val in line.split()]
+                x2, y2 = x + w, y + h
+                boxes.append(torch.Tensor([x, y, x2, y2, label]))
+
+        return torch.stack(boxes)
+
+    @staticmethod
+    def validate_name(name):
+        if name not in [&#39;S1&#39;, &#39;S2&#39;, &#39;M&#39;]:
+            raise ValueError(&#39;You must indicate a valid name. Options: S1, S2 and M. Value: {}&#39;.format(name))
+
+        return &#39;INSTRE-&#39; + name
+
+    @staticmethod
+    def validate_dataset(dataset):
+        if dataset not in [&#39;training&#39;, &#39;validation&#39;, &#39;trainval&#39;]:
+            raise ValueError(&#39;Please provide a valid dataset. Options: &#34;training&#34;, &#34;validation&#34; and &#34;trainval&#34;.&#39;)
+
+        return dataset
+
+    def validate_root(self, root):
+        if not os.path.exists(root):
+            raise ValueError(&#39;&#34;{}&#34; does not exists.&#39;.format(root))
+
+        if self.name not in os.listdir(root):
+            raise ValueError(&#39;The dataset &#34;{}&#34; is not the root directory. &#39;
+                             &#39;Are you sure that is the correct directory?&#39;.format(self.name))
+
+        return os.path.join(root, self.name)
+
+    def get_split(self):
+        &#34;&#34;&#34;Get the split file or generate a new one.
+
+        Returns:
+            dict: A dict with all the class names with a &#39;training&#39; and a &#39;validation&#39;
+                list of of images paths.
+        &#34;&#34;&#34;
+        file = os.path.join(self.root, &#39;split.json&#39;)
+
+        if not os.path.exists(file):
+            print(&#39;There is no split for the dataset, generating a new random one.&#39;)
+            return self.split()
+
+        with open(file, &#39;r&#39;) as file:
+            return json.loads(file.read())
+
+    def generate_labels(self):
+        &#34;&#34;&#34;Generate the dicts to map the labels with the classes.
+
+        Returns:
+            dict: A dict that maps the class (str) -&gt; label (int).
+            dict: A dict that maps the label (int) -&gt; class (str).
+        &#34;&#34;&#34;
+        classes = [name.replace(&#39;_&#39;, &#39; &#39;) for name in self.split.keys()]
+        classes.sort()
+
+        return (
+            {name: i for i, name in enumerate(classes)},
+            {i: name for i, name in enumerate(classes)}
+        )
+
+    def generate_paths(self):
+        &#34;&#34;&#34;Generate tuples with (image file, boxes file, class name) for each image in the dataset.
+
+        Returns:
+            list of tuples: A list with tuples like (image file, boxes file, class name).
+        &#34;&#34;&#34;
+        paths = []
+
+        for name in self.split.keys():
+            images = []
+
+            if self.dataset in [&#39;training&#39;, &#39;trainval&#39;]:
+                images += self.split[name][&#39;training&#39;]
+            if self.dataset in [&#39;validation&#39;, &#39;trainval&#39;]:
+                images += self.split[name][&#39;validation&#39;]
+
+            for image in images:
+                boxes = image[:-3] + &#39;txt&#39;
+                paths.append((image, boxes, name.replace(&#39;_&#39;, &#39; &#39;)))
+
+        return paths
+
+    def make_split(self, proportion=0.8):
+        &#34;&#34;&#34;Make a random split of the given dataset.
+
+        It will look for all the images inside each class and will generate a JSON file with
+        the training images and the validation images for each class.
+
+        Arguments:
+            proportion (float, optional): The proportion of training images to select from the total
+                number of images.
+        &#34;&#34;&#34;
+        classes = [directory for directory in os.listdir(self.root)
+                   if os.path.isdir(os.path.join(self.root, directory))]
+
+        split = {}
+
+        for class_name in classes:
+            images = [os.path.join(self.root, class_name, file)
+                      for file in os.listdir(os.path.join(self.root, class_name))
+                      if file[-4:] == &#39;.jpg&#39;]
+
+            training = random.sample(images, int(len(images) * proportion))
+            validation = list(set(images) - set(training))
+
+            split[class_name] = {
+                &#39;training&#39;: training,
+                &#39;validation&#39;: validation
+            }
+
+        split_file = os.path.join(self.root, &#39;split.json&#39;)
+        with open(split_file, &#39;w&#39;) as file:
+            file.write(json.dumps(split))
+
+        self.split = split
+        self.print_stats()
+
+        return split
+
+    def print_stats(self):
+        &#34;&#34;&#34;Print the distribution of the classes in the given split json file.&#34;&#34;&#34;
+        classes = [class_name for class_name in self.split]
+
+        print(&#39;Classes: {}&#39;.format(len(classes)))
+
+        for name in classes:
+            print(&#39;{} {} {}&#39;.format(
+                name.ljust(30, &#39;.&#39;),
+                str(len(self.split[name][&#39;training&#39;])).rjust(3),
+                str(len(self.split[name][&#39;validation&#39;])).rjust(3)))</code></pre>
+</details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.datasets.instre.InstreDataset.validate_dataset"><code class="name flex">
+<span>def <span class="ident">validate_dataset</span></span>(<span>dataset)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def validate_dataset(dataset):
+    if dataset not in [&#39;training&#39;, &#39;validation&#39;, &#39;trainval&#39;]:
+        raise ValueError(&#39;Please provide a valid dataset. Options: &#34;training&#34;, &#34;validation&#34; and &#34;trainval&#34;.&#39;)
+
+    return dataset</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.validate_name"><code class="name flex">
+<span>def <span class="ident">validate_name</span></span>(<span>name)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def validate_name(name):
+    if name not in [&#39;S1&#39;, &#39;S2&#39;, &#39;M&#39;]:
+        raise ValueError(&#39;You must indicate a valid name. Options: S1, S2 and M. Value: {}&#39;.format(name))
+
+    return &#39;INSTRE-&#39; + name</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.datasets.instre.InstreDataset.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, root, name=&#39;S2&#39;, dataset=&#39;training&#39;, transform=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize the dataset.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>root</code></strong> :&ensp;<code>str</code></dt>
+<dd>The path to the root of the directory.</dd>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The name of the dataset to load.</dd>
+<dt><strong><code>dataset</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The portion of the dataset to load.</dd>
+<dt><strong><code>transform</code></strong> :&ensp;<code>callable</code>, optional</dt>
+<dd>The transformation to apply to the image and bounding boxes.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, root, name=&#39;S2&#39;, dataset=&#39;training&#39;, transform=None):
+    &#34;&#34;&#34;Initialize the dataset.
+
+    Arguments:
+        root (str): The path to the root of the directory.
+        name (str, optional): The name of the dataset to load.
+        dataset (str, optional): The portion of the dataset to load.
+        transform (callable, optional): The transformation to apply to the image and bounding boxes.
+    &#34;&#34;&#34;
+    self.name = self.validate_name(name)
+    self.dataset = self.validate_dataset(dataset)
+    self.root = self.validate_root(root)
+    self.split = self.get_split()
+    self.class_to_label, self.label_to_class = self.generate_labels()
+    self.paths = self.generate_paths()
+    self.transform = transform</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.generate_labels"><code class="name flex">
+<span>def <span class="ident">generate_labels</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate the dicts to map the labels with the classes.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>A dict that maps the class (str) -&gt; label (int).</dd>
+<dt><strong><code>dict</code></strong></dt>
+<dd>A dict that maps the label (int) -&gt; class (str).</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def generate_labels(self):
+    &#34;&#34;&#34;Generate the dicts to map the labels with the classes.
+
+    Returns:
+        dict: A dict that maps the class (str) -&gt; label (int).
+        dict: A dict that maps the label (int) -&gt; class (str).
+    &#34;&#34;&#34;
+    classes = [name.replace(&#39;_&#39;, &#39; &#39;) for name in self.split.keys()]
+    classes.sort()
+
+    return (
+        {name: i for i, name in enumerate(classes)},
+        {i: name for i, name in enumerate(classes)}
+    )</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.generate_paths"><code class="name flex">
+<span>def <span class="ident">generate_paths</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Generate tuples with (image file, boxes file, class name) for each image in the dataset.</p>
+<h2 id="returns">Returns</h2>
+<p>list of tuples: A list with tuples like (image file, boxes file, class name).</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def generate_paths(self):
+    &#34;&#34;&#34;Generate tuples with (image file, boxes file, class name) for each image in the dataset.
+
+    Returns:
+        list of tuples: A list with tuples like (image file, boxes file, class name).
+    &#34;&#34;&#34;
+    paths = []
+
+    for name in self.split.keys():
+        images = []
+
+        if self.dataset in [&#39;training&#39;, &#39;trainval&#39;]:
+            images += self.split[name][&#39;training&#39;]
+        if self.dataset in [&#39;validation&#39;, &#39;trainval&#39;]:
+            images += self.split[name][&#39;validation&#39;]
+
+        for image in images:
+            boxes = image[:-3] + &#39;txt&#39;
+            paths.append((image, boxes, name.replace(&#39;_&#39;, &#39; &#39;)))
+
+    return paths</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.get_boxes"><code class="name flex">
+<span>def <span class="ident">get_boxes</span></span>(<span>self, file, class_name)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Read the file and parse the bounding boxes.</p>
+<h2 id="return">Return</h2>
+<p>torch.Tensor: The bounding boxes loaded from the file.
+Shape: <code>(num of boxes, 4)</code> with x1,y1,x2,y2.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_boxes(self, file, class_name):
+    &#34;&#34;&#34;Read the file and parse the bounding boxes.
+
+    Return:
+        torch.Tensor: The bounding boxes loaded from the file.
+            Shape: `(num of boxes, 4)` with x1,y1,x2,y2.
+    &#34;&#34;&#34;
+    boxes = []
+    label = self.class_to_label[class_name]
+
+    with open(file, &#39;r&#39;) as file:
+        for line in file.readlines():
+            x, y, w, h = [int(val) for val in line.split()]
+            x2, y2 = x + w, y + h
+            boxes.append(torch.Tensor([x, y, x2, y2, label]))
+
+    return torch.stack(boxes)</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.get_split"><code class="name flex">
+<span>def <span class="ident">get_split</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Get the split file or generate a new one.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>dict</code></strong></dt>
+<dd>A dict with all the class names with a 'training' and a 'validation'
+list of of images paths.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def get_split(self):
+    &#34;&#34;&#34;Get the split file or generate a new one.
+
+    Returns:
+        dict: A dict with all the class names with a &#39;training&#39; and a &#39;validation&#39;
+            list of of images paths.
+    &#34;&#34;&#34;
+    file = os.path.join(self.root, &#39;split.json&#39;)
+
+    if not os.path.exists(file):
+        print(&#39;There is no split for the dataset, generating a new random one.&#39;)
+        return self.split()
+
+    with open(file, &#39;r&#39;) as file:
+        return json.loads(file.read())</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.make_split"><code class="name flex">
+<span>def <span class="ident">make_split</span></span>(<span>self, proportion=0.8)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Make a random split of the given dataset.</p>
+<p>It will look for all the images inside each class and will generate a JSON file with
+the training images and the validation images for each class.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>proportion</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>The proportion of training images to select from the total
+number of images.</dd>
+</dl></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def make_split(self, proportion=0.8):
+    &#34;&#34;&#34;Make a random split of the given dataset.
+
+    It will look for all the images inside each class and will generate a JSON file with
+    the training images and the validation images for each class.
+
+    Arguments:
+        proportion (float, optional): The proportion of training images to select from the total
+            number of images.
+    &#34;&#34;&#34;
+    classes = [directory for directory in os.listdir(self.root)
+               if os.path.isdir(os.path.join(self.root, directory))]
+
+    split = {}
+
+    for class_name in classes:
+        images = [os.path.join(self.root, class_name, file)
+                  for file in os.listdir(os.path.join(self.root, class_name))
+                  if file[-4:] == &#39;.jpg&#39;]
+
+        training = random.sample(images, int(len(images) * proportion))
+        validation = list(set(images) - set(training))
+
+        split[class_name] = {
+            &#39;training&#39;: training,
+            &#39;validation&#39;: validation
+        }
+
+    split_file = os.path.join(self.root, &#39;split.json&#39;)
+    with open(split_file, &#39;w&#39;) as file:
+        file.write(json.dumps(split))
+
+    self.split = split
+    self.print_stats()
+
+    return split</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.print_stats"><code class="name flex">
+<span>def <span class="ident">print_stats</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Print the distribution of the classes in the given split json file.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def print_stats(self):
+    &#34;&#34;&#34;Print the distribution of the classes in the given split json file.&#34;&#34;&#34;
+    classes = [class_name for class_name in self.split]
+
+    print(&#39;Classes: {}&#39;.format(len(classes)))
+
+    for name in classes:
+        print(&#39;{} {} {}&#39;.format(
+            name.ljust(30, &#39;.&#39;),
+            str(len(self.split[name][&#39;training&#39;])).rjust(3),
+            str(len(self.split[name][&#39;validation&#39;])).rjust(3)))</code></pre>
+</details>
+</dd>
+<dt id="torchsight.datasets.instre.InstreDataset.validate_root"><code class="name flex">
+<span>def <span class="ident">validate_root</span></span>(<span>self, root)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def validate_root(self, root):
+    if not os.path.exists(root):
+        raise ValueError(&#39;&#34;{}&#34; does not exists.&#39;.format(root))
+
+    if self.name not in os.listdir(root):
+        raise ValueError(&#39;The dataset &#34;{}&#34; is not the root directory. &#39;
+                         &#39;Are you sure that is the correct directory?&#39;.format(self.name))
+
+    return os.path.join(root, self.name)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="torchsight.datasets.mixins.VisualizeMixin" href="mixins.html#torchsight.datasets.mixins.VisualizeMixin">VisualizeMixin</a></b></code>:
+<ul class="hlist">
+<li><code><a title="torchsight.datasets.mixins.VisualizeMixin.visualize" href="mixins.html#torchsight.datasets.mixins.VisualizeMixin.visualize">visualize</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.datasets" href="index.html">torchsight.datasets</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.datasets.instre.InstreDataset" href="#torchsight.datasets.instre.InstreDataset">InstreDataset</a></code></h4>
+<ul class="two-column">
+<li><code><a title="torchsight.datasets.instre.InstreDataset.__init__" href="#torchsight.datasets.instre.InstreDataset.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.generate_labels" href="#torchsight.datasets.instre.InstreDataset.generate_labels">generate_labels</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.generate_paths" href="#torchsight.datasets.instre.InstreDataset.generate_paths">generate_paths</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.get_boxes" href="#torchsight.datasets.instre.InstreDataset.get_boxes">get_boxes</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.get_split" href="#torchsight.datasets.instre.InstreDataset.get_split">get_split</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.make_split" href="#torchsight.datasets.instre.InstreDataset.make_split">make_split</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.print_stats" href="#torchsight.datasets.instre.InstreDataset.print_stats">print_stats</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.validate_dataset" href="#torchsight.datasets.instre.InstreDataset.validate_dataset">validate_dataset</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.validate_name" href="#torchsight.datasets.instre.InstreDataset.validate_name">validate_name</a></code></li>
+<li><code><a title="torchsight.datasets.instre.InstreDataset.validate_root" href="#torchsight.datasets.instre.InstreDataset.validate_root">validate_root</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

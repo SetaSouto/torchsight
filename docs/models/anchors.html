@@ -360,13 +360,13 @@ class Anchors(nn.Module):
         &#34;&#34;&#34;Assign the correspondent annotation to each anchor.
 
         We know that in a feature map we&#39;ll have A anchors per location (i.e. feature map&#39;s height * width * A total
-        anchors), where these A anchors has different sizes and aspect ratios.
+        anchors), where these A anchors have different sizes and aspect ratios.
         Each one of this anchors could have an &#39;assigned annotation&#39;, that is the annotation that has bigger
         Intersection over Union (IoU) with the anchor.
 
         So, all the anchors could have an assigned annotation, but, what we do with the anchors that are containing
         background and none object? That&#39;s the reason that we must provide some thresholds: one to keep only the
-        anchors that are containing objects and on threshold to decide if the anchor is background or not.
+        anchors that are containing objects and one threshold to decide if the anchor is background or not.
         The anchors that has IoU between those threshold are ignored.
 
         With this we can train anchors to fit the annotation and others to fit the background class. And obviously
@@ -805,13 +805,13 @@ Using the scales {2 <strong> 0, 2 </strong> (1/3), 2 ** (2/3)} we can get anchor
         &#34;&#34;&#34;Assign the correspondent annotation to each anchor.
 
         We know that in a feature map we&#39;ll have A anchors per location (i.e. feature map&#39;s height * width * A total
-        anchors), where these A anchors has different sizes and aspect ratios.
+        anchors), where these A anchors have different sizes and aspect ratios.
         Each one of this anchors could have an &#39;assigned annotation&#39;, that is the annotation that has bigger
         Intersection over Union (IoU) with the anchor.
 
         So, all the anchors could have an assigned annotation, but, what we do with the anchors that are containing
         background and none object? That&#39;s the reason that we must provide some thresholds: one to keep only the
-        anchors that are containing objects and on threshold to decide if the anchor is background or not.
+        anchors that are containing objects and one threshold to decide if the anchor is background or not.
         The anchors that has IoU between those threshold are ignored.
 
         With this we can train anchors to fit the annotation and others to fit the background class. And obviously
@@ -872,12 +872,12 @@ Using the scales {2 <strong> 0, 2 </strong> (1/3), 2 ** (2/3)} we can get anchor
 <dd>
 <section class="desc"><p>Assign the correspondent annotation to each anchor.</p>
 <p>We know that in a feature map we'll have A anchors per location (i.e. feature map's height * width * A total
-anchors), where these A anchors has different sizes and aspect ratios.
+anchors), where these A anchors have different sizes and aspect ratios.
 Each one of this anchors could have an 'assigned annotation', that is the annotation that has bigger
 Intersection over Union (IoU) with the anchor.</p>
 <p>So, all the anchors could have an assigned annotation, but, what we do with the anchors that are containing
 background and none object? That's the reason that we must provide some thresholds: one to keep only the
-anchors that are containing objects and on threshold to decide if the anchor is background or not.
+anchors that are containing objects and one threshold to decide if the anchor is background or not.
 The anchors that has IoU between those threshold are ignored.</p>
 <p>With this we can train anchors to fit the annotation and others to fit the background class. And obviously
 keep a centralized way to handle this behavior.</p>
@@ -919,13 +919,13 @@ def assign(anchors, annotations, thresholds=None):
     &#34;&#34;&#34;Assign the correspondent annotation to each anchor.
 
     We know that in a feature map we&#39;ll have A anchors per location (i.e. feature map&#39;s height * width * A total
-    anchors), where these A anchors has different sizes and aspect ratios.
+    anchors), where these A anchors have different sizes and aspect ratios.
     Each one of this anchors could have an &#39;assigned annotation&#39;, that is the annotation that has bigger
     Intersection over Union (IoU) with the anchor.
 
     So, all the anchors could have an assigned annotation, but, what we do with the anchors that are containing
     background and none object? That&#39;s the reason that we must provide some thresholds: one to keep only the
-    anchors that are containing objects and on threshold to decide if the anchor is background or not.
+    anchors that are containing objects and one threshold to decide if the anchor is background or not.
     The anchors that has IoU between those threshold are ignored.
 
     With this we can train anchors to fit the annotation and others to fit the background class. And obviously

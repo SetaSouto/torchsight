@@ -26,7 +26,7 @@ import sys
 from os.path import exists, basename, split, isdir
 from collections import defaultdict
 
-from flickrlogos import fl_read_groundtruth
+from .flickrlogos import fl_read_groundtruth
 
 #==============================================================================
 #

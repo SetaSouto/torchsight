@@ -1,0 +1,743 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.5.4" />
+<title>torchsight.evaluators.flickr32.flickrlogos.flickrlogos API documentation</title>
+<meta name="description" content="Tools for the FlickrLogos-32 dataset.
+See http://www.multimedia-computing.de/flickrlogos/ for details …" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.name small{font-weight:normal}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase;cursor:pointer}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title"><code>torchsight.evaluators.flickr32.flickrlogos.flickrlogos</code> module</h1>
+</header>
+<section id="section-intro">
+<p>Tools for the FlickrLogos-32 dataset.
+See <a href="http://www.multimedia-computing.de/flickrlogos/">http://www.multimedia-computing.de/flickrlogos/</a> for details.</p>
+<p>Please cite the following paper in your work:
+Scalable Logo Recognition in Real-World Images
+Stefan Romberg, Lluis Garcia Pueyo, Rainer Lienhart, Roelof van Zwol
+ACM International Conference on Multimedia Retrieval 2011 (ICMR11), Trento, April 2011.</p>
+<dl>
+<dt><strong><code>Author</code></strong> :&ensp;
+<code>Stefan</code> <code>Romberg</code>, <code>stefan.romberg</code>@<code>informatik.uni</code>-<code>augsburg.de</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>Notes:
+- Script was developed/tested on Windows with Python 2.7</p>
+<p>$Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+$Rev: 7621 $$Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+$HeadURL: <a href="https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/flickrlogos/flickrlogos.py">https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/flickrlogos/flickrlogos.py</a> $
+$Id: flickrlogos.py 7621 2013-11-18 10:15:33Z romberg $</p>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+ Tools for the FlickrLogos-32 dataset.
+ See http://www.multimedia-computing.de/flickrlogos/ for details.
+
+ Please cite the following paper in your work:
+ Scalable Logo Recognition in Real-World Images
+ Stefan Romberg, Lluis Garcia Pueyo, Rainer Lienhart, Roelof van Zwol
+ ACM International Conference on Multimedia Retrieval 2011 (ICMR11), Trento, April 2011.
+
+ Author:   Stefan Romberg, stefan.romberg@informatik.uni-augsburg.de
+
+ Notes:
+  - Script was developed/tested on Windows with Python 2.7
+
+ $Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+ $Rev: 7621 $$Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $
+ $HeadURL: https://137.250.173.47:8443/svn/romberg/trunk/romberg/research/FlickrLogos-32_SDK/FlickrLogos-32_SDK-1.0.4/scripts/flickrlogos/flickrlogos.py $
+ $Id: flickrlogos.py 7621 2013-11-18 10:15:33Z romberg $
+&#34;&#34;&#34;
+__version__ = &#34;$Rev: 7621 $$Date: 2013-11-18 11:15:33 +0100 (Mo, 18 Nov 2013) $&#34;
+
+import sys
+from os.path import exists
+from collections import defaultdict
+from collections import OrderedDict
+from math import sqrt
+
+#==============================================================================
+#
+#==============================================================================
+
+def fl_msplit(s, delimiters=&#34;;,\t&#34;):
+    &#34;&#34;&#34;Splits the given string by any of the given delimiters.&#34;&#34;&#34;
+    if len(s) == 0:
+        return []
+
+    delim = delimiters[0]
+    for d in delimiters[1:]:
+        s = s.replace(d, delim)
+
+    tokens = s.split(delim)
+    #print(&#34;tokens = &#34;+str(tokens))
+    return [ t.strip() for t in tokens if len(t) &gt; 0 ]
+
+
+def fl_read_csv(filename, delimiters=&#34;,\t;&#34;):
+    &#34;&#34;&#34;Reads a CSV file and returns a list of list holding the data.&#34;&#34;&#34;
+
+    data = []
+    with open(filename, &#34;r&#34;) as f:
+        for line in f:
+            tokens = fl_msplit(line, delimiters)
+            data.append(tokens)
+    return data
+
+def fl_read_groundtruth(groundtruth_file):
+    &#34;&#34;&#34;Reads the FlickrLogos-32 ground truth.
+
+    Returns a map &lt;image&gt; -&gt; &lt;object class&gt;.
+    &#34;&#34;&#34;
+    if not exists(groundtruth_file):
+        print(&#34;ERROR: fl_read_groundtruth(): Arg groundtruth_file: &#34;\
+              &#34;File &#39;&#34;+groundtruth_file+&#34;&#39; does not exist!\n&#34;)
+        exit(1)
+
+    gt_data = fl_read_csv(groundtruth_file, delimiters=&#34; \t,;&#34;)
+
+    groundtruth = OrderedDict()
+    for classname, image in gt_data:
+        groundtruth[image] = classname.lower()
+
+    class_names = sorted(list(set(groundtruth.values())))
+    return groundtruth, class_names
+
+
+def fl_read_groundtruth2(groundtruth_file):
+    &#34;&#34;&#34;Reads the FlickrLogos-32 ground truth.
+
+    Returns a 3-tuple with
+           (1) a map: &lt;image&gt; -&gt; &lt;object class&gt;,
+           (2) a map: &lt;object class&gt; -&gt; [list of images],
+           (3) a list: [sorted list of class names]
+    &#34;&#34;&#34;
+
+    if not exists(groundtruth_file):
+        print(&#34;ERROR: fl_read_groundtruth2(): Arg groundtruth_file: &#34;\
+              &#34;File &#39;&#34; + groundtruth_file + &#34;&#39; does not exist!\n&#34;)
+        exit(1)
+
+    gt_data = fl_read_csv(groundtruth_file)
+
+    gt_map_img2class  = OrderedDict()
+    gt_map_class2imgs = defaultdict(list)
+
+    for classname, image in gt_data:
+        gt_map_img2class[image] = classname.lower()
+        gt_map_class2imgs[classname].append(image)
+
+    class_names = sorted(list(set(gt_map_img2class.values())))
+    return gt_map_img2class, gt_map_class2imgs, class_names
+
+#==============================================================================
+#
+#==============================================================================
+
+def fl_ap(pos, amb, ranked_list):
+    &#34;&#34;&#34;Computes the average precision (AP) for an ordered list of retrieval results.
+
+    pos: set of positives images expected (ground truth)
+    amb: set of images ignores in this retrieval (query images + null images)
+    ranked_list: list of images retrieved sorted by similarity, most similar images come first
+
+    Code adapted from http://www.robots.ox.ac.uk/~vgg/data/oxbuildings/
+
+    Examples/Tests:
+
+    &gt;&gt;&gt; pos         = set([0, 1, 3])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.9027777777777777
+
+    &gt;&gt;&gt; pos         = set([0, 3, 7])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.5823412698412699
+
+    &gt;&gt;&gt; pos         = set([0, 3, 7])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = []
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.0
+
+    &gt;&gt;&gt; pos         = set([3])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = [3]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    1.0
+
+    &gt;&gt;&gt; pos         = set([3])
+    &gt;&gt;&gt; amb         = set([3])
+    &gt;&gt;&gt; ranked_list = [3]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.0
+    &#34;&#34;&#34;
+    assert isinstance(pos, set)
+    assert isinstance(amb, set)
+    assert isinstance(ranked_list, list)
+
+    old_recall    = 0.0
+    old_precision = 1.0
+    ap = 0.0
+
+    intersect_size = 0
+    j = 0
+
+    for x in ranked_list:
+        if x in amb:
+            continue
+        if x in pos:
+            intersect_size += 1
+
+        recall    = intersect_size / float(len(pos))
+        precision = intersect_size / (j + 1.0)
+
+        ap += (recall - old_recall) * ((old_precision + precision)/2.0)
+
+        old_recall    = recall
+        old_precision = precision
+        j += 1
+
+    return ap
+
+def fl_mean(l):
+    &#34;&#34;&#34;Computes the mean.
+
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; a = np.array([-1, 0, 3, 4])
+    &gt;&gt;&gt; np.mean(a)
+    1.5
+    &gt;&gt;&gt; fl_mean(a.tolist())
+    1.5
+    &gt;&gt;&gt; fl_mean([])
+    0.0
+    &gt;&gt;&gt; fl_mean([7])
+    7.0
+    &#34;&#34;&#34;
+    mean = 0.0
+    for x in l:
+        mean += x
+
+    N = float(len(l))
+    if N != 0:
+        mean /= N
+    return mean
+
+def fl_sdev(l):
+    &#34;&#34;&#34;Computes the standard deviation.
+
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; a = np.array([-1, 0, 3, 4])
+    &gt;&gt;&gt; np.std(a)
+    2.0615528128088303
+    &gt;&gt;&gt; np.std(a, ddof=1)
+    2.3804761428476167
+    &gt;&gt;&gt; fl_sdev(a.tolist())
+    2.3804761428476167
+    &gt;&gt;&gt; fl_sdev([4])
+    0.0
+    &#34;&#34;&#34;
+    mean = fl_mean(l)
+    sdev = 0.0
+    for x in l:
+        diff = x - mean
+        sdev += diff*diff
+
+    N = float(len(l))
+    if N &gt; 1:
+        sdev = sqrt( sdev / (N-1.0) )
+
+    return sdev
+
+#==============================================================================
+# Misc
+#==============================================================================
+
+class Tee(object):
+    &#34;&#34;&#34;Simulates the behaviour of the unix program &#39;tee&#39; to write output
+    both to stdout *and* a file.
+    &#34;&#34;&#34;
+
+    def __init__(self, filename, mode):
+        self.file = None
+        if filename is not None and filename != &#34;&#34; and filename != &#34;-&#34;:
+            self.file = open(filename, mode)
+        sys.stdout = self
+
+    def __del__(self):
+        try:
+            if self.file is not None:
+                self.file.close()
+        except Exception:
+            pass
+        try:
+            sys.stdout = sys.__stdout__
+        except Exception:
+            pass
+
+    def write(self, data):
+        if self.file is not None:
+            self.file.write(data)
+        sys.__stdout__.write(data)
+
+#==============================================================================
+#
+#==============================================================================
+if __name__ == &#34;__main__&#34;:
+
+    # run all doctests
+    import doctest
+    doctest.testmod()
+
+    print(&#34;All doctests passed.&#34;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_ap"><code class="name flex">
+<span>def <span class="ident">fl_ap</span></span>(<span>pos, amb, ranked_list)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Computes the average precision (AP) for an ordered list of retrieval results.</p>
+<dl>
+<dt><strong><code>pos</code></strong> :&ensp;<code>set</code> of <code>positives</code> <code>images</code> <code>expected</code> (<code>ground</code> <code>truth</code>)</dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>amb</code></strong> :&ensp;<code>set</code> of <code>images</code> <code>ignores</code> <code>in</code> <code>this</code> <code>retrieval</code> (<code>query</code> <code>images</code> + <code>null</code> <code>images</code>)</dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>ranked_list</code></strong> :&ensp;<code>list</code> of <code>images</code> <code>retrieved</code> <code>sorted</code> <code>by</code> <code>similarity</code>, <code>most</code> <code>similar</code> <code>images</code> <code>come</code> <code>first</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<p>Code adapted from <a href="http://www.robots.ox.ac.uk/~vgg/data/oxbuildings/">http://www.robots.ox.ac.uk/~vgg/data/oxbuildings/</a></p>
+<p>Examples/Tests:</p>
+<pre><code>&gt;&gt;&gt; pos         = set([0, 1, 3])
+&gt;&gt;&gt; amb         = set()
+&gt;&gt;&gt; ranked_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+&gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+0.9027777777777777
+
+&gt;&gt;&gt; pos         = set([0, 3, 7])
+&gt;&gt;&gt; amb         = set()
+&gt;&gt;&gt; ranked_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+&gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+0.5823412698412699
+
+&gt;&gt;&gt; pos         = set([0, 3, 7])
+&gt;&gt;&gt; amb         = set()
+&gt;&gt;&gt; ranked_list = []
+&gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+0.0
+
+&gt;&gt;&gt; pos         = set([3])
+&gt;&gt;&gt; amb         = set()
+&gt;&gt;&gt; ranked_list = [3]
+&gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+1.0
+
+&gt;&gt;&gt; pos         = set([3])
+&gt;&gt;&gt; amb         = set([3])
+&gt;&gt;&gt; ranked_list = [3]
+&gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+</code></pre>
+<p>0.0</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_ap(pos, amb, ranked_list):
+    &#34;&#34;&#34;Computes the average precision (AP) for an ordered list of retrieval results.
+
+    pos: set of positives images expected (ground truth)
+    amb: set of images ignores in this retrieval (query images + null images)
+    ranked_list: list of images retrieved sorted by similarity, most similar images come first
+
+    Code adapted from http://www.robots.ox.ac.uk/~vgg/data/oxbuildings/
+
+    Examples/Tests:
+
+    &gt;&gt;&gt; pos         = set([0, 1, 3])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.9027777777777777
+
+    &gt;&gt;&gt; pos         = set([0, 3, 7])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.5823412698412699
+
+    &gt;&gt;&gt; pos         = set([0, 3, 7])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = []
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.0
+
+    &gt;&gt;&gt; pos         = set([3])
+    &gt;&gt;&gt; amb         = set()
+    &gt;&gt;&gt; ranked_list = [3]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    1.0
+
+    &gt;&gt;&gt; pos         = set([3])
+    &gt;&gt;&gt; amb         = set([3])
+    &gt;&gt;&gt; ranked_list = [3]
+    &gt;&gt;&gt; fl_ap(pos, amb, ranked_list)
+    0.0
+    &#34;&#34;&#34;
+    assert isinstance(pos, set)
+    assert isinstance(amb, set)
+    assert isinstance(ranked_list, list)
+
+    old_recall    = 0.0
+    old_precision = 1.0
+    ap = 0.0
+
+    intersect_size = 0
+    j = 0
+
+    for x in ranked_list:
+        if x in amb:
+            continue
+        if x in pos:
+            intersect_size += 1
+
+        recall    = intersect_size / float(len(pos))
+        precision = intersect_size / (j + 1.0)
+
+        ap += (recall - old_recall) * ((old_precision + precision)/2.0)
+
+        old_recall    = recall
+        old_precision = precision
+        j += 1
+
+    return ap</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_mean"><code class="name flex">
+<span>def <span class="ident">fl_mean</span></span>(<span>l)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Computes the mean.</p>
+<pre><code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; a = np.array([-1, 0, 3, 4])
+&gt;&gt;&gt; np.mean(a)
+1.5
+&gt;&gt;&gt; fl_mean(a.tolist())
+1.5
+&gt;&gt;&gt; fl_mean([])
+0.0
+&gt;&gt;&gt; fl_mean([7])
+</code></pre>
+<p>7.0</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_mean(l):
+    &#34;&#34;&#34;Computes the mean.
+
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; a = np.array([-1, 0, 3, 4])
+    &gt;&gt;&gt; np.mean(a)
+    1.5
+    &gt;&gt;&gt; fl_mean(a.tolist())
+    1.5
+    &gt;&gt;&gt; fl_mean([])
+    0.0
+    &gt;&gt;&gt; fl_mean([7])
+    7.0
+    &#34;&#34;&#34;
+    mean = 0.0
+    for x in l:
+        mean += x
+
+    N = float(len(l))
+    if N != 0:
+        mean /= N
+    return mean</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_msplit"><code class="name flex">
+<span>def <span class="ident">fl_msplit</span></span>(<span>s, delimiters=&#39;;,\t&#39;)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Splits the given string by any of the given delimiters.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_msplit(s, delimiters=&#34;;,\t&#34;):
+    &#34;&#34;&#34;Splits the given string by any of the given delimiters.&#34;&#34;&#34;
+    if len(s) == 0:
+        return []
+
+    delim = delimiters[0]
+    for d in delimiters[1:]:
+        s = s.replace(d, delim)
+
+    tokens = s.split(delim)
+    #print(&#34;tokens = &#34;+str(tokens))
+    return [ t.strip() for t in tokens if len(t) &gt; 0 ]</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_csv"><code class="name flex">
+<span>def <span class="ident">fl_read_csv</span></span>(<span>filename, delimiters=&#39;,\t;&#39;)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads a CSV file and returns a list of list holding the data.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_read_csv(filename, delimiters=&#34;,\t;&#34;):
+    &#34;&#34;&#34;Reads a CSV file and returns a list of list holding the data.&#34;&#34;&#34;
+
+    data = []
+    with open(filename, &#34;r&#34;) as f:
+        for line in f:
+            tokens = fl_msplit(line, delimiters)
+            data.append(tokens)
+    return data</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_groundtruth"><code class="name flex">
+<span>def <span class="ident">fl_read_groundtruth</span></span>(<span>groundtruth_file)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads the FlickrLogos-32 ground truth.</p>
+<p>Returns a map <image> -&gt; <object class>.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_read_groundtruth(groundtruth_file):
+    &#34;&#34;&#34;Reads the FlickrLogos-32 ground truth.
+
+    Returns a map &lt;image&gt; -&gt; &lt;object class&gt;.
+    &#34;&#34;&#34;
+    if not exists(groundtruth_file):
+        print(&#34;ERROR: fl_read_groundtruth(): Arg groundtruth_file: &#34;\
+              &#34;File &#39;&#34;+groundtruth_file+&#34;&#39; does not exist!\n&#34;)
+        exit(1)
+
+    gt_data = fl_read_csv(groundtruth_file, delimiters=&#34; \t,;&#34;)
+
+    groundtruth = OrderedDict()
+    for classname, image in gt_data:
+        groundtruth[image] = classname.lower()
+
+    class_names = sorted(list(set(groundtruth.values())))
+    return groundtruth, class_names</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_groundtruth2"><code class="name flex">
+<span>def <span class="ident">fl_read_groundtruth2</span></span>(<span>groundtruth_file)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Reads the FlickrLogos-32 ground truth.</p>
+<p>Returns a 3-tuple with
+(1) a map: <image> -&gt; <object class>,
+(2) a map: <object class> -&gt; [list of images],
+(3) a list: [sorted list of class names]</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_read_groundtruth2(groundtruth_file):
+    &#34;&#34;&#34;Reads the FlickrLogos-32 ground truth.
+
+    Returns a 3-tuple with
+           (1) a map: &lt;image&gt; -&gt; &lt;object class&gt;,
+           (2) a map: &lt;object class&gt; -&gt; [list of images],
+           (3) a list: [sorted list of class names]
+    &#34;&#34;&#34;
+
+    if not exists(groundtruth_file):
+        print(&#34;ERROR: fl_read_groundtruth2(): Arg groundtruth_file: &#34;\
+              &#34;File &#39;&#34; + groundtruth_file + &#34;&#39; does not exist!\n&#34;)
+        exit(1)
+
+    gt_data = fl_read_csv(groundtruth_file)
+
+    gt_map_img2class  = OrderedDict()
+    gt_map_class2imgs = defaultdict(list)
+
+    for classname, image in gt_data:
+        gt_map_img2class[image] = classname.lower()
+        gt_map_class2imgs[classname].append(image)
+
+    class_names = sorted(list(set(gt_map_img2class.values())))
+    return gt_map_img2class, gt_map_class2imgs, class_names</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_sdev"><code class="name flex">
+<span>def <span class="ident">fl_sdev</span></span>(<span>l)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Computes the standard deviation.</p>
+<pre><code>&gt;&gt;&gt; import numpy as np
+&gt;&gt;&gt; a = np.array([-1, 0, 3, 4])
+&gt;&gt;&gt; np.std(a)
+2.0615528128088303
+&gt;&gt;&gt; np.std(a, ddof=1)
+2.3804761428476167
+&gt;&gt;&gt; fl_sdev(a.tolist())
+2.3804761428476167
+&gt;&gt;&gt; fl_sdev([4])
+</code></pre>
+<p>0.0</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def fl_sdev(l):
+    &#34;&#34;&#34;Computes the standard deviation.
+
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; a = np.array([-1, 0, 3, 4])
+    &gt;&gt;&gt; np.std(a)
+    2.0615528128088303
+    &gt;&gt;&gt; np.std(a, ddof=1)
+    2.3804761428476167
+    &gt;&gt;&gt; fl_sdev(a.tolist())
+    2.3804761428476167
+    &gt;&gt;&gt; fl_sdev([4])
+    0.0
+    &#34;&#34;&#34;
+    mean = fl_mean(l)
+    sdev = 0.0
+    for x in l:
+        diff = x - mean
+        sdev += diff*diff
+
+    N = float(len(l))
+    if N &gt; 1:
+        sdev = sqrt( sdev / (N-1.0) )
+
+    return sdev</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee"><code class="flex name class">
+<span>class <span class="ident">Tee</span></span>
+</code></dt>
+<dd>
+<section class="desc"><p>Simulates the behaviour of the unix program 'tee' to write output
+both to stdout <em>and</em> a file.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">class Tee(object):
+    &#34;&#34;&#34;Simulates the behaviour of the unix program &#39;tee&#39; to write output
+    both to stdout *and* a file.
+    &#34;&#34;&#34;
+
+    def __init__(self, filename, mode):
+        self.file = None
+        if filename is not None and filename != &#34;&#34; and filename != &#34;-&#34;:
+            self.file = open(filename, mode)
+        sys.stdout = self
+
+    def __del__(self):
+        try:
+            if self.file is not None:
+                self.file.close()
+        except Exception:
+            pass
+        try:
+            sys.stdout = sys.__stdout__
+        except Exception:
+            pass
+
+    def write(self, data):
+        if self.file is not None:
+            self.file.write(data)
+        sys.__stdout__.write(data)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee.__init__"><code class="name flex">
+<span>def <span class="ident">__init__</span></span>(<span>self, filename, mode)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Initialize self.
+See help(type(self)) for accurate signature.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def __init__(self, filename, mode):
+    self.file = None
+    if filename is not None and filename != &#34;&#34; and filename != &#34;-&#34;:
+        self.file = open(filename, mode)
+    sys.stdout = self</code></pre>
+</details>
+</dd>
+<dt id="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee.write"><code class="name flex">
+<span>def <span class="ident">write</span></span>(<span>self, data)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">def write(self, data):
+    if self.file is not None:
+        self.file.write(data)
+    sys.__stdout__.write(data)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos" href="index.html">torchsight.evaluators.flickr32.flickrlogos</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_ap" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_ap">fl_ap</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_mean" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_mean">fl_mean</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_msplit" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_msplit">fl_msplit</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_csv" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_csv">fl_read_csv</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_groundtruth" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_groundtruth">fl_read_groundtruth</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_groundtruth2" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_read_groundtruth2">fl_read_groundtruth2</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_sdev" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.fl_sdev">fl_sdev</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee">Tee</a></code></h4>
+<ul class="">
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee.__init__" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee.__init__">__init__</a></code></li>
+<li><code><a title="torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee.write" href="#torchsight.evaluators.flickr32.flickrlogos.flickrlogos.Tee.write">write</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.5.4</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

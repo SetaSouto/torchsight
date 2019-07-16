@@ -81,7 +81,8 @@ class ClassificationModule(nn.Module):
     It has the parameters to perform the classification simply by doing cosine similarity and then applied a sigmoid.
     &#34;&#34;&#34;
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False,
+                 weighted_bias=False, fixed_bias=None, increase_norm_by=None):
         &#34;&#34;&#34;Initialize the classification module.
 
         Arguments:
@@ -91,6 +92,10 @@ class ClassificationModule(nn.Module):
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
             normalize (bool, optional): Indicate that it must normalize the embeddings.
+            weighted_bias (bool, optional): If True it uses bias weights to perform the classification.
+            fixed_bias (float, optional): Use a bias for the classification as an hyperparameter.
+            increase_norm_by (float, optional): Increase the norm of the classification vectors during
+                the classification by this value.
         &#34;&#34;&#34;
         super().__init__()
 
@@ -104,11 +109,26 @@ class ClassificationModule(nn.Module):
 
         self.sigmoid = nn.Sigmoid()
         self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
+
+        self.weighted_bias = weighted_bias
+        if self.weighted_bias:
+            self.bias = nn.Parameter(torch.Tensor(classes))
+
+        self.fixed_bias = fixed_bias
+
+        if self.fixed_bias is not None and self.weighted_bias:
+            print(&#39;WARN: Using weighted and fixed bias in the classification module, &#39;
+                  &#39;this could lead to inconsistent results.&#39;)
+
+        self.norm_increaser = increase_norm_by
         self.reset_weights()
 
     def reset_weights(self):
         &#34;&#34;&#34;Reset and initialize with kaiming normal the weights.&#34;&#34;&#34;
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
+
+        if self.weighted_bias:
+            nn.init.constant_(self.bias, 0)
 
     def encode(self, feature_map):
         &#34;&#34;&#34;Generate the embeddings for the given feature map.
@@ -152,7 +172,18 @@ class ClassificationModule(nn.Module):
                 Shape:
                     (batch size, total embeddings, number of classes)
         &#34;&#34;&#34;
-        return self.sigmoid(torch.matmul(embeddings, self.weights))
+        similarity = torch.matmul(embeddings, self.weights)
+
+        if self.norm_increaser is not None:
+            similarity *= self.norm_increaser
+
+        if self.weighted_bias:
+            similarity += self.bias
+
+        if self.fixed_bias is not None:
+            similarity += self.fixed_bias
+
+        return self.sigmoid(similarity)
 
     def forward(self, feature_maps):
         &#34;&#34;&#34;Generate the embeddings based on the feature maps and get thr probability of each one
@@ -181,8 +212,9 @@ class DLDENet(RetinaNet):
     Based on the RetinaNet implementation of this package, for more information please see its docs.
     &#34;&#34;&#34;
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
-                 device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
+                 normalize=False, pretrained=True,
+                 device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None):
         &#34;&#34;&#34;Initialize the network.
 
         Arguments:
@@ -192,15 +224,25 @@ class DLDENet(RetinaNet):
                 For the default dict please see RetinaNet module.
             anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
             normalize (bool, optional): Indicates if the embeddings must be normalized.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
+            weighted_bias (bool, optional): Use bias weights in the classification module.
+            fixed_bias (float, optional): A bias to use as a fixed hyperparameter.
+            increase_norm_by (float, optional): Increase the norm of the classification vectors by this value while
+                performing the classification step.
         &#34;&#34;&#34;
         self.embedding_size = embedding_size
         self.normalize = normalize
-        super().__init__(classes, resnet, features, anchors, pretrained, device)
+        self.weighted_bias = weighted_bias
+        self.fixed_bias = fixed_bias
+        self.increase_norm_by = increase_norm_by
+        super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         &#34;&#34;&#34;Get the classification module according to this implementation.
@@ -217,7 +259,9 @@ class DLDENet(RetinaNet):
             ClassificationModule: The module for classification.
         &#34;&#34;&#34;
         return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
-                                    features=features, classes=classes, normalize=self.normalize)
+                                    features=features, classes=classes, normalize=self.normalize,
+                                    weighted_bias=self.weighted_bias, fixed_bias=self.fixed_bias,
+                                    increase_norm_by=self.increase_norm_by)
 
     def classify(self, feature_maps):
         &#34;&#34;&#34;Perform the classification of the feature maps.
@@ -237,18 +281,21 @@ class DLDENet(RetinaNet):
         return self.classification(feature_maps)
 
     @classmethod
-    def from_checkpoint(cls, checkpoint, device):
+    def from_checkpoint(cls, checkpoint, device=None):
         &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
 
         Arguments:
-            checkpoint (str): The path to the checkpoint file.
-            device (str): The device where to load the model. Necessary to avoid conflicts
-                with the device where the model was trained.
+            checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+            device (str, optional): The device where to load the model.
 
         Returns:
             DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
         &#34;&#34;&#34;
-        checkpoint = torch.load(checkpoint, map_location=device)
+        device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint, map_location=device)
+
         params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
 
         model = cls(classes=params[&#39;classes&#39;],
@@ -257,6 +304,7 @@ class DLDENet(RetinaNet):
                     anchors=params[&#39;anchors&#39;],
                     embedding_size=params[&#39;embedding_size&#39;],
                     normalize=params[&#39;normalize&#39;],
+                    weighted_bias=params[&#39;weighted_bias&#39;],
                     pretrained=params[&#39;pretrained&#39;],
                     device=device)
         model.load_state_dict(checkpoint[&#39;model&#39;])
@@ -291,7 +339,8 @@ class DLDENet(RetinaNet):
     It has the parameters to perform the classification simply by doing cosine similarity and then applied a sigmoid.
     &#34;&#34;&#34;
 
-    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False):
+    def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False,
+                 weighted_bias=False, fixed_bias=None, increase_norm_by=None):
         &#34;&#34;&#34;Initialize the classification module.
 
         Arguments:
@@ -301,6 +350,10 @@ class DLDENet(RetinaNet):
             features (int): Number of features in the conv layers that generates the embedding.
             classes (int): The number of classes to detect.
             normalize (bool, optional): Indicate that it must normalize the embeddings.
+            weighted_bias (bool, optional): If True it uses bias weights to perform the classification.
+            fixed_bias (float, optional): Use a bias for the classification as an hyperparameter.
+            increase_norm_by (float, optional): Increase the norm of the classification vectors during
+                the classification by this value.
         &#34;&#34;&#34;
         super().__init__()
 
@@ -314,11 +367,26 @@ class DLDENet(RetinaNet):
 
         self.sigmoid = nn.Sigmoid()
         self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
+
+        self.weighted_bias = weighted_bias
+        if self.weighted_bias:
+            self.bias = nn.Parameter(torch.Tensor(classes))
+
+        self.fixed_bias = fixed_bias
+
+        if self.fixed_bias is not None and self.weighted_bias:
+            print(&#39;WARN: Using weighted and fixed bias in the classification module, &#39;
+                  &#39;this could lead to inconsistent results.&#39;)
+
+        self.norm_increaser = increase_norm_by
         self.reset_weights()
 
     def reset_weights(self):
         &#34;&#34;&#34;Reset and initialize with kaiming normal the weights.&#34;&#34;&#34;
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
+
+        if self.weighted_bias:
+            nn.init.constant_(self.bias, 0)
 
     def encode(self, feature_map):
         &#34;&#34;&#34;Generate the embeddings for the given feature map.
@@ -362,7 +430,18 @@ class DLDENet(RetinaNet):
                 Shape:
                     (batch size, total embeddings, number of classes)
         &#34;&#34;&#34;
-        return self.sigmoid(torch.matmul(embeddings, self.weights))
+        similarity = torch.matmul(embeddings, self.weights)
+
+        if self.norm_increaser is not None:
+            similarity *= self.norm_increaser
+
+        if self.weighted_bias:
+            similarity += self.bias
+
+        if self.fixed_bias is not None:
+            similarity += self.fixed_bias
+
+        return self.sigmoid(similarity)
 
     def forward(self, feature_maps):
         &#34;&#34;&#34;Generate the embeddings based on the feature maps and get thr probability of each one
@@ -384,7 +463,7 @@ class DLDENet(RetinaNet):
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.models.dlde.weighted.ClassificationModule.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, embedding_size, anchors, features, classes, normalize=False)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, embedding_size, anchors, features, classes, normalize=False, weighted_bias=False, fixed_bias=None, increase_norm_by=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the classification module.</p>
@@ -402,10 +481,18 @@ class DLDENet(RetinaNet):
 <dd>The number of classes to detect.</dd>
 <dt><strong><code>normalize</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Indicate that it must normalize the embeddings.</dd>
+<dt><strong><code>weighted_bias</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True it uses bias weights to perform the classification.</dd>
+<dt><strong><code>fixed_bias</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Use a bias for the classification as an hyperparameter.</dd>
+<dt><strong><code>increase_norm_by</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Increase the norm of the classification vectors during
+the classification by this value.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False):
+<pre><code class="python">def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False,
+             weighted_bias=False, fixed_bias=None, increase_norm_by=None):
     &#34;&#34;&#34;Initialize the classification module.
 
     Arguments:
@@ -415,6 +502,10 @@ class DLDENet(RetinaNet):
         features (int): Number of features in the conv layers that generates the embedding.
         classes (int): The number of classes to detect.
         normalize (bool, optional): Indicate that it must normalize the embeddings.
+        weighted_bias (bool, optional): If True it uses bias weights to perform the classification.
+        fixed_bias (float, optional): Use a bias for the classification as an hyperparameter.
+        increase_norm_by (float, optional): Increase the norm of the classification vectors during
+            the classification by this value.
     &#34;&#34;&#34;
     super().__init__()
 
@@ -428,6 +519,18 @@ class DLDENet(RetinaNet):
 
     self.sigmoid = nn.Sigmoid()
     self.weights = nn.Parameter(torch.Tensor(embedding_size, classes))
+
+    self.weighted_bias = weighted_bias
+    if self.weighted_bias:
+        self.bias = nn.Parameter(torch.Tensor(classes))
+
+    self.fixed_bias = fixed_bias
+
+    if self.fixed_bias is not None and self.weighted_bias:
+        print(&#39;WARN: Using weighted and fixed bias in the classification module, &#39;
+              &#39;this could lead to inconsistent results.&#39;)
+
+    self.norm_increaser = increase_norm_by
     self.reset_weights()</code></pre>
 </details>
 </dd>
@@ -467,7 +570,18 @@ Shape:
             Shape:
                 (batch size, total embeddings, number of classes)
     &#34;&#34;&#34;
-    return self.sigmoid(torch.matmul(embeddings, self.weights))</code></pre>
+    similarity = torch.matmul(embeddings, self.weights)
+
+    if self.norm_increaser is not None:
+        similarity *= self.norm_increaser
+
+    if self.weighted_bias:
+        similarity += self.bias
+
+    if self.fixed_bias is not None:
+        similarity += self.fixed_bias
+
+    return self.sigmoid(similarity)</code></pre>
 </details>
 </dd>
 <dt id="torchsight.models.dlde.weighted.ClassificationModule.encode"><code class="name flex">
@@ -561,7 +675,10 @@ Shape:
 <summary>Source code</summary>
 <pre><code class="python">def reset_weights(self):
     &#34;&#34;&#34;Reset and initialize with kaiming normal the weights.&#34;&#34;&#34;
-    nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))</code></pre>
+    nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
+
+    if self.weighted_bias:
+        nn.init.constant_(self.bias, 0)</code></pre>
 </details>
 </dd>
 </dl>
@@ -586,8 +703,9 @@ in the same direction as its classification vector.</p>
     Based on the RetinaNet implementation of this package, for more information please see its docs.
     &#34;&#34;&#34;
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
-                 device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
+                 normalize=False, pretrained=True,
+                 device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None):
         &#34;&#34;&#34;Initialize the network.
 
         Arguments:
@@ -597,15 +715,25 @@ in the same direction as its classification vector.</p>
                 For the default dict please see RetinaNet module.
             anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
                 the Anchors module. For default values please see RetinaNet module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             embedding_size (int, optional): The length of the embedding to generate per anchor.
             normalize (bool, optional): Indicates if the embeddings must be normalized.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
+            weighted_bias (bool, optional): Use bias weights in the classification module.
+            fixed_bias (float, optional): A bias to use as a fixed hyperparameter.
+            increase_norm_by (float, optional): Increase the norm of the classification vectors by this value while
+                performing the classification step.
         &#34;&#34;&#34;
         self.embedding_size = embedding_size
         self.normalize = normalize
-        super().__init__(classes, resnet, features, anchors, pretrained, device)
+        self.weighted_bias = weighted_bias
+        self.fixed_bias = fixed_bias
+        self.increase_norm_by = increase_norm_by
+        super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
         &#34;&#34;&#34;Get the classification module according to this implementation.
@@ -622,7 +750,9 @@ in the same direction as its classification vector.</p>
             ClassificationModule: The module for classification.
         &#34;&#34;&#34;
         return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
-                                    features=features, classes=classes, normalize=self.normalize)
+                                    features=features, classes=classes, normalize=self.normalize,
+                                    weighted_bias=self.weighted_bias, fixed_bias=self.fixed_bias,
+                                    increase_norm_by=self.increase_norm_by)
 
     def classify(self, feature_maps):
         &#34;&#34;&#34;Perform the classification of the feature maps.
@@ -642,18 +772,21 @@ in the same direction as its classification vector.</p>
         return self.classification(feature_maps)
 
     @classmethod
-    def from_checkpoint(cls, checkpoint, device):
+    def from_checkpoint(cls, checkpoint, device=None):
         &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
 
         Arguments:
-            checkpoint (str): The path to the checkpoint file.
-            device (str): The device where to load the model. Necessary to avoid conflicts
-                with the device where the model was trained.
+            checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+            device (str, optional): The device where to load the model.
 
         Returns:
             DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
         &#34;&#34;&#34;
-        checkpoint = torch.load(checkpoint, map_location=device)
+        device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint, map_location=device)
+
         params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
 
         model = cls(classes=params[&#39;classes&#39;],
@@ -662,6 +795,7 @@ in the same direction as its classification vector.</p>
                     anchors=params[&#39;anchors&#39;],
                     embedding_size=params[&#39;embedding_size&#39;],
                     normalize=params[&#39;normalize&#39;],
+                    weighted_bias=params[&#39;weighted_bias&#39;],
                     pretrained=params[&#39;pretrained&#39;],
                     device=device)
         model.load_state_dict(checkpoint[&#39;model&#39;])
@@ -671,17 +805,16 @@ in the same direction as its classification vector.</p>
 <h3>Static methods</h3>
 <dl>
 <dt id="torchsight.models.dlde.weighted.DLDENet.from_checkpoint"><code class="name flex">
-<span>def <span class="ident">from_checkpoint</span></span>(<span>cls, checkpoint, device)</span>
+<span>def <span class="ident">from_checkpoint</span></span>(<span>cls, checkpoint, device=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Get an instance of the model from a checkpoint generated with the DLDENetTrainer.</p>
 <h2 id="arguments">Arguments</h2>
 <dl>
-<dt><strong><code>checkpoint</code></strong> :&ensp;<code>str</code></dt>
-<dd>The path to the checkpoint file.</dd>
-<dt><strong><code>device</code></strong> :&ensp;<code>str</code></dt>
-<dd>The device where to load the model. Necessary to avoid conflicts
-with the device where the model was trained.</dd>
+<dt><strong><code>checkpoint</code></strong> :&ensp;<code>str</code> or <code>dict</code></dt>
+<dd>The path to the checkpoint file or the loaded checkpoint file.</dd>
+<dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The device where to load the model.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -691,18 +824,21 @@ with the device where the model was trained.</dd>
 <details class="source">
 <summary>Source code</summary>
 <pre><code class="python">@classmethod
-def from_checkpoint(cls, checkpoint, device):
+def from_checkpoint(cls, checkpoint, device=None):
     &#34;&#34;&#34;Get an instance of the model from a checkpoint generated with the DLDENetTrainer.
 
     Arguments:
-        checkpoint (str): The path to the checkpoint file.
-        device (str): The device where to load the model. Necessary to avoid conflicts
-            with the device where the model was trained.
+        checkpoint (str or dict): The path to the checkpoint file or the loaded checkpoint file.
+        device (str, optional): The device where to load the model.
 
     Returns:
         DLDENet: An instance with the weights and hyperparameters got from the checkpoint file.
     &#34;&#34;&#34;
-    checkpoint = torch.load(checkpoint, map_location=device)
+    device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
+
+    if isinstance(checkpoint, str):
+        checkpoint = torch.load(checkpoint, map_location=device)
+
     params = checkpoint[&#39;hyperparameters&#39;][&#39;model&#39;]
 
     model = cls(classes=params[&#39;classes&#39;],
@@ -711,6 +847,7 @@ def from_checkpoint(cls, checkpoint, device):
                 anchors=params[&#39;anchors&#39;],
                 embedding_size=params[&#39;embedding_size&#39;],
                 normalize=params[&#39;normalize&#39;],
+                weighted_bias=params[&#39;weighted_bias&#39;],
                 pretrained=params[&#39;pretrained&#39;],
                 device=device)
     model.load_state_dict(checkpoint[&#39;model&#39;])
@@ -722,7 +859,7 @@ def from_checkpoint(cls, checkpoint, device):
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.models.dlde.weighted.DLDENet.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True, device=None)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512, normalize=False, pretrained=True, device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the network.</p>
@@ -738,6 +875,10 @@ For the default dict please see RetinaNet module.</dd>
 <dt><strong><code>anchors</code></strong> :&ensp;<code>dict</code>, optional</dt>
 <dd>The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
 the Anchors module. For default values please see RetinaNet module.</dd>
+<dt><strong><code>fpn_levels</code></strong> :&ensp;<code>list</code> of <code>int</code></dt>
+<dd>The numbers of the layers in the FPN to get their feature maps.
+If None is given it will return all the levels from 3 to 7.
+If some level is not present it won't return that feature map level of the pyramid.</dd>
 <dt><strong><code>embedding_size</code></strong> :&ensp;<code>int</code>, optional</dt>
 <dd>The length of the embedding to generate per anchor.</dd>
 <dt><strong><code>normalize</code></strong> :&ensp;<code>bool</code>, optional</dt>
@@ -747,11 +888,19 @@ the Anchors module. For default values please see RetinaNet module.</dd>
 This pretraining is provided by the torchvision package.</dd>
 <dt><strong><code>device</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>The device where the module will run.</dd>
+<dt><strong><code>weighted_bias</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Use bias weights in the classification module.</dd>
+<dt><strong><code>fixed_bias</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>A bias to use as a fixed hyperparameter.</dd>
+<dt><strong><code>increase_norm_by</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dd>Increase the norm of the classification vectors by this value while
+performing the classification step.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, embedding_size=512, normalize=False, pretrained=True,
-             device=None):
+<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
+             normalize=False, pretrained=True,
+             device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None):
     &#34;&#34;&#34;Initialize the network.
 
     Arguments:
@@ -761,15 +910,25 @@ This pretraining is provided by the torchvision package.</dd>
             For the default dict please see RetinaNet module.
         anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
             the Anchors module. For default values please see RetinaNet module.
+        fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+            If None is given it will return all the levels from 3 to 7.
+            If some level is not present it won&#39;t return that feature map level of the pyramid.
         embedding_size (int, optional): The length of the embedding to generate per anchor.
         normalize (bool, optional): Indicates if the embeddings must be normalized.
         pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
             This pretraining is provided by the torchvision package.
         device (str, optional): The device where the module will run.
+        weighted_bias (bool, optional): Use bias weights in the classification module.
+        fixed_bias (float, optional): A bias to use as a fixed hyperparameter.
+        increase_norm_by (float, optional): Increase the norm of the classification vectors by this value while
+            performing the classification step.
     &#34;&#34;&#34;
     self.embedding_size = embedding_size
     self.normalize = normalize
-    super().__init__(classes, resnet, features, anchors, pretrained, device)</code></pre>
+    self.weighted_bias = weighted_bias
+    self.fixed_bias = fixed_bias
+    self.increase_norm_by = increase_norm_by
+    super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)</code></pre>
 </details>
 </dd>
 <dt id="torchsight.models.dlde.weighted.DLDENet.classify"><code class="name flex">
@@ -848,7 +1007,9 @@ Shape:
         ClassificationModule: The module for classification.
     &#34;&#34;&#34;
     return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
-                                features=features, classes=classes, normalize=self.normalize)</code></pre>
+                                features=features, classes=classes, normalize=self.normalize,
+                                weighted_bias=self.weighted_bias, fixed_bias=self.fixed_bias,
+                                increase_norm_by=self.increase_norm_by)</code></pre>
 </details>
 </dd>
 </dl>
@@ -858,6 +1019,7 @@ Shape:
 <ul class="hlist">
 <li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.forward" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.forward">forward</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.make_predictions" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.make_predictions">make_predictions</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.to" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.to">to</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="../retinanet.html#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>

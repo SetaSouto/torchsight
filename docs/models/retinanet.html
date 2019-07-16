@@ -63,8 +63,8 @@ https://github.com/yhenon/pytorch-retinanet
 import torch
 from torch import nn
 
-from .resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 from .anchors import Anchors
+from .resnet import resnet18, resnet34, resnet50, resnet101, resnet152
 
 
 class FeaturePyramid(nn.Module):
@@ -88,7 +88,7 @@ class FeaturePyramid(nn.Module):
 
     strides = [8, 16, 32, 64, 128]  # The stride applied to obtain each output
 
-    def __init__(self, resnet=18, features=256, pretrained=True):
+    def __init__(self, resnet=18, features=256, levels=None, pretrained=True):
         &#34;&#34;&#34;Initialize the network.
 
         It init a ResNet with the given depth and use &#39;features&#39; as the number of
@@ -98,9 +98,17 @@ class FeaturePyramid(nn.Module):
             resnet (int): Indicates the depth of the resnet backbone.
             features (int): Indicates the depth (number of channels) of each feature map
                 of the pyramid.
+            levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             pretrained (bool): Indicates if the backbone must be pretrained.
         &#34;&#34;&#34;
         super(FeaturePyramid, self).__init__()
+
+        if levels is None:
+            levels = [3, 4, 5, 6, 7]
+
+        self.levels = levels
 
         if resnet == 18:
             self.backbone = resnet18(pretrained)
@@ -178,12 +186,18 @@ class FeaturePyramid(nn.Module):
         p3 = p3 + p4_upsampled
         p3 = self.p3_conv2(p3)
 
-        p6 = self.p6_conv(c5)
+        features = {3: p3, 4: p4, 5: p5}
 
-        p7 = self.p7_relu(p6)
-        p7 = self.p7_conv(p7)
+        if 6 in self.levels:
+            p6 = self.p6_conv(c5)
+            features[6] = p6
 
-        return p3, p4, p5, p6, p7
+        if 7 in self.levels:
+            p7 = self.p7_relu(p6)
+            p7 = self.p7_conv(p7)
+            features[7] = p7
+
+        return [features[i] for i in self.levels]
 
 
 class SubModule(nn.Module):
@@ -280,7 +294,7 @@ class Classification(SubModule):
     It generates, given a feature map, a tensor with the probability of each class.
     &#34;&#34;&#34;
 
-    def __init__(self, in_channels, classes, anchors=9, features=256):
+    def __init__(self, in_channels, classes, anchors=9, features=256, prior=0.01):
         &#34;&#34;&#34;Initialize the network.
 
         Args:
@@ -290,6 +304,9 @@ class Classification(SubModule):
             features (int, optional): Indicates the number of inner features that the conv layers must have.
         &#34;&#34;&#34;
         super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+        # Initialize the last conv layer with `bias = -log((1-pi)/pi)` as in the paper
+        torch.nn.init.constant_(self.last_conv.bias, float(torch.log(torch.Tensor([(1 - prior) / prior]))))
 
         self.classes = classes
         self.activation = nn.Sigmoid()
@@ -323,7 +340,7 @@ class RetinaNet(nn.Module):
     (N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class&#39; label.
     &#34;&#34;&#34;
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, pretrained=True, device=None):
         &#34;&#34;&#34;Initialize the network.
 
         Arguments:
@@ -332,6 +349,9 @@ class RetinaNet(nn.Module):
             features (dict, optional): The dict that indicates the features for each module of the network.
             anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
                 the Anchors module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
@@ -348,7 +368,9 @@ class RetinaNet(nn.Module):
         self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
 
         # Modules
-        self.fpn = FeaturePyramid(resnet=resnet, features=features[&#39;pyramid&#39;], pretrained=pretrained)
+        self.fpn = FeaturePyramid(
+            resnet=resnet, features=features[&#39;pyramid&#39;], levels=fpn_levels, pretrained=pretrained
+        )
 
         if len(anchors[&#39;sizes&#39;]) != 5:
             raise ValueError(&#39;anchors_size must have length 5 to work with the FPN&#39;)
@@ -418,36 +440,6 @@ class RetinaNet(nn.Module):
 
         return super(RetinaNet, self).eval()
 
-    def transform(self, images, anchors, regressions, classifications):
-        &#34;&#34;&#34;Transform, clip and apply NMS to the predictions.
-
-        Arguments:
-            images (torch.Tensor): The images that passed through the network. Useful for clipping
-                the predicted bounding boxes.
-                Shape:
-                    (batch size, channels, height, width)
-            anchors (torch.Tensor): The base anchors generated for the images.
-                Shape:
-                    (batch size, amount of anchors, 4)
-            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
-                Shape:
-                    (batch size, amount of anchors, 4)
-            classifications (torch.Tensor): The probabilities for each class for each anchor.
-                Shape:
-                    (batch size, amount of anchors, amount of classes)
-
-        Returns:
-            sequence: A sequence of (bounding boxes, classifications) for each image.
-                Bounding boxes: Tensor with shape (total predictions, 4).
-                Classifications: Tensor with shape (total predictions, classes).
-        &#34;&#34;&#34;
-        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
-        del regressions
-        # Clip the boxes to fit in the image
-        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
-        # Generate a sequence of (bounding_boxes, classifications) for each image
-        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
-
     def classify(self, feature_maps):
         &#34;&#34;&#34;Perform the classification of the feature maps.
 
@@ -514,6 +506,60 @@ class RetinaNet(nn.Module):
         anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
         return self.transform(images, anchors, regressions, classifications)
 
+    def transform(self, images, anchors, regressions, classifications):
+        &#34;&#34;&#34;Transform, clip and apply NMS to the predictions.
+
+        Arguments:
+            images (torch.Tensor): The images that passed through the network. Useful for clipping
+                the predicted bounding boxes.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors generated for the images.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            classifications (torch.Tensor): The probabilities for each class for each anchor.
+                Shape:
+                    (batch size, amount of anchors, amount of classes)
+
+        Returns:
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        &#34;&#34;&#34;
+        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+        # Generate a sequence of (bounding_boxes, classifications) for each image
+        return [self.make_predictions(*self.nms(bounding_boxes[index], classifications[index]))
+                for index in range(images.shape[0])]
+
+    @staticmethod
+    def make_predictions(boxes, classifications):
+        &#34;&#34;&#34;Join the boxes and the classification probabilities and make a single predictions per bounding box.
+
+        Arguments:
+            boxes (torch.Tensor): The bounding boxes generated for the image.
+                Shape: `(num of boxes, 4)`.
+            classifications (torch.Tensor): The probability for each class.
+                Shape: `(num of boxes, num of classes)`.
+
+        Returns:
+            torch.Tensor: A single tensor with the label and the probability for each predicted bounding box.
+        &#34;&#34;&#34;
+        detections = torch.zeros(boxes.shape[0], 6)
+
+        if boxes.shape[0] &gt; 0:
+            detections[:, :4] = boxes
+            probs, labels = classifications.max(dim=1)
+            detections[:, 4] = labels
+            detections[:, 5] = probs
+
+        return detections
+
     def nms(self, boxes, classifications):
         &#34;&#34;&#34;Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
         the same object.
@@ -545,7 +591,7 @@ class RetinaNet(nn.Module):
 
         # If there aren&#39;t detections return empty
         if boxes.shape[0] == 0:
-            return torch.zeros(0).cuda()
+            return torch.zeros(0).to(self.device)
 
         # Get the numpy version
         # was_cuda = detections.is_cuda
@@ -584,8 +630,8 @@ class RetinaNet(nn.Module):
             yy2 = torch.min(y2[actual], y2[indexes[:-1]])
 
             # Compute width and height to compute the intersection over union
-            w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
-            h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+            w = torch.max(torch.Tensor([0]).to(self.device), xx2 - xx1 + 1)
+            h = torch.max(torch.Tensor([0]).to(self.device), yy2 - yy1 + 1)
             del xx1, yy1, xx2, yy2
             intersection = (w * h)
             del h, w
@@ -625,7 +671,7 @@ class RetinaNet(nn.Module):
     It generates, given a feature map, a tensor with the probability of each class.
     &#34;&#34;&#34;
 
-    def __init__(self, in_channels, classes, anchors=9, features=256):
+    def __init__(self, in_channels, classes, anchors=9, features=256, prior=0.01):
         &#34;&#34;&#34;Initialize the network.
 
         Args:
@@ -635,6 +681,9 @@ class RetinaNet(nn.Module):
             features (int, optional): Indicates the number of inner features that the conv layers must have.
         &#34;&#34;&#34;
         super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+        # Initialize the last conv layer with `bias = -log((1-pi)/pi)` as in the paper
+        torch.nn.init.constant_(self.last_conv.bias, float(torch.log(torch.Tensor([(1 - prior) / prior]))))
 
         self.classes = classes
         self.activation = nn.Sigmoid()
@@ -659,7 +708,7 @@ class RetinaNet(nn.Module):
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.models.retinanet.Classification.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, classes, anchors=9, features=256)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, in_channels, classes, anchors=9, features=256, prior=0.01)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the network.</p>
@@ -676,7 +725,7 @@ class RetinaNet(nn.Module):
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, in_channels, classes, anchors=9, features=256):
+<pre><code class="python">def __init__(self, in_channels, classes, anchors=9, features=256, prior=0.01):
     &#34;&#34;&#34;Initialize the network.
 
     Args:
@@ -686,6 +735,9 @@ class RetinaNet(nn.Module):
         features (int, optional): Indicates the number of inner features that the conv layers must have.
     &#34;&#34;&#34;
     super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+    # Initialize the last conv layer with `bias = -log((1-pi)/pi)` as in the paper
+    torch.nn.init.constant_(self.last_conv.bias, float(torch.log(torch.Tensor([(1 - prior) / prior]))))
 
     self.classes = classes
     self.activation = nn.Sigmoid()</code></pre>
@@ -765,7 +817,7 @@ and the strong localization features of the first layers.</p>
 
     strides = [8, 16, 32, 64, 128]  # The stride applied to obtain each output
 
-    def __init__(self, resnet=18, features=256, pretrained=True):
+    def __init__(self, resnet=18, features=256, levels=None, pretrained=True):
         &#34;&#34;&#34;Initialize the network.
 
         It init a ResNet with the given depth and use &#39;features&#39; as the number of
@@ -775,9 +827,17 @@ and the strong localization features of the first layers.</p>
             resnet (int): Indicates the depth of the resnet backbone.
             features (int): Indicates the depth (number of channels) of each feature map
                 of the pyramid.
+            levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             pretrained (bool): Indicates if the backbone must be pretrained.
         &#34;&#34;&#34;
         super(FeaturePyramid, self).__init__()
+
+        if levels is None:
+            levels = [3, 4, 5, 6, 7]
+
+        self.levels = levels
 
         if resnet == 18:
             self.backbone = resnet18(pretrained)
@@ -855,12 +915,18 @@ and the strong localization features of the first layers.</p>
         p3 = p3 + p4_upsampled
         p3 = self.p3_conv2(p3)
 
-        p6 = self.p6_conv(c5)
+        features = {3: p3, 4: p4, 5: p5}
 
-        p7 = self.p7_relu(p6)
-        p7 = self.p7_conv(p7)
+        if 6 in self.levels:
+            p6 = self.p6_conv(c5)
+            features[6] = p6
 
-        return p3, p4, p5, p6, p7</code></pre>
+        if 7 in self.levels:
+            p7 = self.p7_relu(p6)
+            p7 = self.p7_conv(p7)
+            features[7] = p7
+
+        return [features[i] for i in self.levels]</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -872,7 +938,7 @@ and the strong localization features of the first layers.</p>
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.models.retinanet.FeaturePyramid.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, resnet=18, features=256, pretrained=True)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, resnet=18, features=256, levels=None, pretrained=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the network.</p>
@@ -885,12 +951,16 @@ channels for each feature map.</p>
 <dt><strong><code>features</code></strong> :&ensp;<code>int</code></dt>
 <dd>Indicates the depth (number of channels) of each feature map
 of the pyramid.</dd>
+<dt><strong><code>levels</code></strong> :&ensp;<code>list</code> of <code>int</code></dt>
+<dd>The numbers of the layers in the FPN to get their feature maps.
+If None is given it will return all the levels from 3 to 7.
+If some level is not present it won't return that feature map level of the pyramid.</dd>
 <dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code></dt>
 <dd>Indicates if the backbone must be pretrained.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, resnet=18, features=256, pretrained=True):
+<pre><code class="python">def __init__(self, resnet=18, features=256, levels=None, pretrained=True):
     &#34;&#34;&#34;Initialize the network.
 
     It init a ResNet with the given depth and use &#39;features&#39; as the number of
@@ -900,9 +970,17 @@ of the pyramid.</dd>
         resnet (int): Indicates the depth of the resnet backbone.
         features (int): Indicates the depth (number of channels) of each feature map
             of the pyramid.
+        levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+            If None is given it will return all the levels from 3 to 7.
+            If some level is not present it won&#39;t return that feature map level of the pyramid.
         pretrained (bool): Indicates if the backbone must be pretrained.
     &#34;&#34;&#34;
     super(FeaturePyramid, self).__init__()
+
+    if levels is None:
+        levels = [3, 4, 5, 6, 7]
+
+    self.levels = levels
 
     if resnet == 18:
         self.backbone = resnet18(pretrained)
@@ -1004,12 +1082,18 @@ Shapes:
     p3 = p3 + p4_upsampled
     p3 = self.p3_conv2(p3)
 
-    p6 = self.p6_conv(c5)
+    features = {3: p3, 4: p4, 5: p5}
 
-    p7 = self.p7_relu(p6)
-    p7 = self.p7_conv(p7)
+    if 6 in self.levels:
+        p6 = self.p6_conv(c5)
+        features[6] = p6
 
-    return p3, p4, p5, p6, p7</code></pre>
+    if 7 in self.levels:
+        p7 = self.p7_relu(p6)
+        p7 = self.p7_conv(p7)
+        features[7] = p7
+
+    return [features[i] for i in self.levels]</code></pre>
 </details>
 </dd>
 </dl>
@@ -1150,7 +1234,7 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
     (N, 5) where N are the number of detections and 5 are for the x1, y1, x2, y2, class&#39; label.
     &#34;&#34;&#34;
 
-    def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
+    def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, pretrained=True, device=None):
         &#34;&#34;&#34;Initialize the network.
 
         Arguments:
@@ -1159,6 +1243,9 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
             features (dict, optional): The dict that indicates the features for each module of the network.
             anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
                 the Anchors module.
+            fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+                If None is given it will return all the levels from 3 to 7.
+                If some level is not present it won&#39;t return that feature map level of the pyramid.
             pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
                 This pretraining is provided by the torchvision package.
             device (str, optional): The device where the module will run.
@@ -1175,7 +1262,9 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
         self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
 
         # Modules
-        self.fpn = FeaturePyramid(resnet=resnet, features=features[&#39;pyramid&#39;], pretrained=pretrained)
+        self.fpn = FeaturePyramid(
+            resnet=resnet, features=features[&#39;pyramid&#39;], levels=fpn_levels, pretrained=pretrained
+        )
 
         if len(anchors[&#39;sizes&#39;]) != 5:
             raise ValueError(&#39;anchors_size must have length 5 to work with the FPN&#39;)
@@ -1245,36 +1334,6 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
 
         return super(RetinaNet, self).eval()
 
-    def transform(self, images, anchors, regressions, classifications):
-        &#34;&#34;&#34;Transform, clip and apply NMS to the predictions.
-
-        Arguments:
-            images (torch.Tensor): The images that passed through the network. Useful for clipping
-                the predicted bounding boxes.
-                Shape:
-                    (batch size, channels, height, width)
-            anchors (torch.Tensor): The base anchors generated for the images.
-                Shape:
-                    (batch size, amount of anchors, 4)
-            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
-                Shape:
-                    (batch size, amount of anchors, 4)
-            classifications (torch.Tensor): The probabilities for each class for each anchor.
-                Shape:
-                    (batch size, amount of anchors, amount of classes)
-
-        Returns:
-            sequence: A sequence of (bounding boxes, classifications) for each image.
-                Bounding boxes: Tensor with shape (total predictions, 4).
-                Classifications: Tensor with shape (total predictions, classes).
-        &#34;&#34;&#34;
-        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
-        del regressions
-        # Clip the boxes to fit in the image
-        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
-        # Generate a sequence of (bounding_boxes, classifications) for each image
-        return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]
-
     def classify(self, feature_maps):
         &#34;&#34;&#34;Perform the classification of the feature maps.
 
@@ -1341,6 +1400,60 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
         anchors, regressions, classifications = anchors.detach(), regressions.detach(), classifications.detach()
         return self.transform(images, anchors, regressions, classifications)
 
+    def transform(self, images, anchors, regressions, classifications):
+        &#34;&#34;&#34;Transform, clip and apply NMS to the predictions.
+
+        Arguments:
+            images (torch.Tensor): The images that passed through the network. Useful for clipping
+                the predicted bounding boxes.
+                Shape:
+                    (batch size, channels, height, width)
+            anchors (torch.Tensor): The base anchors generated for the images.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            regressions (torch.Tensor): The regression values to transform and adjust the bounding boxes.
+                Shape:
+                    (batch size, amount of anchors, 4)
+            classifications (torch.Tensor): The probabilities for each class for each anchor.
+                Shape:
+                    (batch size, amount of anchors, amount of classes)
+
+        Returns:
+            sequence: A sequence of (bounding boxes, classifications) for each image.
+                Bounding boxes: Tensor with shape (total predictions, 4).
+                Classifications: Tensor with shape (total predictions, classes).
+        &#34;&#34;&#34;
+        bounding_boxes = self.anchors.transform(anchors, regressions).detach()
+        del regressions
+        # Clip the boxes to fit in the image
+        bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
+        # Generate a sequence of (bounding_boxes, classifications) for each image
+        return [self.make_predictions(*self.nms(bounding_boxes[index], classifications[index]))
+                for index in range(images.shape[0])]
+
+    @staticmethod
+    def make_predictions(boxes, classifications):
+        &#34;&#34;&#34;Join the boxes and the classification probabilities and make a single predictions per bounding box.
+
+        Arguments:
+            boxes (torch.Tensor): The bounding boxes generated for the image.
+                Shape: `(num of boxes, 4)`.
+            classifications (torch.Tensor): The probability for each class.
+                Shape: `(num of boxes, num of classes)`.
+
+        Returns:
+            torch.Tensor: A single tensor with the label and the probability for each predicted bounding box.
+        &#34;&#34;&#34;
+        detections = torch.zeros(boxes.shape[0], 6)
+
+        if boxes.shape[0] &gt; 0:
+            detections[:, :4] = boxes
+            probs, labels = classifications.max(dim=1)
+            detections[:, 4] = labels
+            detections[:, 5] = probs
+
+        return detections
+
     def nms(self, boxes, classifications):
         &#34;&#34;&#34;Apply Non-Maximum Suppression over the detections to remove bounding boxes that are detecting
         the same object.
@@ -1372,7 +1485,7 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
 
         # If there aren&#39;t detections return empty
         if boxes.shape[0] == 0:
-            return torch.zeros(0).cuda()
+            return torch.zeros(0).to(self.device)
 
         # Get the numpy version
         # was_cuda = detections.is_cuda
@@ -1411,8 +1524,8 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
             yy2 = torch.min(y2[actual], y2[indexes[:-1]])
 
             # Compute width and height to compute the intersection over union
-            w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
-            h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+            w = torch.max(torch.Tensor([0]).to(self.device), xx2 - xx1 + 1)
+            h = torch.max(torch.Tensor([0]).to(self.device), yy2 - yy1 + 1)
             del xx1, yy1, xx2, yy2
             intersection = (w * h)
             del h, w
@@ -1427,10 +1540,55 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
         # Return the filtered bounding boxes and classifications
         return boxes[picked].detach(), classifications[picked].detach()</code></pre>
 </details>
+<h3>Static methods</h3>
+<dl>
+<dt id="torchsight.models.retinanet.RetinaNet.make_predictions"><code class="name flex">
+<span>def <span class="ident">make_predictions</span></span>(<span>boxes, classifications)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Join the boxes and the classification probabilities and make a single predictions per bounding box.</p>
+<h2 id="arguments">Arguments</h2>
+<dl>
+<dt><strong><code>boxes</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The bounding boxes generated for the image.
+Shape: <code>(num of boxes, 4)</code>.</dd>
+<dt><strong><code>classifications</code></strong> :&ensp;<code>torch.Tensor</code></dt>
+<dd>The probability for each class.
+Shape: <code>(num of boxes, num of classes)</code>.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>torch.Tensor: A single tensor with the label and the probability for each predicted bounding box.</p></section>
+<details class="source">
+<summary>Source code</summary>
+<pre><code class="python">@staticmethod
+def make_predictions(boxes, classifications):
+    &#34;&#34;&#34;Join the boxes and the classification probabilities and make a single predictions per bounding box.
+
+    Arguments:
+        boxes (torch.Tensor): The bounding boxes generated for the image.
+            Shape: `(num of boxes, 4)`.
+        classifications (torch.Tensor): The probability for each class.
+            Shape: `(num of boxes, num of classes)`.
+
+    Returns:
+        torch.Tensor: A single tensor with the label and the probability for each predicted bounding box.
+    &#34;&#34;&#34;
+    detections = torch.zeros(boxes.shape[0], 6)
+
+    if boxes.shape[0] &gt; 0:
+        detections[:, :4] = boxes
+        probs, labels = classifications.max(dim=1)
+        detections[:, 4] = labels
+        detections[:, 5] = probs
+
+    return detections</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="torchsight.models.retinanet.RetinaNet.__init__"><code class="name flex">
-<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None)</span>
+<span>def <span class="ident">__init__</span></span>(<span>self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, pretrained=True, device=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Initialize the network.</p>
@@ -1445,6 +1603,10 @@ and in evaluation mode applies Non-Maximum suppresion to return only the relevan
 <dt><strong><code>anchors</code></strong> :&ensp;<code>dict</code>, optional</dt>
 <dd>The dict with the 'sizes', 'scales' and 'ratios' sequences to initialize
 the Anchors module.</dd>
+<dt><strong><code>fpn_levels</code></strong> :&ensp;<code>list</code> of <code>int</code></dt>
+<dd>The numbers of the layers in the FPN to get their feature maps.
+If None is given it will return all the levels from 3 to 7.
+If some level is not present it won't return that feature map level of the pyramid.</dd>
 <dt><strong><code>pretrained</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
 This pretraining is provided by the torchvision package.</dd>
@@ -1453,7 +1615,7 @@ This pretraining is provided by the torchvision package.</dd>
 </dl></section>
 <details class="source">
 <summary>Source code</summary>
-<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, pretrained=True, device=None):
+<pre><code class="python">def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, pretrained=True, device=None):
     &#34;&#34;&#34;Initialize the network.
 
     Arguments:
@@ -1462,6 +1624,9 @@ This pretraining is provided by the torchvision package.</dd>
         features (dict, optional): The dict that indicates the features for each module of the network.
         anchors (dict, optional): The dict with the &#39;sizes&#39;, &#39;scales&#39; and &#39;ratios&#39; sequences to initialize
             the Anchors module.
+        fpn_levels (list of int): The numbers of the layers in the FPN to get their feature maps.
+            If None is given it will return all the levels from 3 to 7.
+            If some level is not present it won&#39;t return that feature map level of the pyramid.
         pretrained (bool, optional): If the resnet backbone of the FPN must be pretrained on the ImageNet dataset.
             This pretraining is provided by the torchvision package.
         device (str, optional): The device where the module will run.
@@ -1478,7 +1643,9 @@ This pretraining is provided by the torchvision package.</dd>
     self.device = device if device is not None else &#39;cuda:0&#39; if torch.cuda.is_available() else &#39;cpu&#39;
 
     # Modules
-    self.fpn = FeaturePyramid(resnet=resnet, features=features[&#39;pyramid&#39;], pretrained=pretrained)
+    self.fpn = FeaturePyramid(
+        resnet=resnet, features=features[&#39;pyramid&#39;], levels=fpn_levels, pretrained=pretrained
+    )
 
     if len(anchors[&#39;sizes&#39;]) != 5:
         raise ValueError(&#39;anchors_size must have length 5 to work with the FPN&#39;)
@@ -1759,7 +1926,7 @@ torch.Tensor: The probabilities for each class for each bounding box keeped.</p>
 
     # If there aren&#39;t detections return empty
     if boxes.shape[0] == 0:
-        return torch.zeros(0).cuda()
+        return torch.zeros(0).to(self.device)
 
     # Get the numpy version
     # was_cuda = detections.is_cuda
@@ -1798,8 +1965,8 @@ torch.Tensor: The probabilities for each class for each bounding box keeped.</p>
         yy2 = torch.min(y2[actual], y2[indexes[:-1]])
 
         # Compute width and height to compute the intersection over union
-        w = torch.max(torch.Tensor([0]).cuda(), xx2 - xx1 + 1)
-        h = torch.max(torch.Tensor([0]).cuda(), yy2 - yy1 + 1)
+        w = torch.max(torch.Tensor([0]).to(self.device), xx2 - xx1 + 1)
+        h = torch.max(torch.Tensor([0]).to(self.device), yy2 - yy1 + 1)
         del xx1, yy1, xx2, yy2
         intersection = (w * h)
         del h, w
@@ -1902,7 +2069,8 @@ Classifications: Tensor with shape (total predictions, classes).</dd>
     # Clip the boxes to fit in the image
     bounding_boxes = self.anchors.clip(images, bounding_boxes).detach()
     # Generate a sequence of (bounding_boxes, classifications) for each image
-    return [self.nms(bounding_boxes[index], classifications[index]) for index in range(images.shape[0])]</code></pre>
+    return [self.make_predictions(*self.nms(bounding_boxes[index], classifications[index]))
+            for index in range(images.shape[0])]</code></pre>
 </details>
 </dd>
 </dl>
@@ -2105,6 +2273,7 @@ Shape:
 <li><code><a title="torchsight.models.retinanet.RetinaNet.eval" href="#torchsight.models.retinanet.RetinaNet.eval">eval</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.forward" href="#torchsight.models.retinanet.RetinaNet.forward">forward</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.get_classification_module" href="#torchsight.models.retinanet.RetinaNet.get_classification_module">get_classification_module</a></code></li>
+<li><code><a title="torchsight.models.retinanet.RetinaNet.make_predictions" href="#torchsight.models.retinanet.RetinaNet.make_predictions">make_predictions</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.nms" href="#torchsight.models.retinanet.RetinaNet.nms">nms</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.to" href="#torchsight.models.retinanet.RetinaNet.to">to</a></code></li>
 <li><code><a title="torchsight.models.retinanet.RetinaNet.transform" href="#torchsight.models.retinanet.RetinaNet.transform">transform</a></code></li>
