@@ -251,7 +251,7 @@ class Classification(SubModule):
     It generates, given a feature map, a tensor with the probability of each class.
     """
 
-    def __init__(self, in_channels, classes, anchors=9, features=256):
+    def __init__(self, in_channels, classes, anchors=9, features=256, prior=0.01):
         """Initialize the network.
 
         Args:
@@ -261,6 +261,9 @@ class Classification(SubModule):
             features (int, optional): Indicates the number of inner features that the conv layers must have.
         """
         super(Classification, self).__init__(in_channels, outputs=classes, anchors=anchors, features=features)
+
+        # Initialize the last conv layer with `bias = -log((1-pi)/pi)` as in the paper
+        torch.nn.init.constant_(self.last_conv.bias, float(torch.log(torch.Tensor([(1 - prior) / prior]))))
 
         self.classes = classes
         self.activation = nn.Sigmoid()
