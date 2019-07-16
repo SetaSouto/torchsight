@@ -13,7 +13,7 @@ def sigmoid(w, b, sigmoid_step, normal):
     from matplotlib import pyplot as plt
     similarities = torch.arange(start=-1, end=(1 + sigmoid_step), step=sigmoid_step)
     sigmoid = torch.nn.Sigmoid()
-    activations = sigmoid(w * (similarities + b))
+    activations = sigmoid(w * similarities + b)
     if not normal:
         activations /= sigmoid(w * (torch.Tensor([1]) + b))
     plt.scatter(similarities.numpy(), activations.numpy())
