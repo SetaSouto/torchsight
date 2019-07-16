@@ -72,7 +72,7 @@ class FaissInstanceRetriever(InstanceRetriever):
             num_workers (int): The number of process to use to load the images and generate
                 the batches.
         """
-        self._print('Creating database ...')
+        self.print('Creating database ...')
 
         dataloader = self.dataset.get_dataloader(batch_size, num_workers)
 
@@ -119,13 +119,13 @@ class FaissInstanceRetriever(InstanceRetriever):
 
     def save(self):
         """Save the indexes in the storage directory."""
-        self._print('Saving indexes ...')
+        self.print('Saving indexes ...')
         faiss.write_index(self.embeddings, self.embeddings_file)
         faiss.write_index(self.boxes, self.boxes_file)
 
     def load(self):
         """Load the indexes from the storage directory."""
-        self._print('Loading indexes ...')
+        self.print('Loading indexes ...')
 
         if not os.path.exists(self.embeddings_file):
             raise ValueError('There is no ')

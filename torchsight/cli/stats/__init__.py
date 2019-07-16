@@ -3,6 +3,7 @@ import click
 
 from .boxes import describe_boxes
 from .dldenet import dldenet
+from .focal import focal
 from .print import printlogger
 from .sizes import sizes
 
@@ -14,5 +15,6 @@ def stats():
 
 stats.add_command(describe_boxes)
 stats.add_command(dldenet)
+stats.add_command(focal)
 stats.add_command(printlogger)
 stats.add_command(sizes)

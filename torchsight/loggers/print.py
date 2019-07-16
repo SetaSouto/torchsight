@@ -17,7 +17,7 @@ class PrintLogger(AbstractLogger):
     this logger with that directory and output the stdout to a file inside that directory.
     """
 
-    def __init__(self, description=None, directory='./logs'):
+    def __init__(self, description=None, directory=None):
         """Initialize the logger.
 
         Arguments:
@@ -25,7 +25,7 @@ class PrintLogger(AbstractLogger):
                 Useful to store the hyperparameters of the training for example.
             directory (str, optional): The directory where to save the description file.
         """
-        if not os.path.exists(directory):
+        if directory is not None and not os.path.exists(directory):
             os.makedirs(directory)
 
         self.directory = directory

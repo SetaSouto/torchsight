@@ -68,6 +68,7 @@ class SlowInstanceRetriver(InstanceRetriever):
         embeddings = embeddings.unsqueeze(dim=0).unsqueeze(dim=3)                     # (1, b, e, dim,   1)
         similarity = torch.matmul(queries, embeddings).squeeze(dim=4).squeeze(dim=3)  # (q, b, e)
         similarity /= norms
+        # TODO: Split this, it cannot handle that big matrixes multiplications
 
         return 1 - similarity
 
@@ -102,8 +103,10 @@ class SlowInstanceRetriver(InstanceRetriever):
         init = time.time()
 
         with torch.no_grad():
+            self.model.to(self.device)
             for i, (images, batch_paths) in enumerate(self.dataloader):
                 batch_size = images.shape[0]
+                images = images.to(self.device)
                 embeddings, batch_boxes = self.model(images)  # (b, e, d), (b, e, 4)
                 num_embeddings = embeddings.shape[1]
                 actual_distances = self._distance(queries, embeddings)  # (q, b, e)

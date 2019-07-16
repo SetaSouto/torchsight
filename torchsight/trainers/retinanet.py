@@ -42,8 +42,9 @@ class RetinaNetTrainer(Trainer):
                 'background': 0.4,
                 'object': 0.5
             },
+            'increase_foreground_by': 1e3,
             # Weight of each loss. See train method.
-            'weights': {'classification': 1e4, 'regression': 1}
+            'weights': {'classification': 1e3, 'regression': 1}
         },
         'datasets': {
             'use': 'coco',
@@ -224,6 +225,7 @@ class RetinaNetTrainer(Trainer):
             alpha=hyperparameters['alpha'],
             gamma=hyperparameters['gamma'],
             iou_thresholds=hyperparameters['iou_thresholds'],
+            increase_foreground_by=hyperparameters['increase_foreground_by'],
             device=self.device
         )
 

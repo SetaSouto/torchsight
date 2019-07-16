@@ -12,7 +12,7 @@ class AveragePrecision():
 
     averages = []    # List of Average Precisions computed by this metric
 
-    def __call__(self, results):
+    def __call__(self, results, relevant=None):
         """Compute the Average Precision for each query.
 
         The results tensor must have shape `(q, r)` where `q` is the number of queries
@@ -34,6 +34,9 @@ class AveragePrecision():
         Arguments:
             results (torch.Tensor): the ordered results of the queries labeled as correct
                 with a 1.
+            relevant (torch.Tensor, optional): the amount of relevant results for each query.
+                If it's not provided it will assume that in the results are all the relevant
+                results, so it can be computed by `results.sum(dim=1)`.
 
         Returns:
             torch.Tensor: with the average precision of each query.
@@ -45,7 +48,8 @@ class AveragePrecision():
             raise ValueError('"results" can only be a tensor of shape (q, r).')
 
         # Get the number of relevant results
-        relevant = results.sum(dim=1)                              # (q, 1)
+        if relevant is None:
+            relevant = results.sum(dim=1)                           # (q, 1)
 
         if (relevant == 0).sum() >= 1:
             raise ValueError('There are queries without relevant results and could generate NaN results.')

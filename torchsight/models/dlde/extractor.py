@@ -22,7 +22,7 @@ class DLDENetExtractor(DLDENet):
         with torch.no_grad():
             feature_maps = self.fpn(images)
             regressions = torch.cat([self.regression(feature_map) for feature_map in feature_maps], dim=1)
-            embeddings = torch.cat([self.encode(feature_map) for feature_map in feature_maps], dim=1)
+            embeddings = torch.cat([self.classification.encode(feature_map) for feature_map in feature_maps], dim=1)
             anchors = self.anchors(images)
             bounding_boxes = self.anchors.transform(anchors, regressions)
             bounding_boxes = self.anchors.clip(images, bounding_boxes)

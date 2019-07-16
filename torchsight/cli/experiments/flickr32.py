@@ -8,6 +8,22 @@ def flickr32():
 
 
 @flickr32.command()
+@click.option('-c', '--config', required=True, type=click.Path(exists=True),
+              help='The configuration to use as params in the experiment.')
+@click.option('--device', help='The device to use to run the experiment.')
+def run(config, device):
+    """Run the experiment with the given configuration."""
+    import json
+
+    from torchsight.experiments.retrievers.flickr32.experiment import Flickr32RetrieverExperiment
+
+    with open(config, 'r') as file:
+        config = json.loads(file.read())
+
+    return Flickr32RetrieverExperiment(params=config, device=device).run()
+
+
+@flickr32.command()
 @click.option('-r', '--root', required=True, help='The root directory where is the data of the dataset. '
               'See Flickr32 dataset for more docs.')
 @click.option('-k', default=27, show_default=True, help='The number of brands to select.')

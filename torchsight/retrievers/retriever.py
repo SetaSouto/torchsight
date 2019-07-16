@@ -7,12 +7,12 @@ from PIL import Image
 
 from torchsight.loggers import PrintLogger
 from torchsight.metrics import iou as compute_iou
-from torchsight.utils import visualize_boxes
+from torchsight.utils import PrintMixin, visualize_boxes
 
 from .datasets import ImagesDataset
 
 
-class InstanceRetriever():
+class InstanceRetriever(PrintMixin):
     """An abstract retriver that looks for instance of objects in a set of images."""
 
     def __init__(self, root=None, paths=None, extensions=None, batch_size=8, num_workers=8, verbose=True, device=None):
@@ -35,23 +35,14 @@ class InstanceRetriever():
         self.batch_size = batch_size
         self.verbose = verbose
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
-        self._print('Loading model ...')
+        self.print('Loading model ...')
         self.model = self._get_model()
-        self._print('Generating dataset ...')
+        self.print('Generating dataset ...')
         # Tuple with transforms: The first is only for images, the second images + boxes
         self.image_transform, self.with_boxes_transform = self._get_transforms()
         self.dataset = ImagesDataset(root=root, paths=paths, extensions=extensions, transform=self.image_transform)
         self.dataloader = self.dataset.get_dataloader(batch_size, num_workers)
         self.logger = PrintLogger()
-
-    def _print(self, msg):
-        """Print a namespaced message with the class' name.
-
-        Arguments:
-            msg (str): The message to print.
-        """
-        if self.verbose:
-            print('[{}] {}'.format(self.__class__.__name__, msg))
 
     #############################
     ###        GETTERS        ###
@@ -115,7 +106,7 @@ class InstanceRetriever():
                 one of the images where the object was found.
                 If you want to know the path of the result object that is in the `k`-th position
                 of the `i` embedding you can do `results_paths[i][k]`.
-            list of int: the index of the image that the embedding belongs to. Is useful to know the
+            list of int: the index of the image that the query embedding belongs to. Is useful to know the
                 image of that embedding. To know the image from where is the embedding `i` you
                 can do `belongs_to[i]`.
         """
@@ -207,10 +198,10 @@ class InstanceRetriever():
                 batches = math.ceil(num_images / self.batch_size)
                 batch_embeddings, batch_pred_boxes = [], []
                 for i in range(batches):
-                    batch = images[i * self.batch_size: (i + 1) * self.batch_size]
+                    batch = images[i * self.batch_size: (i + 1) * self.batch_size].to(self.device)
                     embeddings, pred_boxes = self.model(batch)
                     batch_embeddings.append(embeddings)
-                    batch_pred_boxes.append(batch_pred_boxes)
+                    batch_pred_boxes.append(pred_boxes)
                 batch_embeddings = torch.cat(batch_embeddings, dim=0)       # (num images, *, dim)
                 batch_pred_boxes = torch.cat(batch_pred_boxes, dim=0)       # (num images, *, 4)
 
@@ -219,7 +210,7 @@ class InstanceRetriever():
         belongs_to = []
         for i, embeddings in enumerate(batch_embeddings):
             pred_boxes = batch_pred_boxes[i]         # (n pred, 4)
-            iou = compute_iou(boxes[i], pred_boxes)  # (n ground, n pred)
+            iou = compute_iou(boxes[i].to(self.device), pred_boxes)  # (n ground, n pred)
 
             if strategy == 'max_iou':
                 _, iou_argmax = iou.max(dim=1)       # (n ground)
