@@ -70,7 +70,7 @@ class Flickr32Evaluator(Evaluator):
             # The model was not trained over flickr32 dataset
             params = {'classes': None}
 
-        return Flickr32Dataset(root=self.params['root'], classes=params['classes'], only_boxes=False,
+        return Flickr32Dataset(root=self.params['root'], brands=params['brands'], only_boxes=False,
                                dataset='test', transform=transform)
 
     def get_dataloader(self):
