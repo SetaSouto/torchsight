@@ -8,6 +8,7 @@ import os
 import torch
 from PIL import Image
 
+from torchsight.retrievers.dldenet import DLDENetRetriever
 from torchsight.retrievers.resnet import ResnetRetriever
 
 
@@ -20,8 +21,9 @@ def main():
 
     root = '/home/souto/datasets/flickr32/sanity_check/'
     images = [Image.open(os.path.join(root, image)) for image in ['apple.jpg', 'adidas.jpg']]
-    retriever = ResnetRetriever(root=root)
-    distances, boxes, paths, _ = retriever.query(images, query_boxes, k=5, device='cpu')
+    # retriever = ResnetRetriever(root=root, device='cpu')
+    retriever = DLDENetRetriever(checkpoint="/home/souto/repos/pytorch/torchsight/logs/flickr32/resnet50/checkpoint.pth.tar", root=root)
+    distances, boxes, paths, _ = retriever.query(images, query_boxes, k=5)
 
     for i, query_image in enumerate(images):
         query_image = retriever.image_transform({'image': query_image})

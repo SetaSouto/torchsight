@@ -120,10 +120,10 @@ class InstanceRetriever(PrintMixin):
         distances, boxes, results_paths = self._search(queries, k)             # (num of queries, k)
 
         if torch.is_tensor(distances):
-            distances = distances.numpy()
+            distances = distances.cpu().numpy()
 
         if torch.is_tensor(boxes):
-            boxes = boxes.numpy()
+            boxes = boxes.cpu().numpy()
 
         return distances, boxes, results_paths, belongs_to
 
