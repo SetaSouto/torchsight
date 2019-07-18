@@ -64,11 +64,11 @@ class SlowInstanceRetriver(InstanceRetriever):
         queries_norm = queries.norm(dim=1).unsqueeze(dim=1).unsqueeze(dim=2)          # (q, 1, 1)
         embeddings_norm = embeddings.norm(dim=2).unsqueeze(dim=0)                     # (1, b, e)
         norms = queries_norm * embeddings_norm                                        # (q, b, e)
-        queries = queries.unsqueeze(dim=1).unsqueeze(dim=2).unsqueeze(dim=3)          # (q, 1, 1,   1, dim)
-        embeddings = embeddings.unsqueeze(dim=0).unsqueeze(dim=3)                     # (1, b, e, dim,   1)
-        similarity = torch.matmul(queries, embeddings).squeeze(dim=4).squeeze(dim=3)  # (q, b, e)
+        queries = queries.permute(1, 0)                                               # (   d, q)
+        # Now we con do the matmul with (b, e, d) x (d, q) = (b, e, q)
+        similarity = torch.matmul(embeddings, queries)                                # (b, e, q)
+        similarity = similarity.permute(2, 0, 1)                                      # (q, b, e)
         similarity /= norms
-        # TODO: Split this, it cannot handle that big matrixes multiplications
 
         return 1 - similarity
 
@@ -108,23 +108,23 @@ class SlowInstanceRetriver(InstanceRetriever):
                 batch_size = images.shape[0]
                 images = images.to(self.device)
                 embeddings, batch_boxes = self.model(images)  # (b, e, d), (b, e, 4)
-                num_embeddings = embeddings.shape[1]
                 actual_distances = self._distance(queries, embeddings)  # (q, b, e)
 
-                # Iterate over the queries
-                for q in range(num_queries):
-                    # Iterate over the batch items
-                    for b in range(batch_size):
-                        # Iterate over the embeddings of a given batch item
-                        for e in range(num_embeddings):
-                            dis = actual_distances[q, b, e]
-                            # Get the index by counting how many distances are below this one
-                            index = (distances[q] < dis).sum()
-                            if index >= k:
-                                continue
-                            distances[q, index] = dis
-                            paths[q][index] = batch_paths[b]
-                            boxes[q, index, :] = batch_boxes[b, e]
+                for b in range(batch_size):
+                    # Update the distances
+                    distances = torch.cat([distances, actual_distances[:, b, :]], dim=1)  # (q, k + e)
+                    distances, indices = distances.sort(dim=1)              # (q, k + e), (q, k + e)
+                    distances, indices = distances[:, :k], indices[:, :k]   # (q, k), (q, k)
+                    # Update the boxes
+                    image_boxes = batch_boxes[b].unsqueeze(dim=0)           # (1, e, 4)
+                    image_boxes = image_boxes.repeat(num_queries, 1, 1)     # (q, e, 4)
+                    boxes = torch.cat([boxes, image_boxes], dim=1)          # (q, k + e, 4)
+                    boxes = boxes[torch.arange(num_queries).unsqueeze(dim=1), indices, :]   # (q, k, 4)
+                    # Update the paths: only the indices >= k are new paths
+                    for q in range(num_queries):
+                        for j in range(k):
+                            if indices[q, j] >= k:
+                                paths[q][j] = batch_paths[b]
 
                 # Show some stats about the progress
                 total_imgs += images.shape[0]
