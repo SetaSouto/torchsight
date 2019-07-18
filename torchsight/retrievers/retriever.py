@@ -112,6 +112,11 @@ class InstanceRetriever(PrintMixin):
         """
         images, boxes = self._query_transform(images, boxes)
         queries, belongs_to = self._query_embeddings(images, boxes, strategy)  # (num of queries, embedding dim)
+
+        # Free the memory used by the query_embeddings method
+        if 'cuda' in self.device:
+            torch.cuda.empty_cache()
+
         distances, boxes, results_paths = self._search(queries, k)             # (num of queries, k)
 
         if torch.is_tensor(distances):
@@ -175,6 +180,8 @@ class InstanceRetriever(PrintMixin):
                 `number of instances to search`. Se you can get the image index of the `i`
                 embedding by doing `belongs_to[i]`.
         """
+        # TODO: This method uses a lot of memory, we could try to get another way to do this
+
         num_images = len(images)
 
         # Make that the images have the same shape
@@ -209,11 +216,11 @@ class InstanceRetriever(PrintMixin):
         result = []
         belongs_to = []
         for i, embeddings in enumerate(batch_embeddings):
-            pred_boxes = batch_pred_boxes[i]         # (n pred, 4)
-            iou = compute_iou(boxes[i].to(self.device), pred_boxes)  # (n ground, n pred)
+            pred_boxes = batch_pred_boxes[i]                            # (n pred, 4)
+            iou = compute_iou(boxes[i].to(self.device), pred_boxes)     # (n ground, n pred)
 
             if strategy == 'max_iou':
-                _, iou_argmax = iou.max(dim=1)       # (n ground)
+                _, iou_argmax = iou.max(dim=1)                          # (n ground)
                 for embedding in embeddings[iou_argmax]:
                     result.append(embedding)
                     belongs_to.append(i)
