@@ -40,9 +40,9 @@ class DLDENetTrainer(RetinaNetTrainer):
             'gamma': 2.0,
             'sigma': 3.0,
             'iou_thresholds': {'background': 0.4, 'object': 0.5},
-            'increase_foreground_by': 1000,
+            'increase_foreground_by': 100,
             # Weight of each loss. See train method.
-            'weights': {'classification': 1e4, 'regression': 1, 'similarity': 1},
+            'weights': {'classification': 100, 'regression': 1, 'similarity': 1, 'dispersion': 1},
             'soft': False,  # Apply soft loss weighted by the IoU
         },
         'datasets': {
@@ -178,15 +178,16 @@ class DLDENetTrainer(RetinaNetTrainer):
         losses = self.criterion(anchors, regressions, classifications, annotations, self.model)
         del anchors, regressions, classifications, annotations
 
-        classification, regression, similarity = losses
+        classification, regression, similarity, dispersion = losses
 
         # Amplify the losses according to the criterion weights
         weights = self.hyperparameters['criterion']['weights']
         classification *= weights['classification']
         regression *= weights['regression']
         similarity *= weights['similarity']
+        dispersion *= weights['dispersion']
 
-        loss = classification + regression + similarity
+        loss = classification + regression + similarity + dispersion
 
         # Log the classification and regression loss too:
         self.current_log['Class.'] = '{:.4f}'.format(float(classification))
@@ -194,6 +195,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         self.current_log['Neg'] = '{:.4f}'.format(float(self.criterion.focal.neg_loss * weights['classification']))
         self.current_log['Regr.'] = '{:.4f}'.format(float(regression))
         self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
+        self.current_log['Disp.'] = '{:4f}'.format(float(dispersion))
         # Log the mean norm of the weights in the classification module and their biases
         self.current_log['w-norm'] = '{:.4f}'.format(float(self.model.classification.weights.norm(dim=0).mean()))
         if self.model.classification.weighted_bias:

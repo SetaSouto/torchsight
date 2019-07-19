@@ -198,8 +198,7 @@ class Trainer():
 
                 self.logger.log(merge_dicts({
                     'Training': None,
-                    'Epoch': epoch,
-                    'Batch': '{}/{}'.format(batch + 1, n_batches),
+                    'Epoch': '{} ({}/{})'.format(epoch, batch + 1, n_batches),
                     'LR': ' '.join(learning_rates),
                     'Loss': '{:.7f}'.format(float(loss)),
                     'Time': '{:.3f} s'.format(batch_time),
@@ -279,8 +278,7 @@ class Trainer():
 
                 self.logger.log(merge_dicts({
                     'Validating': None,
-                    'Epoch': epoch,
-                    'Batch': '{}/{}'.format(batch + 1, n_batches),
+                    'Epoch': '{} ({}/{})'.format(epoch, batch + 1, n_batches),
                     'Loss': '{:.7f}'.format(float(loss)),
                     'Time': '{:.3f} s'.format(batch_time),
                     'Total': '{:.1f} s'.format(total_time)

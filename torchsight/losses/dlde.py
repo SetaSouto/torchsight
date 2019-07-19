@@ -3,6 +3,7 @@ import torch
 from torch import nn
 
 from .ccs import CCSLoss
+from .disperse import DisperseLoss
 from .focal import FocalLoss
 
 
@@ -31,6 +32,7 @@ class DLDENetLoss(nn.Module):
 
         self.focal = FocalLoss(alpha, gamma, sigma, iou_thresholds, increase_foreground_by, soft, device)
         self.ccs = CCSLoss(iou_thresholds, soft)
+        self.disperse = DisperseLoss()
 
     def forward(self, anchors, regressions, classifications, annotations, model):
         """Compute the different losses for the batch.
@@ -67,5 +69,6 @@ class DLDENetLoss(nn.Module):
         """
         classification, regression = self.focal(anchors, regressions, classifications, annotations)
         similarity = self.ccs(anchors, model.classification.embeddings, model.classification.weights, annotations)
+        dispersion = self.disperse(model.classification.weights)
 
-        return classification, regression, similarity
+        return classification, regression, similarity, dispersion

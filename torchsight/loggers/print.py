@@ -30,7 +30,7 @@ class PrintLogger(AbstractLogger):
 
         self.directory = directory
 
-        if description is not None:
+        if description is not None and directory is not None:
             with open(os.path.join(directory, 'description.txt'), 'w') as file:
                 file.write(description)
 

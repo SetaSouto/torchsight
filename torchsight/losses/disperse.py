@@ -37,5 +37,9 @@ class DisperseLoss(torch.nn.Module):
         # that is the total number of elements in the matrix (c ** 2) minus the diagonal of elements
         # (c) multiplied by 2 because we have duplicated the values, similarity[i, j] = similarity[j, i]
         num_items = ((num_classes ** 2) - num_classes)
+        loss = similarity.sum() / (2 * num_items)
 
-        return similarity.sum() / (2 * num_items)
+        # Normalize the loss to get values between 0 and 1
+        loss = (loss + 1) / 2
+
+        return loss
