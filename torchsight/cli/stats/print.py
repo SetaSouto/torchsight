@@ -6,10 +6,10 @@ from torchsight.loggers import PrintLogger
 
 @click.command()
 @click.argument('log_file')
-@click.option('-k', '--keys', default='Loss Class. Pos Neg Regr. Simil. w-norm LR', show_default=True)
+@click.option('-k', '--keys', default='Loss Class. Pos Neg Regr. Simil. Disp. w-norm LR', show_default=True)
 @click.option('-nv', '--no-valid', default='LR w-norm', show_default=True)
 @click.option('-ek', '--epoch-key', default='Epoch', help='The key in the logs that indicates the epoch.')
-@click.option('--just', default=11, show_default=True)
+@click.option('--just', default=8, show_default=True)
 def printlogger(log_file, keys, no_valid, epoch_key, just):
     """Get the mean loss per epoch over the training dataset and validation dataset.
 
@@ -45,7 +45,7 @@ def printlogger(log_file, keys, no_valid, epoch_key, just):
         epochs = {}
 
         for log in logs:
-            epoch = log[epoch_key]
+            epoch = log[epoch_key].split()[0]
 
             if epoch not in epochs:
                 epochs[epoch] = {}
@@ -83,7 +83,7 @@ def printlogger(log_file, keys, no_valid, epoch_key, just):
                 if train_value > 10:
                     train_value = '{:.3f}'.format(train_value)
                 else:
-                    train_value = '{:.7f}'.format(train_value)
+                    train_value = '{:.5f}'.format(train_value)
                 train_value = train_value.rjust(just)
 
             if k not in no_valid:
@@ -94,7 +94,7 @@ def printlogger(log_file, keys, no_valid, epoch_key, just):
                     if valid_value > 10:
                         valid_value = '{:.3f}'.format(valid_value)
                     else:
-                        valid_value = '{:.7f}'.format(valid_value)
+                        valid_value = '{:.5f}'.format(valid_value)
                     valid_value = valid_value.rjust(just)
 
                 values.append('{} {}'.format(train_value, valid_value))

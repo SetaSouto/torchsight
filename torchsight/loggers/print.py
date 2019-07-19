@@ -89,12 +89,8 @@ class PrintLogger(AbstractLogger):
             pairs = line.split('] [')  # Get the key-value pairs
             current = {}  # Current log dict
             for pair in pairs:
-                try:
-                    key, value = pair.split(' ')
-                    current[key] = value
-                except ValueError:
-                    # There is only a key without a value
-                    current[pair] = None
+                key, *values = pair.split(' ')
+                current[key] = ' '.join(values)
             logs.append(current)
 
         return logs
