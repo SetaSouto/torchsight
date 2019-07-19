@@ -96,7 +96,7 @@ class Flickr32RetrieverExperiment(PrintMixin):
         if retriever == 'dldenet':
             params = self.params.retriever.dldenet
             # Paths are tuples like (brand, image path, boxes path)
-            params.paths = [t[1] for t in self.dataset.paths][:100]
+            params.paths = [t[1] for t in self.dataset.paths]
             params.device = self.device
 
             if params.checkpoint is None:
