@@ -2,15 +2,16 @@
   "dataset": {
       "root": "/home/souto/datasets/flickr32"
   },
-  "k": 500,
+  "k": 200,
   "queries_file": "./queries.csv",
   "results_file": "./results.csv",
   "retriever": {
       "use": "dldenet",
       "dldenet": {
           "checkpoint": "/home/souto/repos/pytorch/torchsight/logs/flickr32/resnet50/checkpoint.pth.tar",
-          "batch_size": 1,
+          "batch_size": 6,
           "num_workers": 8,
+          "instances_per_image": 1,
           "verbose": true
       }
   }

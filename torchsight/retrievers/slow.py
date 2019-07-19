@@ -16,14 +16,17 @@ class SlowInstanceRetriver(InstanceRetriever):
     - Iterate through the images by batching getting the nearest embeddings to the objects and
       update the k nearest ones.
 
-    Returns the final k*Q nearest instances.
+    Returns the final k nearest instances for each one of the Q queries.
     """
 
-    def __init__(self, *args, distance='l2', **kwargs):
+    def __init__(self, *args, distance='l2', instances_per_image=None, **kwargs):
         """Initialize the retriver.
 
         Arguments:
             distance (str, optional): The distance to use.
+            instances_per_image (int, optional): If provided it will get only the given number
+                of instances per image. For example, if `instances_per_image = 1` it will get
+                only the most similar instance for the query in the image and not more.
 
             The rest of the arguments are the same as InstanceRetriever.
         """
@@ -31,6 +34,7 @@ class SlowInstanceRetriver(InstanceRetriever):
             raise ValueError('Distance "{}" not supported. Availables: {}'.format(distance, ['l2', 'cos']))
 
         self._distance = self._l2_distance if distance == 'l2' else self._cos_distance
+        self.instances_per_image = instances_per_image
 
         super().__init__(*args, **kwargs)
 
@@ -104,11 +108,16 @@ class SlowInstanceRetriver(InstanceRetriever):
 
         with torch.no_grad():
             self.model.to(self.device)
+            init_batch = time.time()
             for i, (images, batch_paths) in enumerate(self.dataloader):
                 batch_size = images.shape[0]
                 images = images.to(self.device)
                 embeddings, batch_boxes = self.model(images)  # (b, e, d), (b, e, 4)
                 actual_distances = self._distance(queries, embeddings)  # (q, b, e)
+
+                if self.instances_per_image is not None:
+                    actual_distances, _ = actual_distances.sort(dim=2)
+                    actual_distances = actual_distances[:, :, :self.instances_per_image]
 
                 for b in range(batch_size):
                     # Update the distances
@@ -120,18 +129,22 @@ class SlowInstanceRetriver(InstanceRetriever):
                     image_boxes = image_boxes.repeat(num_queries, 1, 1)     # (q, e, 4)
                     boxes = torch.cat([boxes, image_boxes], dim=1)          # (q, k + e, 4)
                     boxes = boxes[torch.arange(num_queries).unsqueeze(dim=1), indices, :]   # (q, k, 4)
+
                     # Update the paths: only the indices >= k are new paths
                     for q in range(num_queries):
-                        for j in range(k):
-                            if indices[q, j] >= k:
-                                paths[q][j] = batch_paths[b]
+                        old_paths = paths[q]
+                        new_path = batch_paths[b]
+                        paths[q] = [old_paths[i] if i < k else new_path for i in indices[q]]
 
                 # Show some stats about the progress
                 total_imgs += images.shape[0]
                 self.logger.log({
                     'Batch': '{}/{}'.format(i + 1, num_batches),
-                    'Time': '{:.3f} s'.format(time.time() - init),
+                    'Time': '{:.3f} s'.format(time.time() - init_batch),
+                    'Total': '{:.3f} s'.format(time.time() - init),
                     'Images': total_imgs
                 })
+
+                init_batch = time.time()
 
         return distances, boxes, paths
