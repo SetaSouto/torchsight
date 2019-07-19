@@ -279,9 +279,9 @@ class InstanceRetriever(PrintMixin):
 
         print('Results:')
         num_results = distances.shape[0]
-        boxes_with_dist = torch.zeros(num_results, 5)       # (n, 5)
+        boxes_with_dist = torch.zeros(num_results, 6)       # (n, 5)
         boxes_with_dist[:, :4] = torch.Tensor(boxes)        # (n, 4)
-        boxes_with_dist[:, 4] = torch.Tensor(distances)     # (n,)
+        boxes_with_dist[:, 5] = torch.Tensor(distances)     # (n,)
         boxes_with_dist = boxes_with_dist.unsqueeze(dim=1)  # (n, 1, 5)
         for i, path in enumerate(paths):
             image = Image.open(path)

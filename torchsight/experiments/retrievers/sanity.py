@@ -24,8 +24,10 @@ def main():
     images = [Image.open(os.path.join(root, image)) for image in ['apple.jpg', 'adidas.jpg']]
     # retriever = ResnetRetriever(root=root, device='cpu')
     retriever = DLDENetRetriever(
-        checkpoint="/home/souto/repos/pytorch/torchsight/logs/flickr32/resnet50/checkpoint.pth.tar", root=root)
-    distances, boxes, paths, _ = retriever.query(images, query_boxes, k=5)
+        checkpoint="/home/souto/repos/pytorch/torchsight/logs/flickr32/resnet50/checkpoint.pth.tar", root=root, instances_per_image=1)
+    distances, boxes, paths, _ = retriever.query(images, query_boxes, k=4)
+
+    print(distances)
 
     for i, query_image in enumerate(images):
         query_image = retriever.image_transform({'image': query_image})

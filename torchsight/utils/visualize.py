@@ -32,7 +32,7 @@ def visualize_boxes(image, boxes, label_to_name=None):
     for box in boxes:
         if box.shape[0] == 6:
             x, y, x2, y2, label, prob = box
-            prob = ' {:.2f}'.format(prob)
+            prob = ' {:.3f}'.format(prob)
         else:
             x, y, x2, y2, label = box
             prob = ''
@@ -43,9 +43,8 @@ def visualize_boxes(image, boxes, label_to_name=None):
         color = colors[label % n_colors]
         axes.add_patch(matplotlib.patches.Rectangle((x, y), w, h, linewidth=2, edgecolor=color, facecolor='none'))
 
-        name = label_to_name[label] if label_to_name is not None else label
-
-        tag = '{}{}'.format(name, prob)
+        name = label_to_name[label] if label_to_name is not None else None
+        tag = '{}{}'.format(name, prob) if name is not None else '{}'.format(prob)
         plt.text(x, y, s=tag, color='white', verticalalignment='top', bbox={'color': color, 'pad': 0})
 
     print('Bounding boxes:\n{}'.format(boxes))

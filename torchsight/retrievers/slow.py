@@ -116,25 +116,35 @@ class SlowInstanceRetriver(InstanceRetriever):
                 actual_distances = self._distance(queries, embeddings)  # (q, b, e)
 
                 if self.instances_per_image is not None:
-                    actual_distances, _ = actual_distances.sort(dim=2)
-                    actual_distances = actual_distances[:, :, :self.instances_per_image]
+                    # Get top distances
+                    actual_distances, sort_indices = actual_distances.sort(dim=2)                   # (q, b, e)
+                    actual_distances = actual_distances[:, :, :self.instances_per_image]            # (q, b, i)
+                    sort_indices = sort_indices[:, :, :self.instances_per_image]                    # (q, b, i)
+                    # Update the boxes
+                    batch_boxes = batch_boxes.unsqueeze(dim=0)                                      # (1, b, e, 4)
+                    batch_boxes = batch_boxes.repeat(num_queries, 1, 1, 1)                          # (q, b, e, 4)
+                    query_indices = torch.arange(num_queries).unsqueeze(dim=1).unsqueeze(dim=2)     # (q, 1, 1)
+                    batch_indices = torch.arange(batch_size).unsqueeze(dim=0).unsqueeze(dim=2)      # (1, b, 1)
+                    batch_boxes = batch_boxes[query_indices, batch_indices, sort_indices, :]        # (q, b, i, 4)
+                else:
+                    batch_boxes = batch_boxes.unsqueeze(dim=0).repeat(num_queries, 1, 1, 1)         # (q, b, e, 4)
 
                 for b in range(batch_size):
                     # Update the distances
-                    distances = torch.cat([distances, actual_distances[:, b, :]], dim=1)  # (q, k + e)
-                    distances, indices = distances.sort(dim=1)              # (q, k + e), (q, k + e)
-                    distances, indices = distances[:, :k], indices[:, :k]   # (q, k), (q, k)
+                    distances = torch.cat([distances, actual_distances[:, b, :]], dim=1)    # (q, k + e)
+                    distances, sort_indices = distances.sort(dim=1)                         # (q, k + e), (q, k + e)
+                    distances, sort_indices = distances[:, :k], sort_indices[:, :k]         # (q, k), (q, k)
                     # Update the boxes
-                    image_boxes = batch_boxes[b].unsqueeze(dim=0)           # (1, e, 4)
-                    image_boxes = image_boxes.repeat(num_queries, 1, 1)     # (q, e, 4)
-                    boxes = torch.cat([boxes, image_boxes], dim=1)          # (q, k + e, 4)
-                    boxes = boxes[torch.arange(num_queries).unsqueeze(dim=1), indices, :]   # (q, k, 4)
+                    image_boxes = batch_boxes[:, b, :, :]                                   # (q, e, 4)
+                    boxes = torch.cat([boxes, image_boxes], dim=1)                          # (q, k + e, 4)
+                    query_indices = torch.arange(num_queries).unsqueeze(dim=1)
+                    boxes = boxes[query_indices, sort_indices, :]                           # (q, k, 4)
 
                     # Update the paths: only the indices >= k are new paths
                     for q in range(num_queries):
                         old_paths = paths[q]
                         new_path = batch_paths[b]
-                        paths[q] = [old_paths[i] if i < k else new_path for i in indices[q]]
+                        paths[q] = [old_paths[i] if i < k else new_path for i in sort_indices[q]]
 
                 # Show some stats about the progress
                 total_imgs += images.shape[0]
