@@ -9,4 +9,11 @@ def experiments():
     """Commands for the experiments."""
 
 
-experiments.add_command(flickr32)
+@click.group()
+def retrievers():
+    """Commands for the retrivers experiments."""
+
+
+retrievers.add_command(flickr32)
+
+experiments.add_command(retrievers)

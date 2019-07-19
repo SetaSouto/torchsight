@@ -2,6 +2,7 @@
 import os
 import random
 
+import numpy as np
 import torch
 from PIL import Image
 
@@ -59,6 +60,8 @@ class Flickr32RetrieverExperiment(PrintMixin):
             'k': 500,  # The amount of results to retrieve
             'queries_file': './queries.csv',
             'results_file': './results.csv',
+            'distances_file': './distances.npy',
+            'boxes_file': './boxes.npy',
             'retriever': {
                 'use': 'dldenet',
                 'dldenet': {
@@ -67,6 +70,7 @@ class Flickr32RetrieverExperiment(PrintMixin):
                     'extensions': None,
                     'batch_size': 8,
                     'num_workers': 8,
+                    'instances_per_image': 1,
                     'verbose': True,
                     'params': {'transform': {}}
                 }
@@ -91,7 +95,8 @@ class Flickr32RetrieverExperiment(PrintMixin):
 
         if retriever == 'dldenet':
             params = self.params.retriever.dldenet
-            params.paths = [t[1] for t in self.dataset.paths]  # Paths are tuples like (brand, image path, boxes path)
+            # Paths are tuples like (brand, image path, boxes path)
+            params.paths = [t[1] for t in self.dataset.paths][:100]
             params.device = self.device
 
             if params.checkpoint is None:
@@ -157,14 +162,14 @@ class Flickr32RetrieverExperiment(PrintMixin):
         brands, images, query_boxes = self.load_queries()
 
         self.print('Retrieving instances ...')
-        _, _, paths, _ = self.retriver.query(images=images, boxes=query_boxes, k=self.params.k)
+        distances, boxes, paths, _ = self.retriver.query(images=images, boxes=query_boxes, k=self.params.k)
         paths = self.unique_paths(paths)
 
         self.print('Getting average precision for each query ...')
         average_precisions = self.average_precision(*self.results_tensors(brands, paths))
 
         self.print('Storing results ...')
-        self.store_results(brands, paths, average_precisions)
+        self.store_results(distances, boxes, brands, paths, average_precisions)
 
         self.print('Mean Average Precision: {}'.format(float(average_precisions.mean())))
 
@@ -214,16 +219,61 @@ class Flickr32RetrieverExperiment(PrintMixin):
 
         return results, relevant
 
-    def store_results(self, brands, paths, average_precisions):
-        """Store the results in a CSV file with columns: Brand, Average Precision, result paths.
+    def store_results(self, distances, boxes, brands, paths, average_precisions):
+        """Store the np.array results and a CSV file with columns: Brand, Average Precision, result paths.
 
         Arguments:
+            distances (np.ndarray): The distances between the embedding queries and the found object in
+                descendant order.
+            boxes (np.ndarray): The bounding boxes for each result. Shape `(num of query objects, k, 4)`.
             brands (list of str): with the brand of each query.
             paths (list of list of str): with the paths of the images retrieved.
             average_precisions (torch.Tensor): with the average precision for each query.
         """
+        np.save(self.params.distances_file, distances)
+        np.save(self.params.boxes_file, boxes)
+
         with open(self.params.results_file, 'w') as file:
-            for i, brand in brands:
-                line = '{},{},'.format(brand, float(average_precisions[i]))
+            for i, brand in enumerate(brands):
+                line = '{},{:.5f},'.format(brand, float(average_precisions[i]))
                 line += ','.join(paths[i])
                 file.write(line + '\n')
+
+    def visualize_results(self, brand=None, k=10):
+        """Visualize the top k results of the given brand. If no brand is given it will iterate through
+        each brand showing its top k results.
+
+        Arguments:
+            brand (str, optional): The brand to visualize.
+            k (int, optional): the number of results to show.
+        """
+        distances = np.load(self.params.distances_file)[:, :k]  # (q, k)
+        boxes = np.load(self.params.boxes_file)[:, :k, :]       # (q, k, 4)
+
+        # Load the queries
+        brands, images, query_boxes = self.load_queries()
+
+        # Load the results' paths
+        with open(self.params.results_file, 'r') as file:
+            paths = {}
+            for line in file.read().split('\n'):
+                items = line.split(',')
+                brand = items[0]
+                paths[brand] = items[2:]
+
+        # Filter by the brand
+        if brand is not None:
+            for i, b in enumerate(brands):
+                if b == brand:
+                    brands = [brand]
+                    images = [images[i]]
+                    query_boxes = [query_boxes[i]]
+                    break
+
+        # Show the results for each brand
+        for i, brand in enumerate(brands):
+            print('--------- {} --------'.format(brand))
+            query_image = images[i]
+            query_box = np.zeros(5)
+            query_box[:4] = query_boxes[i]
+            self.retriver.visualize(query_image, distances[i], boxes[i], paths[brand], query_box)

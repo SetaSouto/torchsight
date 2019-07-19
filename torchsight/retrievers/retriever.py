@@ -275,7 +275,7 @@ class InstanceRetriever(PrintMixin):
             query_box = []
 
         print('Query:')
-        visualize_boxes(query_image, query_box)
+        visualize_boxes(query_image, np.expand_dims(query_box, axis=0))
 
         print('Results:')
         num_results = distances.shape[0]

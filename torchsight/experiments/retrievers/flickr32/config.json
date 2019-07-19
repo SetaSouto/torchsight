@@ -2,7 +2,7 @@
   "dataset": {
       "root": "/home/souto/datasets/flickr32"
   },
-  "k": 200,
+  "k": 10,
   "queries_file": "./queries.csv",
   "results_file": "./results.csv",
   "retriever": {

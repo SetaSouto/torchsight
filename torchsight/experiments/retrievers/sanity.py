@@ -5,6 +5,7 @@ so any decent model must get the real object.
 """
 import os
 
+import numpy as np
 import torch
 from PIL import Image
 
@@ -22,14 +23,14 @@ def main():
     root = '/home/souto/datasets/flickr32/sanity_check/'
     images = [Image.open(os.path.join(root, image)) for image in ['apple.jpg', 'adidas.jpg']]
     # retriever = ResnetRetriever(root=root, device='cpu')
-    retriever = DLDENetRetriever(checkpoint="/home/souto/repos/pytorch/torchsight/logs/flickr32/resnet50/checkpoint.pth.tar", root=root)
+    retriever = DLDENetRetriever(
+        checkpoint="/home/souto/repos/pytorch/torchsight/logs/flickr32/resnet50/checkpoint.pth.tar", root=root)
     distances, boxes, paths, _ = retriever.query(images, query_boxes, k=5)
 
     for i, query_image in enumerate(images):
         query_image = retriever.image_transform({'image': query_image})
-        box_with_dist = torch.zeros((1, 5))
-        box_with_dist[:, :4] = torch.Tensor(query_boxes[i])
-        box_with_dist[:, 4] = 0
+        box_with_dist = np.zeros(5)
+        box_with_dist[:4] = query_boxes[i]
         retriever.visualize(query_image, distances[i], boxes[i], paths[i], query_box=box_with_dist)
 
 
