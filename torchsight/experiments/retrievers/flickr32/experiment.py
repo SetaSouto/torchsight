@@ -259,7 +259,7 @@ class Flickr32RetrieverExperiment(PrintMixin):
             for line in file.read().split('\n'):
                 items = line.split(',')
                 brand = items[0]
-                paths[brand] = items[2:]
+                paths[brand] = items[2:(k+2)]
 
         # Filter by the brand
         if brand is not None:
