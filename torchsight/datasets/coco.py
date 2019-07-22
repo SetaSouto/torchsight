@@ -147,14 +147,13 @@ class CocoDataset(Dataset):
         image = skimage.io.imread(path)
         if len(image.shape) == 2:
             image = skimage.color.gray2rgb(image)
-        image = image.astype(np.float32) / 255.0
 
         # Transform from [x,y,w,h] to [x1,y1,x2,y2]
         bounding_boxes[:, 2] = bounding_boxes[:, 0] + bounding_boxes[:, 2]
         bounding_boxes[:, 3] = bounding_boxes[:, 1] + bounding_boxes[:, 3]
 
         if self.transform:
-            image, bounding_boxes, info = self.transform((image, bounding_boxes, info))
+            image, bounding_boxes = self.transform({'image': image, 'boxes': bounding_boxes})
 
         return image, bounding_boxes, info
 

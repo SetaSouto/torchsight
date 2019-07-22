@@ -133,9 +133,7 @@ class AugmentDetection():
             return image, boxes
 
         # Transform to numpy the boxes if it were tensors
-        was_tensor = False
         if torch.is_tensor(boxes):
-            was_tensor = True
             boxes = boxes.numpy()
 
         # Add a dummy label if the boxes does not have one
@@ -148,15 +146,11 @@ class AugmentDetection():
         # Apply the transformation
         transformed = self.transform(image=image, bboxes=boxes)
         image, boxes = transformed['image'], transformed.get('bboxes', None)
+        boxes = torch.Tensor(boxes)
 
         # Remove the dummy label
         if not had_label:
-            boxes = np.array(boxes)
             boxes = boxes[:, :4]
-
-        # Transform to tensor
-        if was_tensor:
-            boxes = torch.Tensor(boxes)
 
         # Return the transformed image and boxes
         return image, boxes
