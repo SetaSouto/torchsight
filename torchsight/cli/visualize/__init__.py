@@ -1,6 +1,7 @@
 """Commands to visualize the datasets or the results."""
 import click
 
+from .coco import coco
 from .dldenet import dldenet
 from .flickr32 import flickr32
 from .instre import instre
@@ -13,6 +14,7 @@ def visualize():
     """Visualize command to see datasets and results."""
 
 
+visualize.add_command(coco)
 visualize.add_command(dldenet)
 visualize.add_command(flickr32)
 visualize.add_command(instre)

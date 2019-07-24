@@ -142,20 +142,26 @@ class CocoDataset(Dataset):
             ndarray: The transformed image if there is any transformation or the original image.
             ndarray: The bounding boxes of the image.
         """
-        path, bounding_boxes, info, *_ = self.images[index]
+        path, boxes, info, *_ = self.images[index]
 
         image = skimage.io.imread(path)
         if len(image.shape) == 2:
             image = skimage.color.gray2rgb(image)
 
+        # Remove bounding boxes without area
+        w, h = boxes[:, 2], boxes[:, 3]     # (n,)
+        areas = w * h                       # (n,)
+        has_area = areas != 0               # (n,)
+        boxes = boxes[has_area, :]          # (n, 5)
+
         # Transform from [x,y,w,h] to [x1,y1,x2,y2]
-        bounding_boxes[:, 2] = bounding_boxes[:, 0] + bounding_boxes[:, 2]
-        bounding_boxes[:, 3] = bounding_boxes[:, 1] + bounding_boxes[:, 3]
+        boxes[:, 2] = boxes[:, 0] + boxes[:, 2]     # (n,)
+        boxes[:, 3] = boxes[:, 1] + boxes[:, 3]     # (n,)
 
         if self.transform:
-            image, bounding_boxes = self.transform({'image': image, 'boxes': bounding_boxes})
+            image, boxes = self.transform({'image': image, 'boxes': boxes})
 
-        return image, bounding_boxes, info
+        return image, boxes, info
 
     def visualize(self, image, boxes=None, initial_time=None, n_colors=20):
         """Visualize an image and its bounding boxes.
