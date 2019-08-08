@@ -9,7 +9,7 @@ from PIL import Image
 from torchsight.datasets import Flickr32Dataset
 from torchsight.metrics.retrieval import AveragePrecision
 from torchsight.retrievers.dldenet import DLDENetRetriever
-from torchsight.utils import JsonObject, PrintMixin
+from torchsight.utils import JsonObject, PrintMixin, visualize_boxes
 
 
 class Flickr32RetrieverExperiment(PrintMixin):
@@ -277,3 +277,12 @@ class Flickr32RetrieverExperiment(PrintMixin):
             query_box = np.zeros(5)
             query_box[:4] = query_boxes[i]
             self.retriver.visualize(query_image, distances[i], boxes[i], paths[brand], query_box)
+
+    def visualize_queries(self):
+        """Visualize one by one the queries that the experiment is using."""
+        brands, images, boxes = self.load_queries()
+
+        for i, image in enumerate(images):
+            box = torch.zeros(1, 5)     # (1, 5)
+            box[:, :4] = boxes[i]       # (1, 5)
+            visualize_boxes(image, box, label_to_name={0: brands[i]})

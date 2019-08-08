@@ -1,6 +1,4 @@
 """Commands for the experiments using the Flickr32 dataset."""
-import json
-
 import click
 
 
@@ -18,6 +16,8 @@ def load_config(config):
     Returns:
         dict: the loaded config.
     """
+    import json
+
     with open(config, 'r') as file:
         return json.loads(file.read())
 
@@ -37,11 +37,17 @@ def run(config, device):
 @click.option('-c', '--config', required=True, type=click.Path(exists=True), help='The config used for the experiment.')
 @click.option('-b', '--brand', help='Show the results only for this single brand.')
 @click.option('-k', default=10, show_default=True, help='The number of results to see.')
-def visualize(config, brand, k):
+@click.option('--queries', is_flag=True, help='Visualize only the queries instead of the queries and their results.')
+def visualize(config, brand, k, queries):
     """Visualize the results of the experiment."""
     from torchsight.experiments.retrievers.flickr32.experiment import Flickr32RetrieverExperiment
 
-    return Flickr32RetrieverExperiment(params=load_config(config)).visualize_results(brand, k)
+    experiment = Flickr32RetrieverExperiment(params=load_config(config))
+
+    if queries:
+        return experiment.visualize_queries()
+
+    return experiment.visualize_results(brand, k)
 
 
 @flickr32.command()
