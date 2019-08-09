@@ -1,0 +1,18 @@
+{
+  "dataset": {
+      "root": "/home/souto/datasets/flickr32"
+  },
+  "k": 100,
+  "queries_file": "/home/souto/repos/pytorch/torchsight/torchsight/experiments/retrievers/flickr32/queries.csv",
+  "results_file": "./results.csv",
+  "retriever": {
+      "use": "dldenet",
+      "dldenet": {
+          "checkpoint": "/home/souto/repos/pytorch/torchsight/logs/flickr32/few-classes/checkpoint.pth.tar",
+          "batch_size": 10,
+          "num_workers": 8,
+          "instances_per_image": 1,
+          "verbose": true
+      }
+  }
+}
