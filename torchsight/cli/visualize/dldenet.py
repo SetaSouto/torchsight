@@ -61,10 +61,10 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
     elif dataset == 'flickr32':
         params['dataset'] = 'trainval' if training_set else 'test'
         try:
-            params['brands'] = hyperparameters['datasets']['flickr32']['classes']
+            params['brands'] = hyperparameters['datasets']['flickr32']['brands']
         except KeyError:
             print('WARN: Model was not trained using flickr32 dataset.')
-            params['classes'] = None
+            params['brands'] = None
         dataset = Flickr32Dataset(**params, transform=transform, only_boxes=only_logos)
         dataset_human = Flickr32Dataset(**params, transform=transform_visible)
         label_to_name = dataset.label_to_class

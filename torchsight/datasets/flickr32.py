@@ -8,7 +8,7 @@ import os
 import torch
 from PIL import Image
 
-from torchsight.utils import describe_boxes, visualize_boxes
+from torchsight.utils import describe_boxes
 
 from .mixins import VisualizeMixin
 

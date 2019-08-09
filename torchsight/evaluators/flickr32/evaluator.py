@@ -68,7 +68,7 @@ class Flickr32Evaluator(Evaluator):
             params = self.checkpoint['hyperparameters']['datasets']['flickr32']
         except KeyError:
             # The model was not trained over flickr32 dataset
-            params = {'classes': None}
+            params = {'brands': None}
 
         return Flickr32Dataset(root=self.params['root'], brands=params['brands'], only_boxes=False,
                                dataset='test', transform=transform)
