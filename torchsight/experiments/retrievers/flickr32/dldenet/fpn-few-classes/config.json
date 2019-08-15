@@ -8,9 +8,9 @@
   "retriever": {
     "use": "dldenet",
     "dldenet": {
-      "extractor": "dldenet",
+      "extractor": "fpn",
       "checkpoint": "/home/souto/repos/pytorch/torchsight/logs/flickr32/few-classes/checkpoint.pth.tar",
-      "batch_size": 10,
+      "batch_size": 5,
       "num_workers": 8,
       "instances_per_image": 1,
       "verbose": true

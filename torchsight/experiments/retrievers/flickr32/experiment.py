@@ -66,6 +66,7 @@ class Flickr32RetrieverExperiment(PrintMixin):
             'retriever': {
                 'use': 'dldenet',
                 'dldenet': {
+                    'extractor': 'fpn',
                     'checkpoint': None,
                     'paths': None,  # Populated by the experiment using the dataset's paths
                     'extensions': None,  # Not used
@@ -74,7 +75,7 @@ class Flickr32RetrieverExperiment(PrintMixin):
                     'instances_per_image': 1,
                     'verbose': True,
                     'device': None,  # Populated with the experiment's device
-                    'params': {'transform': {}}
+                    'transform_params': {}  # Populated with the checkpoint
                 },
                 'resnet': {
                     'paths': None,  # Populated by the experiment using the dataset's paths
@@ -127,10 +128,10 @@ class Flickr32RetrieverExperiment(PrintMixin):
 
         if model == 'dldenet':
             if params.checkpoint is None:
-                raise ValueError('Please provide a checkpoint for the DLDENet retriever.')
+                raise ValueError('Please provide a checkpoint for the retriever.')
 
             params.checkpoint = torch.load(params.checkpoint, map_location=self.device)
-            params.params.transform = params.checkpoint['hyperparameters']['transform']
+            params.transform_params = params.checkpoint['hyperparameters']['transform']
 
             return DLDENetRetriever(**params)
 

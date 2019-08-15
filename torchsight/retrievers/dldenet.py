@@ -1,7 +1,8 @@
 """A module with a retriever based on the DLDENet."""
 import torch
 
-from torchsight.models.dlde.extractor import DLDENetExtractor
+from torchsight.models.dlde.extractor import (DLDENetExtractor,
+                                              FpnFromDLDENetExtractor)
 from torchsight.transforms.augmentation import AugmentDetection
 from torchsight.utils import JsonObject
 
@@ -9,44 +10,56 @@ from .slow import SlowInstanceRetriver
 
 
 class DLDENetRetriever(SlowInstanceRetriver):
-    """A retriever that uses the DLDENet extractor."""
+    """A retriever that uses the DLDENet extractor of the FPN extractor based on the weights
+    of a DLDENet.
+    """
 
-    def __init__(self, checkpoint, *args, params=None, device=None, **kwargs):
+    def __init__(self, checkpoint, *args, extractor='fpn', transform_params=None, device=None, **kwargs):
         """Initialize the retriver.
 
         Arguments:
-            params (JsonObject or dict, optional): The parameters for the model and the transforms.
+            transform_params (dict, optional): The parameters for the transforms.
 
             The rest of the arguments are the same as the SlowInstanceRetriever, only the distance
-            is fixed to 'cos'.
+            is fixed to 'cos' in the case of the DLDENet retriever or to 'l2' in the FpnFromDLDENet.
         """
-        self.params = self.get_params().merge(params)
+        self.extractor = extractor
+        self.transform_params = self.get_transform_params().merge(transform_params)
         self.checkpoint = checkpoint
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
-        super().__init__(*args, **kwargs, distance='cos')
+
+        if extractor == 'fpn':
+            distance = 'l2'
+        elif extractor == 'dldenet':
+            distance = 'cos'
+        else:
+            raise ValueError('The extractor must be "fpn" or "dldenet" not "{}"'.format(extractor))
+
+        super().__init__(*args, **kwargs, distance=distance)
 
     @staticmethod
-    def get_params():
-        """Get the base params for the model.
+    def get_transform_params():
+        """Get the base params for the transform.
 
         Returns:
-            JsonObject: with the parameters for the model.
+            JsonObject: with the parameters for the transform.
         """
         return JsonObject({
-            'transform': {
-                'LongestMaxSize': {
-                    'max_size': 512
-                },
-                'PadIfNeeded': {
-                    'min_height': 512,
-                    'min_width': 512
-                }
+            'LongestMaxSize': {
+                'max_size': 512
+            },
+            'PadIfNeeded': {
+                'min_height': 512,
+                'min_width': 512
             }
         })
 
     def _get_model(self):
-        """Get the ResnetDetector."""
-        return DLDENetExtractor.from_checkpoint(self.checkpoint, self.device)
+        """Get the correspondent detector."""
+        if self.extractor == 'dldenet':
+            return DLDENetExtractor.from_checkpoint(self.checkpoint, self.device)
+
+        return FpnFromDLDENetExtractor.from_checkpoint(self.checkpoint, self.device)
 
     def _get_transforms(self):
         """Get the transformations to apply to the images in the dataset and in the queries.
@@ -56,6 +69,6 @@ class DLDENetRetriever(SlowInstanceRetriver):
             callable: a transformation for images and bounding boxes (the query images with their
                 bounding boxes indicating the instances to search).
         """
-        transform = AugmentDetection(self.params.transform, evaluation=True, normalize=True)
+        transform = AugmentDetection(self.transform_params, evaluation=True, normalize=True)
 
         return transform, transform

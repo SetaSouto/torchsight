@@ -10,14 +10,14 @@
     "resnet": {
       "paths": null,
       "extensions": null,
-      "batch_size": 40,
+      "batch_size": 20,
       "num_workers": 8,
       "instances_per_image": 1,
       "verbose": true,
       "params": {
         "model": {
-          "resnet": 18,
-          "dim": 512,
+          "resnet": 50,
+          "dim": 2048,
           "pool": "avg",
           "kernels": [
             2,
