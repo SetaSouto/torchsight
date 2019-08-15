@@ -3,7 +3,7 @@
     "root": "/home/souto/datasets/flickr32"
   },
   "k": 100,
-  "queries_file": "../queries.csv",
+  "queries_file": "../../queries.csv",
   "results_file": "./results.csv",
   "retriever": {
     "use": "dldenet",
