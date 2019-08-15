@@ -1,0 +1,41 @@
+{
+  "dataset": {
+    "root": "/home/souto/datasets/flickr32"
+  },
+  "k": 100,
+  "queries_file": "../queries.csv",
+  "results_file": "./results.csv",
+  "retriever": {
+    "use": "resnet",
+    "resnet": {
+      "paths": null,
+      "extensions": null,
+      "batch_size": 40,
+      "num_workers": 8,
+      "instances_per_image": 1,
+      "verbose": true,
+      "params": {
+        "model": {
+          "resnet": 18,
+          "dim": 512,
+          "pool": "avg",
+          "kernels": [
+            2,
+            4,
+            8,
+            16
+          ]
+        },
+        "transform": {
+          "LongestMaxSize": {
+            "max_size": 512
+          },
+          "PadIfNeeded": {
+            "min_height": 512,
+            "min_width": 512
+          }
+        }
+      }
+    }
+  }
+}

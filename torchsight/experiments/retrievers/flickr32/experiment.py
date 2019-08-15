@@ -9,6 +9,7 @@ from PIL import Image
 from torchsight.datasets import Flickr32Dataset
 from torchsight.metrics.retrieval import AveragePrecision
 from torchsight.retrievers.dldenet import DLDENetRetriever
+from torchsight.retrievers.resnet import ResnetRetriever
 from torchsight.utils import JsonObject, PrintMixin, visualize_boxes
 
 
@@ -66,13 +67,40 @@ class Flickr32RetrieverExperiment(PrintMixin):
                 'use': 'dldenet',
                 'dldenet': {
                     'checkpoint': None,
-                    'paths': None,
-                    'extensions': None,
+                    'paths': None,  # Populated by the experiment using the dataset's paths
+                    'extensions': None,  # Not used
                     'batch_size': 8,
                     'num_workers': 8,
                     'instances_per_image': 1,
                     'verbose': True,
+                    'device': None,  # Populated with the experiment's device
                     'params': {'transform': {}}
+                },
+                'resnet': {
+                    'paths': None,  # Populated by the experiment using the dataset's paths
+                    'extensions': None,  # Not used
+                    'batch_size': 8,
+                    'num_workers': 8,
+                    'instances_per_image': 1,
+                    'verbose': True,
+                    'device': None,  # Populated with the experiment's device
+                    'params': {
+                        'model': {
+                            'resnet': 18,
+                            'dim': 512,
+                            'pool': 'avg',
+                            'kernels': [2, 4, 8, 16]
+                        },
+                        'transform': {
+                            'LongestMaxSize': {
+                                'max_size': 512
+                            },
+                            'PadIfNeeded': {
+                                'min_height': 512,
+                                'min_width': 512
+                            }
+                        }
+                    }
                 }
             }
         })
@@ -91,14 +119,13 @@ class Flickr32RetrieverExperiment(PrintMixin):
         Return:
             InstanceRetriver: the retriever to use.
         """
-        retriever = self.params.retriever.use
+        model = self.params.retriever.use
+        params = self.params.retriever[model]
+        params.device = self.device
+        # Paths are tuples like (brand, image path, boxes path)
+        params.paths = [t[1] for t in self.dataset.paths]
 
-        if retriever == 'dldenet':
-            params = self.params.retriever.dldenet
-            # Paths are tuples like (brand, image path, boxes path)
-            params.paths = [t[1] for t in self.dataset.paths]
-            params.device = self.device
-
+        if model == 'dldenet':
             if params.checkpoint is None:
                 raise ValueError('Please provide a checkpoint for the DLDENet retriever.')
 
@@ -107,7 +134,10 @@ class Flickr32RetrieverExperiment(PrintMixin):
 
             return DLDENetRetriever(**params)
 
-        raise NotImplementedError('There is no implementation for the "{}" retriever.'.format(retriever))
+        if model == 'resnet':
+            return ResnetRetriever(**params)
+
+        raise NotImplementedError('There is no implementation for the "{}" retriever.'.format(model))
 
     def generate_queries(self):
         """Generate a file with a random path to an image for each brand.
