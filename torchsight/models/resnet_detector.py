@@ -15,7 +15,7 @@ class ResnetDetector(torch.nn.Module):
     So, for example, if we have an image of 512x512, the ResNet has an stride of 32,
     we get a feature map of 16x16 locations. Using a ResNet50, there are 2048 features
     generated per location. We can reduce them to 256 by pooling them.
-    Now, we can apply kernels of size 2x2, 4x4 and 8x8 to get other embeddings for
+    Also, we can apply kernels of size 2x2, 4x4 and 8x8 to get other embeddings for
     "bigger" objects.
     """
 
