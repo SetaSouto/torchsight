@@ -15,6 +15,12 @@ class DLDENetTrainer(RetinaNetTrainer):
     # Base hyperparameters, can be replaced in the initialization of the trainer
     hyperparameters = {
         'model': {
+            # If you provide a checkpoint all the other hyperparameters will be overriden
+            # by the ones in the checkpoint and the model will be initialized with the
+            # weights of the checkpoint except for the classification layer (to work with
+            # a possible mismatching number of classes)
+            'checkpoint': None,
+            # The hyperparameters of the model if no checkpoint is provided
             'resnet': 18,
             'features': {
                 'pyramid': 256,
@@ -126,6 +132,16 @@ class DLDENetTrainer(RetinaNetTrainer):
     def get_model(self):
         """Initialize and get a DLDENet model instance."""
         hyperparameters = self.hyperparameters['model']
+
+        # Load the model from the checkpoint
+        if hyperparameters['checkpoint'] is not None:
+            return DLDENet.from_checkpoint_with_new_classes(
+                checkpoint=hyperparameters['checkpoint'],
+                num_classes=hyperparameters['classes'],
+                device=self.device
+            )
+
+        # No checkpoint detected, start only with the weights of the ResNet
         return DLDENet(
             classes=hyperparameters['classes'],
             resnet=hyperparameters['resnet'],
