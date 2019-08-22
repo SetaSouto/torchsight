@@ -5,7 +5,7 @@ import click
 @click.command()
 @click.option('-dr', '--dataset-root', required=True, type=click.Path(exists=True),
               help='The root directory of the dataset.')
-@click.option('--dataset', default='trainval', type=click.Choice(['training', 'validation', 'trainval', 'test']))
+@click.option('--dataset', default='trainval')
 @click.option('--no-shuffle', is_flag=True, help='Show the images in order and not randomly.')
 @click.option('--brands', help='Visualize only this classes. Ex: "google esso"')
 @click.option('--only-boxes', is_flag=True, help='Visualize only images with bounding boxes.')

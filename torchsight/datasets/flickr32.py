@@ -32,7 +32,8 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         Arguments:
             root (str): The path to the root directory that contains the data.
             dataset (str, optional): The dataset that you want to load.
-                Options available: 'training', 'validation', 'test', 'trainval'.
+                Options available: 'training', 'validation', 'test', 'trainval' or a file name
+                of a few shot dataset like 'few_shot_5.txt'.
             transform (callable, optional): A callable to transform the images and
                 bounding boxes.
             brands (list, optional): A list with the brands to load. If None is provided it will load
@@ -120,7 +121,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         Raises:
             ValueError: if the given name is not a valid one.
         """
-        if name not in ['training', 'validation', 'test', 'trainval']:
+        if name not in ['training', 'validation', 'test', 'trainval'] and 'few_shot_' != name[:9]:
             raise ValueError('"{}" is not a valid dataset name.'.format(name))
 
         return name
@@ -143,12 +144,14 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         """
         if self.dataset == 'training':
             file = 'trainset.txt'
-        if self.dataset == 'validation':
+        elif self.dataset == 'validation':
             file = 'valset.txt'
-        if self.dataset == 'test':
+        elif self.dataset == 'test':
             file = 'testset.txt'
-        if self.dataset == 'trainval':
+        elif self.dataset == 'trainval':
             file = 'trainvalset.txt'
+        else:
+            file = self.dataset
 
         file = os.path.join(self.root, file)
 
