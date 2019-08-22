@@ -293,15 +293,59 @@ class DLDENet(RetinaNet):
 
         params = checkpoint['hyperparameters']['model']
 
-        model = cls(classes=params['classes'],
-                    resnet=params['resnet'],
-                    features=params['features'],
-                    anchors=params['anchors'],
-                    embedding_size=params['embedding_size'],
-                    normalize=params['normalize'],
-                    weighted_bias=params['weighted_bias'],
-                    pretrained=params['pretrained'],
-                    device=device)
+        model = cls(
+            classes=params['classes'],
+            resnet=params['resnet'],
+            features=params['features'],
+            anchors=params['anchors'],
+            embedding_size=params['embedding_size'],
+            normalize=params['normalize'],
+            weighted_bias=params['weighted_bias'],
+            pretrained=params['pretrained'],
+            device=device
+        )
         model.load_state_dict(checkpoint['model'])
+
+        return model
+
+    @classmethod
+    def from_checkpoint_with_new_classes(cls, checkpoint, num_classes, device=None):
+        """Get an instance of the model from a checkpoint generated with the DLDENet trainer
+        but chaning the number of classes of the classification module.
+
+        This can be useful to transfer learning between the models.
+        This class method will load all the weights except those of the classification layer.
+
+        Arguments:
+            checkpoint (str or dict): path to the checkpoint file or the loaded checkpoint file.
+            num_classes (int): number of classes to detect with the model.
+            device (str, optional): where to load the model.
+
+        Returns:
+            DLDENet: with the weights and hyperparameters of the checkpoint but with a new
+                classification layer without pretrained weights.
+        """
+        if isinstance(checkpoint, str):
+            checkpoint = torch.load(checkpoint, map_location=device)
+        # Instantiate a new DLDENet
+        params = checkpoint['hyperparameters']['model']
+        model = cls(
+            classes=num_classes,
+            resnet=params['resnet'],
+            features=params['features'],
+            anchors=params['anchors'],
+            embedding_size=params['embedding_size'],
+            normalize=params['normalize'],
+            weighted_bias=params['weighted_bias'],
+            pretrained=params['pretrained'],
+            device=device
+        )
+        # Get the state dict of the model
+        state_dict = checkpoint['model']
+        # Remove the weights of the classification layer
+        state_dict.pop('classification.weights')
+        state_dict.pop('classification.bias')
+        # Load the weights in the model
+        model.load_state_dict(state_dict, strict=False)
 
         return model
