@@ -23,7 +23,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
     - Provide the path to the root* directory of the dataset in the initialization.
 
     *: The root directory is the one that contains the 'classes' and 'scripts' directories
-    and the `.txt` files with the split of the data (training, validation and test sets). 
+    and the `.txt` files with the split of the data (training, validation and test sets).
     """
 
     def __init__(self, root, dataset='training', transform=None, brands=None, only_boxes=False):
@@ -236,3 +236,51 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             boxes = [self.get_boxes(boxes, brand) for brand, _, boxes in self.paths]
 
         return describe_boxes(torch.cat(boxes, dim=0))
+
+    #############################################
+    ###          DATASETS GENERATORS          ###
+    #############################################
+
+    @staticmethod
+    def generate_few_shot_dataset(root, base_file='trainvalset.txt', k=20):
+        """Generate a new dataset based on the given one that takes
+        only `k` samples per class.
+
+        It will generate in the root directory a file named `few_shot_k.txt`
+        where `k` will be replaced by the given one.
+
+        Arguments:
+            root (str): path of the directory that contains the dataset and the base file.
+            base_file (str, optional): name of the file that will be used to generate the
+                new dataset.
+            k (int, optional): number of samples to use per class.
+        """
+        # import here the random package because is never used in the other methods and
+        # this method is rarely used
+        import random
+
+        images = {}  # images keyed by brand
+
+        # Get all the images per brand from the file
+        with open(os.path.join(root, base_file), 'r') as file:
+            for line in file.readlines():
+                brand, image = line.split(',')
+
+                if brand == 'no-logo':
+                    continue
+
+                if brand not in images:
+                    images[brand] = []
+
+                images[brand].append(image)
+
+        # Select randomly only k images
+        for brand in images:
+            images[brand] = random.sample(images[brand], k)
+
+        # Save the new file
+        file_name = 'few_shot_{}.txt'.format(k)
+        with open(os.path.join(root, file_name), 'w') as file:
+            for brand in images:
+                for image in images[brand]:
+                    file.write('{},{}'.format(brand, image))
