@@ -287,7 +287,7 @@ class Trainer():
 
                 losses.append(loss)
 
-        return torch.Tensor(losses).mean()
+        return torch.Tensor(losses).mean().to(self.device)
 
     def batch_callback(self, batch, epoch):
         """Method that is called after a batch has finished its process."""
@@ -372,7 +372,6 @@ class Trainer():
 
         if 'scheduler' in checkpoint:
             # The scheduler could not be mapped to gpu, it raises errors
-            checkpoint = torch.load(checkpoint_path)
             self.scheduler.load_state_dict(checkpoint['scheduler'])
 
         self.best_loss = checkpoint.get('best_loss', 1e10)
@@ -399,6 +398,10 @@ class Trainer():
             Trainer: An instance of the trainer with the exact same hyperparameters and with
                 the modules with their state_dicts from the checkpoint too.
         """
-        hyperparameters = merge_dicts(torch.load(checkpoint)['hyperparameters'], new_params, verbose)
+        if device is None:
+            device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+        hyperparameters = merge_dicts(torch.load(checkpoint, map_location=device)
+                                      ['hyperparameters'], new_params, verbose)
 
         return cls(hyperparameters=hyperparameters, checkpoint=checkpoint, device=device)
