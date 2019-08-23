@@ -3,7 +3,7 @@ import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from torchsight import utils
-from torchsight.optimizers import AdaBound
+from torchsight.optimizers import AdaBound, Lookahead, RAdam
 
 from ..datasets import CocoDataset, Flickr32Dataset, Logo32plusDataset
 from ..losses import FocalLoss
@@ -76,6 +76,19 @@ class RetinaNetTrainer(Trainer):
             'adabound': {
                 'lr': 1e-3,  # Learning rate
                 'final_lr': 1  # When the optimizer change from Adam to SGD
+            },
+            # Lookahead is not an optimizer by itself, you must choose another of
+            # the optimizers and set the 'use' flag to True in the lookahead params
+            'lookahead': {
+                'use': False,
+                'k': 5,
+                'alpha': 0.5
+            },
+            'radam': {
+                'lr': 1e-3,
+                'betas': [0.9, 0.999],
+                'eps': 1e-8,
+                'weight_decay': 0
             },
             'sgd': {
                 'lr': 1e-2,
@@ -232,32 +245,40 @@ class RetinaNetTrainer(Trainer):
     def get_optimizer(self):
         """Returns the optimizer for the training.
 
-        It has the classic SGD optimizer, but this trainer also
-        includes the [AdaBound optimizer](https://github.com/Luolc/AdaBound) that it's
-        supposed to be as fast as Adam and as good as SGD.
-
         You can provide the optimizer that you want to use in the 'optimizer' hyperparameter
         changing the 'use' parameter and providing the name of the one that
         you want to use.
 
         Returns:
-            AdaBound: The adabound optimizer for the training.
+            Optimizer: The optimizer for the training.
         """
         params = self.hyperparameters['optimizer']
-        optimizer = params['use'].lower()
+        name = params['use'].lower()
 
-        if optimizer == 'adabound':
+        if name == 'adabound':
             params = params['adabound']
-            return AdaBound(self.model.parameters(), lr=params['lr'], final_lr=params['final_lr'])
-
-        if optimizer == 'sgd':
+            optimizer = AdaBound(self.model.parameters(), lr=params['lr'], final_lr=params['final_lr'])
+        elif name == 'sgd':
             params = params['sgd']
-            return torch.optim.SGD(self.model.parameters(),
-                                   lr=params['lr'],
-                                   momentum=params['momentum'],
-                                   weight_decay=params['weight_decay'])
+            optimizer = torch.optim.SGD(
+                self.model.parameters(),
+                lr=params['lr'],
+                momentum=params['momentum'],
+                weight_decay=params['weight_decay']
+            )
+        elif name == 'radam':
+            optimizer = RAdam(self.model.parameters, **params['radam'])
+        else:
+            raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
 
-        raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
+        # Check if we want to use the lookahead algorithm with the optimizer
+        if params['lookahead']['use']:
+            kwargs = {**params['lookahead']}
+            kwargs.pop('use')
+            optimizer = Lookahead(optimizer, **kwargs)
+
+        # Return the final optimizer for the trainer
+        return optimizer
 
     def get_scheduler(self):
         """Get the learning rate scheduler.

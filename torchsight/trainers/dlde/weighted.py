@@ -82,6 +82,19 @@ class DLDENetTrainer(RetinaNetTrainer):
                 'lr': 1e-3,  # Learning rate
                 'final_lr': 1  # When the optimizer change from Adam to SGD
             },
+            # Lookahead is not an optimizer by itself, you must choose another of
+            # the optimizers and set the 'use' flag to True in the lookahead params
+            'lookahead': {
+                'use': False,
+                'k': 5,
+                'alpha': 0.5
+            },
+            'radam': {
+                'lr': 1e-3,
+                'betas': [0.9, 0.999],
+                'eps': 1e-8,
+                'weight_decay': 0
+            },
             'sgd': {
                 'lr': 1e-2,
                 'momentum': 0.9,
