@@ -110,12 +110,12 @@ def dldenet(config, device, dataset_root, dataset, batch_size, resnet, fixed_bia
 @click.option('-c', '--checkpoint', type=click.Path(exists=True), required=True)
 @click.option('-dr', '--dataset-root', type=click.Path(exists=True), required=True)
 @click.option('-b', '--batch-size', default=8, show_default=True, type=click.INT)
-@click.option('--logs-dir', default='./logs', show_default=True, type=click.Path(exists=True),
-              help='Where to store the checkpoints and descriptions.')
+@click.option('--train-dir', default='.', show_default=True, type=click.Path(exists=True),
+              help='Where to store the checkpoints.')
 @click.option('--device', help='The device that the model must use.')
 @click.option('--epochs', default=100, show_default=True)
 @click.option('--tracked-means', is_flag=True, help='Use the tracked means version.')
-def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, device, epochs, tracked_means):
+def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, train_dir, device, epochs, tracked_means):
     """Get an instance of the trainer from the checkpoint CHECKPOINT and resume the exact same training
     with the dataset that contains its data in DATASET_ROOT.
 
@@ -131,9 +131,8 @@ def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, logs_dir, devi
 
     if batch_size is not None:
         new_params['dataloaders'] = {'batch_size': batch_size}
-    if logs_dir is not None:
-        new_params['logger'] = {'dir': logs_dir}
-        new_params['checkpoint'] = {'dir': logs_dir}
+    if train_dir is not None:
+        new_params['checkpoint'] = {'dir': train_dir}
 
     if tracked_means:
         DLDENetWithTrackedMeansTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)

@@ -48,7 +48,7 @@ class Trainer():
                 the checkpoints for each epoch.
         """
         base_hyperparameters = {'checkpoint': {'dir': LOGS_DIR, 'verbose': True},
-                                'logger': {'dir': LOGS_DIR}}
+                                'logger': {'dir': None}}
         # Add the base hyperparameters to the trainer hyperparameters
         self.hyperparameters = merge_dicts(self.hyperparameters, base_hyperparameters)
         # Add the modified hyperparameters given in the initialization
