@@ -149,10 +149,8 @@ class FocalLoss(nn.Module):
             bce[ignored_anchors, :] = 0
             # Append to the classification losses
             loss = focal * bce
-
-            # TODO: DELETE THIS
+            # Increase the foreground loss
             loss[selected_anchors_objects] *= self.increase_foreground_by
-
             # Update the *_loss losses
             pos_loss = torch.where(targets == 1, loss, loss.new_tensor(0))
             pos_loss[ignored_anchors, :] = 0
