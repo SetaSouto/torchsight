@@ -267,7 +267,7 @@ class RetinaNetTrainer(Trainer):
                 weight_decay=params['weight_decay']
             )
         elif name == 'radam':
-            optimizer = RAdam(self.model.parameters, **params['radam'])
+            optimizer = RAdam(self.model.parameters(), **params['radam'])
         else:
             raise ValueError('Cannot find the parameters for the optimizer "{}"'.format(params['use']))
 
