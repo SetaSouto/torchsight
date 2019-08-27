@@ -58,7 +58,9 @@ def get_dataloaders(hyperparameters, train_dataset, valid_dataset=None):
         def fill_annotations(annotations):
             aux = torch.ones((max_annotations, 5))
             aux *= -1
-            aux[:annotations.shape[0], :] = annotations
+            if annotations.shape[0] > 0 and annotations.shape[1] == 5:
+                # The annotations could be empty and this will raise an error
+                aux[:annotations.shape[0], :] = annotations
             return aux
 
         annotations = torch.stack([fill_annotations(a) for _, a, *_ in data], dim=0)
