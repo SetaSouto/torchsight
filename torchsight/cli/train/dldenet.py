@@ -19,32 +19,21 @@ def dldenet(config, device, epochs):
 
 
 @click.command()
-@click.option('-c', '--checkpoint', type=click.Path(exists=True), required=True)
-@click.option('-dr', '--dataset-root', type=click.Path(exists=True), required=True)
-@click.option('-b', '--batch-size', default=8, show_default=True, type=click.INT)
-@click.option('--train-dir', default='.', show_default=True, type=click.Path(exists=True),
-              help='Where to store the checkpoints.')
+@click.option('-ch', '--checkpoint', type=click.Path(exists=True), required=True)
+@click.option('-co', '--config', type=click.Path(exists=True),
+              help='The new config to use to override the hyperparameters of the checkpoint')
 @click.option('--device', help='The device that the model must use.')
 @click.option('--epochs', default=100, show_default=True)
-def dldenet_from_checkpoint(dataset_root, checkpoint, batch_size, train_dir, device, epochs):
+def dldenet_from_checkpoint(checkpoint, config, device, epochs):
     """Get an instance of the trainer from the checkpoint and resume the exact same training
-    with the dataset.
-
-    You can only change things that will not affect the coherence of the training.
+    with the dataset and optionally change any hyperparameter with the new config provided.
     """
+    import json
     from torchsight.trainers import DLDENetTrainer
 
-    new_params = {
-        'datasets': {
-            'coco': {'root': dataset_root},
-            'logo32plus': {'root': dataset_root},
-            'flickr32': {'root': dataset_root}
-        }
-    }
-
-    if batch_size is not None:
-        new_params['dataloaders'] = {'batch_size': batch_size}
-    if train_dir is not None:
-        new_params['checkpoint'] = {'dir': train_dir}
+    new_params = {}
+    if config is not None:
+        with open(config, 'r') as file:
+            new_params = json.loads(file.read())
 
     DLDENetTrainer.from_checkpoint(checkpoint, new_params, device).train(epochs)
