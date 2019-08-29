@@ -121,7 +121,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         Raises:
             ValueError: if the given name is not a valid one.
         """
-        if name not in ['training', 'validation', 'test', 'trainval'] and 'few_shot_' != name[:9]:
+        if name not in ['training', 'validation', 'test', 'trainval'] and name[:9] != 'few_shot_':
             raise ValueError('"{}" is not a valid dataset name.'.format(name))
 
         return name
@@ -169,7 +169,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                     self.root, 'classes/masks/{}/{}.bboxes.txt'.format(brand if brand != 'HP' else 'hp', image))
                 image = os.path.join(self.root, 'classes/jpg/{}/{}'.format(brand, image))
 
-                if not os.path.exists(boxes) and self.only_boxes:
+                if self.only_boxes and not os.path.exists(boxes):
                     continue
 
                 tuples.append((brand, image, boxes))
@@ -245,7 +245,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
     #############################################
 
     @staticmethod
-    def generate_few_shot_dataset(root, base_file='trainvalset.txt', k=20):
+    def generate_few_shot_dataset(root, base_file='trainvalset.txt', k=20, include_no_logo=False):
         """Generate a new dataset based on the given one that takes
         only `k` samples per class.
 
@@ -257,6 +257,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             base_file (str, optional): name of the file that will be used to generate the
                 new dataset.
             k (int, optional): number of samples to use per class.
+            include_no_logo (bool, optional): Include the images with no logo (all).
         """
         # import here the random package because is never used in the other methods and
         # this method is rarely used
@@ -269,7 +270,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             for line in file.readlines():
                 brand, image = line.split(',')
 
-                if brand == 'no-logo':
+                if brand == 'no-logo' and not include_no_logo:
                     continue
 
                 if brand not in images:
@@ -279,7 +280,8 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
 
         # Select randomly only k images
         for brand in images:
-            images[brand] = random.sample(images[brand], k)
+            if brand != 'no-logo':
+                images[brand] = random.sample(images[brand], k)
 
         # Save the new file
         file_name = 'few_shot_{}.txt'.format(k)

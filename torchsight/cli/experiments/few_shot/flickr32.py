@@ -14,8 +14,9 @@ def flickr32():
     help='The base file to use to select the samples'
 )
 @click.option('-k', default=20, show_default=True)
-def generate_dataset(root, base_file, k):
+@click.option('--include-no-logo', is_flag=True, help='Include the images without logos (all) in the dataset')
+def generate_dataset(root, base_file, k, include_no_logo):
     """Generate the few shot dataset with K samples per class."""
     from torchsight.datasets.flickr32 import Flickr32Dataset
 
-    return Flickr32Dataset.generate_few_shot_dataset(root, base_file, k)
+    return Flickr32Dataset.generate_few_shot_dataset(root, base_file, k, include_no_logo)
