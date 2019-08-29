@@ -374,6 +374,18 @@ class Anchors(nn.Module):
             torch.Tensor: The IoU of the selected anchors as objects. Obviously all of them are over the 'object'
                 threshold.
         """
+        if annotations is None or annotations.shape[0] == 0:
+            # There are no assigned annotations
+            num_anchors = anchors.shape[0]
+            assigned_annotations = -1 * anchors.new_ones(num_anchors, 5)
+            # There are no selected anchors as objects
+            objects_mask = anchors.new_zeros(num_anchors).byte()
+            # All the anchors are background
+            background_mask = anchors.new_ones(num_anchors).byte()
+            # There are no iou between anchors and objects
+            iou_objects = anchors.new_zeros(0)
+            return assigned_annotations, objects_mask, background_mask, iou_objects
+
         default_thresholds = {'object': 0.5, 'background': 0.4}
 
         if thresholds is None:

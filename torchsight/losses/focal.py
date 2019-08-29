@@ -108,11 +108,6 @@ class FocalLoss(nn.Module):
             # Keep only the real labels
             annotations = annotations[annotations[:, -1] != -1]
 
-            if annotations.shape[0] == 0:
-                classification_losses.append(torch.zeros((1,)).mean().to(self.device))
-                regression_losses.append(torch.zeros((1,)).mean().to(self.device))
-                continue
-
             # Get assignations of the annotations to the anchors
             # Get the assigned annotations (the i-th assigned annotation is the annotation assigned to the i-th
             # anchor)
