@@ -34,4 +34,4 @@ def generate_some_brands_dataset(root, base_file, num_brands):
     """
     from torchsight.datasets.flickr32 import Flickr32Dataset
 
-    Flickr32Dataset.generate_some_brands_dataset(root, base_file, num_brands)
+    Flickr32Dataset.generate_some_brands_dataset(root=root, base_file=base_file, num_brands=num_brands)

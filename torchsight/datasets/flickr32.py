@@ -247,6 +247,46 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
     #############################################
 
     @staticmethod
+    def get_images_by_brand(directory, file, include_no_logo=False):
+        """Get the images file names from the given file.
+
+        The file must have in each of its lines a tuple like 'brand,file name'.
+
+        Arguments:
+            directory (str): the path to the directory that contains the file.
+            file (str): the path to the file with the brands and images.
+            include_no_logo (bool, optional): include the images with no logo.
+
+        Returns:
+            dict: with the files keyed by brand. Like `{'brand': [image1.jpg, ...]}`
+        """
+        images = {}
+        with open(os.path.join(directory, file), 'r') as file:
+            for line in file.readlines():
+                brand, image = line.split(',')
+                if brand == 'no-logo' and not include_no_logo:
+                    continue
+                if brand not in images:
+                    images[brand] = []
+                images[brand].append(image)
+        return images
+
+    @staticmethod
+    def write_brands_and_images(directory, name, brands, images):
+        """Write the tuples 'brand,image' in the given file that will be stored in the given directory.
+
+        Arguments:
+            directory (str): the directory where to store the file.
+            name (str): the name of the file.
+            brands (list of str): with the selected brands to store.
+            images (dict): with the images keyed by brand.
+        """
+        with open(os.path.join(directory, name), 'w') as file:
+            for brand in brands:
+                for image in images[brand]:
+                    file.write('{},{}'.format(brand, image))
+
+    @staticmethod
     def generate_few_shot_dataset(root, base_file='trainvalset.txt', k=20, file_name=None, include_no_logo=False):
         """Generate a new dataset based on the given one that takes
         only `k` samples per class.
@@ -267,20 +307,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         # this method is rarely used
         import random
 
-        images = {}  # images keyed by brand
-
-        # Get all the images per brand from the file
-        with open(os.path.join(root, base_file), 'r') as file:
-            for line in file.readlines():
-                brand, image = line.split(',')
-
-                if brand == 'no-logo' and not include_no_logo:
-                    continue
-
-                if brand not in images:
-                    images[brand] = []
-
-                images[brand].append(image)
+        images = Flickr32Dataset.get_images_by_brand(root, base_file, include_no_logo)
 
         # Select randomly only k images
         for brand in images:
@@ -289,14 +316,18 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
 
         # Save the new file
         file_name = file_name if file_name is not None else 'few_shot_{}.txt'.format(k)
-        with open(os.path.join(root, file_name), 'w') as file:
-            for brand in images:
-                for image in images[brand]:
-                    file.write('{},{}'.format(brand, image))
+        Flickr32Dataset.write_brands_and_images(root, file_name, list(images.keys()), images)
 
     @staticmethod
     def generate_some_brands_dataset(
-            root, base_file='trainvalset.txt', num_brands=25, file_name=None, file_name_complement=None,
+            root,
+            base_file='trainvalset.txt',
+            test_base_file='testset.txt',
+            num_brands=25,
+            file_name=None,
+            file_name_complement=None,
+            file_name_test=None,
+            file_name_complement_test=None,
             include_no_logo=False
     ):
         """Generate a dataset based on the given file with only `num_brands` brands and
@@ -312,6 +343,10 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             file_name_complement (str, optional): the file name for the images that will not
                 be keeped in the dataset. If None is provided it will use the name
                 `<num_brands>_brands_complement.txt`.
+            file_name_test (str, optional): the file name for the images to test the learning.
+                Default to `<num_brands>_brands_text.txt.
+            file_name_complement_test (str, optional): the file to test the complement of brands.
+                Default to `<num_brands>_brands_complement_test.txt`.
             include_no_logo (bool, optional): include the images with no logo.
         """
         import random
@@ -320,31 +355,24 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
             file_name = '{}_brands.txt'.format(num_brands)
         if file_name_complement is None:
             file_name_complement = '{}_brands_complement.txt'.format(num_brands)
+        if file_name_test is None:
+            file_name_test = '{}_brands_test.txt'.format(num_brands)
+        if file_name_complement_test is None:
+            file_name_complement_test = '{}_brands_complement_test.txt'.format(num_brands)
 
         # Get all the images of the brands
-        images = {}
-        with open(os.path.join(root, base_file), 'r') as file:
-            for line in file.readlines():
-                brand, image = line.split(',')
-                if brand == 'no-logo' and not include_no_logo:
-                    continue
-                if brand not in images:
-                    images[brand] = []
-                images[brand].append(image)
-
+        images = Flickr32Dataset.get_images_by_brand(root, base_file, include_no_logo)
         # Select the num_brands brands
         brands = list(images.keys())
         selected_brands = random.sample(brands, num_brands)
         complement_brands = [b for b in brands if b not in selected_brands]
-
         # Write the brands and images in the dataset
-        with open(os.path.join(root, file_name), 'w') as file:
-            for brand in selected_brands:
-                for image in images[brand]:
-                    file.write('{},{}'.format(brand, image))
-
+        Flickr32Dataset.write_brands_and_images(root, file_name, selected_brands, images)
         # Write the complement for this dataset
-        with open(os.path.join(root, file_name_complement), 'w') as file:
-            for brand in complement_brands:
-                for image in images[brand]:
-                    file.write('{},{}'.format(brand, image))
+        Flickr32Dataset.write_brands_and_images(root, file_name_complement, complement_brands, images)
+        # Get the images of the test set
+        images = Flickr32Dataset.get_images_by_brand(root, test_base_file, include_no_logo)
+        # Write the brands and images for testing
+        Flickr32Dataset.write_brands_and_images(root, file_name_test, selected_brands, images)
+        # Write the brands and images for testing the complement
+        Flickr32Dataset.write_brands_and_images(root, file_name_complement_test, complement_brands, images)
