@@ -108,8 +108,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
 
         return path
 
-    @staticmethod
-    def validate_dataset(name):
+    def validate_dataset(self, name):
         """Check that the given name of the dataset is a correct one.
 
         Arguments:
@@ -121,7 +120,10 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         Raises:
             ValueError: if the given name is not a valid one.
         """
-        if name not in ['training', 'validation', 'test', 'trainval'] and name[:9] != 'few_shot_':
+        datasets = ['training', 'validation', 'test', 'trainval']
+        exists = os.path.exists(os.path.join(self.root, name))
+
+        if name not in datasets and not exists:
             raise ValueError('"{}" is not a valid dataset name.'.format(name))
 
         return name
