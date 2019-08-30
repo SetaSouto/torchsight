@@ -51,6 +51,7 @@ class Trainer():
                                 'logger': {'dir': None}}
         # Add the base hyperparameters to the trainer hyperparameters
         self.hyperparameters = merge_dicts(self.hyperparameters, base_hyperparameters)
+        print("Merging hyperparameters")
         # Add the modified hyperparameters given in the initialization
         self.hyperparameters = merge_dicts(self.hyperparameters, hyperparameters, verbose=True)
         # Set the device of the trainer
@@ -364,11 +365,19 @@ class Trainer():
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
 
         self.model.load_state_dict(checkpoint['model'])
-        self.optimizer.load_state_dict(checkpoint['optimizer'])
-        for state in self.optimizer.state.values():
-            for k, val in state.items():
-                if torch.is_tensor(val):
-                    state[k] = val.to(self.device)
+
+        # Load the saved params of the optimizer only if it's the same
+        current_optimizer = self.hyperparameters['optimizer']['use']
+        saved_optimizer = checkpoint['hyperparameters']['optimizer']['use']
+        if current_optimizer == saved_optimizer:
+            self.optimizer.load_state_dict(checkpoint['optimizer'])
+            for state in self.optimizer.state.values():
+                for k, val in state.items():
+                    if torch.is_tensor(val):
+                        state[k] = val.to(self.device)
+        else:
+            print("WARN: Cannot load optimizer's params because the selected one is different from the saved one. "
+                  "{} (selected) != {} (checkpoint)".format(current_optimizer, saved_optimizer))
 
         if 'scheduler' in checkpoint:
             # The scheduler could not be mapped to gpu, it raises errors
@@ -401,6 +410,7 @@ class Trainer():
         if device is None:
             device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
+        print("Merging checkpoint's hyperparameters with new hyperparameters")
         hyperparameters = merge_dicts(torch.load(checkpoint, map_location=device)
                                       ['hyperparameters'], new_params, verbose)
 

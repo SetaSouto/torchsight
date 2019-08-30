@@ -256,16 +256,9 @@ class RetinaNetTrainer(Trainer):
         name = params['use'].lower()
 
         if name == 'adabound':
-            params = params['adabound']
-            optimizer = AdaBound(self.model.parameters(), lr=params['lr'], final_lr=params['final_lr'])
+            optimizer = AdaBound(self.model.parameters(), **params['adabound'])
         elif name == 'sgd':
-            params = params['sgd']
-            optimizer = torch.optim.SGD(
-                self.model.parameters(),
-                lr=params['lr'],
-                momentum=params['momentum'],
-                weight_decay=params['weight_decay']
-            )
+            optimizer = torch.optim.SGD(self.model.parameters(), **params['sgd'])
         elif name == 'radam':
             optimizer = RAdam(self.model.parameters(), **params['radam'])
         else:
