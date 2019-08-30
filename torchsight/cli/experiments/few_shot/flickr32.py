@@ -20,3 +20,18 @@ def generate_dataset(root, base_file, k, include_no_logo):
     from torchsight.datasets.flickr32 import Flickr32Dataset
 
     return Flickr32Dataset.generate_few_shot_dataset(root, base_file, k, include_no_logo)
+
+
+@flickr32.command()
+@click.option('-r', '--root', required=True, type=click.Path(exists=True), help='The root directory of the dataset')
+@click.option('-f', '--base-file', default='trainvalset.txt', show_default=True)
+@click.option('-n', '--num-brands', default=25, show_default=True)
+def generate_some_brands_dataset(root, base_file, num_brands):
+    """Generate a dataset with only some brands.
+
+    It will write the files `<num_brands>_brands.txt` and `<num_brands>_brands_complement.txt`
+    in the root directory of the dataset.
+    """
+    from torchsight.datasets.flickr32 import Flickr32Dataset
+
+    Flickr32Dataset.generate_some_brands_dataset(root, base_file, num_brands)

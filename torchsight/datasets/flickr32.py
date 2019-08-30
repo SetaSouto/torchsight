@@ -245,7 +245,7 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
     #############################################
 
     @staticmethod
-    def generate_few_shot_dataset(root, base_file='trainvalset.txt', k=20, include_no_logo=False):
+    def generate_few_shot_dataset(root, base_file='trainvalset.txt', k=20, file_name=None, include_no_logo=False):
         """Generate a new dataset based on the given one that takes
         only `k` samples per class.
 
@@ -255,8 +255,10 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
         Arguments:
             root (str): path of the directory that contains the dataset and the base file.
             base_file (str, optional): name of the file that will be used to generate the
-                new dataset.
+                new dataset. It must contain for each line the tuple `brand,file`.
             k (int, optional): number of samples to use per class.
+            file_name (str, optional): the name of the output file. If None is provided it
+                will assign `few_shot_<k>.txt` as name.
             include_no_logo (bool, optional): Include the images with no logo (all).
         """
         # import here the random package because is never used in the other methods and
@@ -284,8 +286,63 @@ class Flickr32Dataset(torch.utils.data.Dataset, VisualizeMixin):
                 images[brand] = random.sample(images[brand], k)
 
         # Save the new file
-        file_name = 'few_shot_{}.txt'.format(k)
+        file_name = file_name if file_name is not None else 'few_shot_{}.txt'.format(k)
         with open(os.path.join(root, file_name), 'w') as file:
             for brand in images:
+                for image in images[brand]:
+                    file.write('{},{}'.format(brand, image))
+
+    @staticmethod
+    def generate_some_brands_dataset(
+            root, base_file='trainvalset.txt', num_brands=25, file_name=None, file_name_complement=None,
+            include_no_logo=False
+    ):
+        """Generate a dataset based on the given file with only `num_brands` brands and
+        keep some brands (`32 - num_brands`) out of the dataset.
+
+        Arguments:
+            root (str): the root directory of the dataset where the base_file is.
+            base_file (str, optional): name of the file that will be used to generate the
+                new dataset. It must contain for each line the tuple `brand,file`.
+            num_brands (int, optional): the number of brands to keep in the dataset.
+            file_name (str, optional): the output file name. If None is provided it will
+                generate a name like `<num_brands>_brands.txt`.
+            file_name_complement (str, optional): the file name for the images that will not
+                be keeped in the dataset. If None is provided it will use the name
+                `<num_brands>_brands_complement.txt`.
+            include_no_logo (bool, optional): include the images with no logo.
+        """
+        import random
+
+        if file_name is None:
+            file_name = '{}_brands.txt'.format(num_brands)
+        if file_name_complement is None:
+            file_name_complement = '{}_brands_complement.txt'.format(num_brands)
+
+        # Get all the images of the brands
+        images = {}
+        with open(os.path.join(root, base_file), 'r') as file:
+            for line in file.readlines():
+                brand, image = line.split(',')
+                if brand == 'no-logo' and not include_no_logo:
+                    continue
+                if brand not in images:
+                    images[brand] = []
+                images[brand].append(image)
+
+        # Select the num_brands brands
+        brands = list(images.keys())
+        selected_brands = random.sample(brands, num_brands)
+        complement_brands = [b for b in brands if b not in selected_brands]
+
+        # Write the brands and images in the dataset
+        with open(os.path.join(root, file_name), 'w') as file:
+            for brand in selected_brands:
+                for image in images[brand]:
+                    file.write('{},{}'.format(brand, image))
+
+        # Write the complement for this dataset
+        with open(os.path.join(root, file_name_complement), 'w') as file:
+            for brand in complement_brands:
                 for image in images[brand]:
                     file.write('{},{}'.format(brand, image))
