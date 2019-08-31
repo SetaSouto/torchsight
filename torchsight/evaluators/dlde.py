@@ -8,7 +8,6 @@ from torchvision import transforms
 
 from torchsight.datasets import CocoDataset
 from torchsight.models import DLDENet, DLDENetWithTrackedMeans
-from torchsight.transforms.augmentation import AugmentDetection
 from torchsight.transforms.detection import Normalize, Resize, ToTensor
 from torchsight.utils import merge_dicts
 
@@ -44,10 +43,7 @@ class DLDENetCOCOEvaluator(Evaluator):
                                                 'ratios': [0.5, 1, 2]},
                                     'embedding_size': 256,
                                     'concentration': 15,
-                                    'shift': 0.8}},
-              # We don't have params from the transforms because we load the params from the checkpoint,
-              # but we can edit this params writing them here
-              'transforms': {}}
+                                    'shift': 0.8}}}
 
     def __init__(self, *args, **kwargs):
         """Initialize the evaluator.
@@ -68,12 +64,13 @@ class DLDENetCOCOEvaluator(Evaluator):
         Returns:
             torchvision.transforms.Compose: A composition of the transformations to apply.
         """
-        params = self.checkpoint['hyperparameters']['transforms']
-        params = merge_dicts(params, self.params['transforms'], verbose=True)
+        params = self.checkpoint['hyperparameters']['transform']
 
-        return transforms.Compose([Resize(**params['resize']),
-                                   ToTensor(),
-                                   Normalize(**params['normalize'])])
+        return transforms.Compose([
+            Resize(max_side=params['LongestMaxSize']['max_size']),
+            ToTensor(),
+            Normalize()
+        ])
 
     def get_dataset(self):
         """Get the COCO dataset for the evaluation.
@@ -87,7 +84,7 @@ class DLDENetCOCOEvaluator(Evaluator):
 
         if params['class_names_from_checkpoint']:
             if 'hyperparameters' in self.checkpoint:
-                class_names = self.checkpoint['hyperparameters']['datasets']['class_names']
+                class_names = self.checkpoint['hyperparameters']['datasets']['coco']['class_names']
             else:
                 print("Couldn't load the class_names from the checkpoint, it doesn't have the hyperparameters.")
 
@@ -95,7 +92,8 @@ class DLDENetCOCOEvaluator(Evaluator):
             root=params['root'],
             dataset=params['validation'],
             classes_names=class_names,
-            transform=transform)
+            transform=transform
+        )
 
     def get_dataloader(self):
         """Get the dataloader to use for the evaluation.
@@ -176,6 +174,8 @@ class DLDENetCOCOEvaluator(Evaluator):
         # Update the scale
         if 'resize_scale' in info:
             boxes /= info['resize_scale']
+        else:
+            raise ValueError('There is no "resize_scale" in the info of the image')
 
         x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
         w, h = x2 - x1, y2 - y1
@@ -191,29 +191,30 @@ class DLDENetCOCOEvaluator(Evaluator):
             images (torch.Tensor): The tensor with the batch of images where to make predictions.
             infos (list): A list with the info of each image.
         """
-        # Get the list of tuples (boxes, classifications)
-        # With shapes (n predictions, 4) and (n predictions, n classes)
-        predictions = self.model(images.to(self.device))
-        for i, (boxes, classifications) in enumerate(predictions):
-            # Check if there are no detections
-            if boxes.shape[0] == 0:
+        images = images.to(self.device)
+        for i, detections in enumerate(self.model(images)):
+            # Continue if there are no detections
+            if detections.shape[0] == 0:
                 continue
 
-            scores, labels = classifications.max(dim=1)
-            boxes = self.transform_boxes(boxes, infos[i])
+            labels = detections[:, 4]
+            probs = detections[:, 5]
             image_id = infos[i]['id']
+            boxes = self.transform_boxes(detections[:, :4], infos[i])
 
             for j, box in enumerate(boxes):
-                score, label = scores[j], labels[j]
+                label, prob = labels[j], probs[j]
                 try:
-                    category_id = self.dataset.classes['ids'][int(label)]
+                    category_id = self.dataset.classes['id'][int(label)]
+                    self.predictions.append({
+                        'image_id': image_id,
+                        'category_id': category_id,
+                        'bbox': [float(point) for point in box],
+                        'score': float(prob)
+                    })
                 except KeyError:
                     # The model predicted a class that is not present in the dataset
                     continue
-                self.predictions.append({'image_id': image_id,
-                                         'category_id': category_id,
-                                         'bbox': [float(point) for point in box],
-                                         'score': float(score)})
 
     def evaluate_callback(self):
         """After the finish of the evaluation store the predictions in the results directory

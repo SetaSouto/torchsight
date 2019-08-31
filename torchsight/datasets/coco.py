@@ -159,7 +159,13 @@ class CocoDataset(Dataset):
         boxes[:, 3] = boxes[:, 1] + boxes[:, 3]     # (n,)
 
         if self.transform:
-            image, boxes = self.transform({'image': image, 'boxes': boxes})
+            results = self.transform({'image': image, 'boxes': boxes, 'info': info})
+            if isinstance(results, dict):
+                # We used our own custom transformations
+                image, boxes, info = results['image'], results['boxes'], results['info']
+            else:
+                # We used the albumentations transforms
+                image, boxes = results
 
         return image, boxes, info
 

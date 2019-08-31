@@ -69,14 +69,19 @@ class Resize():
         """Resize the image and scale the bounding boxes.
 
         Args:
-            data (PIL Image or tuple): The image to resize or a tuple with a PIL image and
+            data (PIL Image, tuple or dict): The image to resize or a tuple with a PIL image and
                 the bounding boxes as numpy arrays.
         """
         if isinstance(data, Image):
             image, _ = self.resize_image(data)
             return image
+        if isinstance(data, dict):
+            image, bounding_boxes, *rest = data['image'], data['boxes'], data.get('info', None)
+        elif isinstance(data, (list, tuple)):
+            image, bounding_boxes, *rest = data
+        else:
+            raise ValueError("The data is not an image, dict or tuple")
 
-        image, bounding_boxes, *rest = data
         image, scale = self.resize_image(image)
 
         if bounding_boxes.shape[0] > 0:
@@ -85,6 +90,13 @@ class Resize():
         if rest and isinstance(rest[0], dict):
             info = rest[0]
             info['resize_scale'] = scale
+
+            if isinstance(data, dict):
+                data['image'] = image
+                data['boxes'] = bounding_boxes
+                data['info'] = info
+                return data
+
             return image, bounding_boxes, info
 
         return image, bounding_boxes
@@ -100,20 +112,27 @@ class ToTensor():
         """Transforms the image and bounding boxes to tensors.
 
         Arguments:
-            data (tuple): A tuple with a PIL image and the bounding boxes as numpy arrays.
+            data (tuple or dict): A tuple or dict with a PIL image and the bounding boxes as numpy arrays.
 
         Returns:
             torch.Tensor: The image.
             torch.Tensor: The annotations.
         """
-        image, boxes, *rest = data
+        if isinstance(data, dict):
+            image, boxes = data['image'], data['boxes']
+            data['image'] = to_tensor(image)
+            if not torch.is_tensor(boxes):
+                data['boxes'] = torch.from_numpy(boxes)
+            return data
 
-        image = to_tensor(image)
+        if isinstance(data, (list, tuple)):
+            image, boxes, *rest = data
+            image = to_tensor(image)
+            if not torch.is_tensor(boxes):
+                boxes = torch.from_numpy(boxes)
+            return (image, boxes, *rest)
 
-        if not torch.is_tensor(boxes):
-            boxes = torch.from_numpy(boxes)
-
-        return (image, boxes, *rest)
+        raise ValueError("The data is not a tuple nor dict")
 
 
 class Normalize():
@@ -143,6 +162,13 @@ class Normalize():
         Returns:
             torch.Tensor: The image normalized.
         """
-        image, *rest = data
-        image = image.type(torch.float)
-        return (normalize(image, self.mean, self.std), *rest)
+        if isinstance(data, dict):
+            data['image'] = normalize(data['image'].float(), self.mean, self.std)
+            return data
+
+        if isinstance(data, (list, tuple)):
+            image, *rest = data
+            image = image.type(torch.float)
+            return (normalize(image, self.mean, self.std), *rest)
+
+        raise ValueError("The data is not a tuple nor dict")
