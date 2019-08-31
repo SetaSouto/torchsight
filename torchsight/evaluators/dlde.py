@@ -205,7 +205,7 @@ class DLDENetCOCOEvaluator(Evaluator):
             for j, box in enumerate(boxes):
                 label, prob = labels[j], probs[j]
                 try:
-                    category_id = self.dataset.classes['id'][int(label)]
+                    category_id = self.dataset.classes['ids'][int(label)]
                     self.predictions.append({
                         'image_id': image_id,
                         'category_id': category_id,
