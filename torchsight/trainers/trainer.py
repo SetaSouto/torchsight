@@ -1,6 +1,6 @@
 """Abstract trainer module.
 
-## Quick start
+# Quick start
 
 A trainer has getters and methods:
 - The getters are for get the different modules necessary for the training like *datasets*, *dataloaders*,
@@ -18,16 +18,13 @@ To use a trainer you must implement the getters methods and the *forward* method
 A good practice is to use the hyperparameters dict to store the parameters for the getters, so anyone can change
 the hyperparameters without changing the code.
 """
-import json
 import os
 import time
 
 import torch
 
 from torchsight.loggers import PrintLogger
-from torchsight.utils import merge_dicts
-
-LOGS_DIR = './logs'
+from torchsight.utils import JsonObject, merge_dicts
 
 
 class Trainer():
@@ -47,13 +44,9 @@ class Trainer():
             save_only_best (bool, optional): If True, it will save only the best checkpoint, not all
                 the checkpoints for each epoch.
         """
-        base_hyperparameters = {'checkpoint': {'dir': LOGS_DIR, 'verbose': True},
-                                'logger': {'dir': None}}
-        # Add the base hyperparameters to the trainer hyperparameters
-        self.hyperparameters = merge_dicts(self.hyperparameters, base_hyperparameters)
         print("Merging hyperparameters")
         # Add the modified hyperparameters given in the initialization
-        self.hyperparameters = merge_dicts(self.hyperparameters, hyperparameters, verbose=True)
+        self.hyperparameters = self.get_base_hp().merge(hyperparameters, verbose=True)
         # Set the device of the trainer
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -83,6 +76,22 @@ class Trainer():
     ####################################
     ###           GETTERS            ###
     ####################################
+
+    @staticmethod
+    def get_base_hp():
+        """Get the base hyperparameters of the Trainer.
+
+        Returns:
+            JsonObject: with the base hyperparameters.
+        """
+        return JsonObject({
+            'checkpoint': {
+                'dir': '.',
+                'verbose': True
+            },
+            # Restart the best loss when training from a checkpoint
+            'restart_best_loss': False
+        })
 
     def get_datasets(self):
         """Get the training and validation datasets.
@@ -140,8 +149,7 @@ class Trainer():
         Returns:
             pymatch.loggers.Logger: A Logger to use during the training.
         """
-        description = 'Hyperparameters:\n{}'.format(json.dumps(self.hyperparameters, indent=2))
-        return PrintLogger(description, self.hyperparameters['logger']['dir'])
+        return PrintLogger()
 
     ####################################
     ###           METHODS            ###
@@ -321,13 +329,9 @@ class Trainer():
             return
 
         self.best_loss = current_loss
-
-        params = self.hyperparameters['checkpoint']
-        path = os.path.join(params['dir'], self.get_checkpoint_name(epoch))
-
-        if params['verbose']:
-            print('[Epoch {}] Saving checkpoint to: {}'.format(epoch, path))
-
+        params = self.hyperparameters.checkpoint
+        path = os.path.join(params.dir, self.get_checkpoint_name(epoch))
+        print('[Epoch {}] Saving checkpoint to: {}'.format(epoch, path))
         checkpoint = {'epoch': epoch,
                       'best_loss': self.best_loss,
                       'model': self.model.state_dict(),
@@ -356,18 +360,14 @@ class Trainer():
         if checkpoint is None:
             return None
 
-        verbose = self.hyperparameters['checkpoint']['verbose']
-
-        if verbose:
+        if isinstance(checkpoint, str):
             print('Loading checkpoint from {}'.format(checkpoint))
-
-        checkpoint_path = checkpoint
-        checkpoint = torch.load(checkpoint_path, map_location=self.device)
+            checkpoint = torch.load(checkpoint, map_location=self.device)
 
         self.model.load_state_dict(checkpoint['model'])
 
         # Load the saved params of the optimizer only if it's the same
-        current_optimizer = self.hyperparameters['optimizer']['use']
+        current_optimizer = self.hyperparameters.optimizer.use
         saved_optimizer = checkpoint['hyperparameters']['optimizer']['use']
         if current_optimizer == saved_optimizer:
             self.optimizer.load_state_dict(checkpoint['optimizer'])
@@ -383,7 +383,9 @@ class Trainer():
             # The scheduler could not be mapped to gpu, it raises errors
             self.scheduler.load_state_dict(checkpoint['scheduler'])
 
-        self.best_loss = checkpoint.get('best_loss', 1e10)
+        if not self.hyperparameters.restart_best_loss:
+            print('Getting last best loss from checkpoint')
+            self.best_loss = checkpoint.get('best_loss', 1e10)
 
         return {'epoch': checkpoint['epoch']}
 
@@ -411,7 +413,7 @@ class Trainer():
             device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
         print("Merging checkpoint's hyperparameters with new hyperparameters")
-        hyperparameters = merge_dicts(torch.load(checkpoint, map_location=device)
-                                      ['hyperparameters'], new_params, verbose)
+        checkpoint = torch.load(checkpoint, map_location=device)
+        hyperparameters = merge_dicts(checkpoint['hyperparameters'], new_params, verbose)
 
         return cls(hyperparameters=hyperparameters, checkpoint=checkpoint, device=device)

@@ -52,18 +52,34 @@ class JsonObject():
 
         return value
 
+    def _to_dict(self, item):
+        """Deeply transform to dict the given item.
+
+        Returns:
+            dict: with no values as JsonObject.
+        """
+        if not isinstance(item, (self.__class__, dict)):
+            return item
+
+        # If the item is a dict
+        if isinstance(item, dict):
+            for key, value in item.items():
+                item[key] = self._to_dict(value)
+            return item
+
+        # If the item is a JsonObject
+        original = {}
+        for key, value in item.items():
+            original[key] = self._to_dict(value)
+        return original
+
     def dict(self):
         """Get the original dict based on the __dict__ of this instance.
 
         Returns:
             dict: The original dict of this instance.
         """
-        original = {}
-
-        for key, value in self.__dict__.items():
-            original[key] = value.dict() if isinstance(value, self.__class__) else value
-
-        return original
+        return self._to_dict(self)
 
     def __str__(self):
         """The human readable version of the object.
@@ -85,9 +101,6 @@ class JsonObject():
         Returns:
             JsonObject: The self instance.
         """
-        if data is None:
-            return self
-
         if isinstance(data, self.__class__):
             data = data.dict()
 
@@ -105,6 +118,22 @@ class JsonObject():
         """
         return self.__dict__.keys()
 
+    def values(self):
+        """Get the values of the instance.
+
+        Returns:
+            dict_values: the values of the instance.
+        """
+        return self.__dict__.values()
+
+    def items(self):
+        """Get the list of (key, value) pairs of the instance.
+
+        Returns:
+            list of tuple: with the key, value pairs.
+        """
+        return self.__dict__.items()
+
     def __getitem__(self, key):
         """Get an item of the object by key.
 
@@ -117,3 +146,16 @@ class JsonObject():
             The value for the given key.
         """
         return getattr(self, key)
+
+    def pop(self, key):
+        """Remove the attribute named with the given key and returns its value.
+
+        Arguments:
+            key (str): The name of the attribute to delete.
+
+        Returns:
+            *: the value that the attribute had.
+        """
+        value = self[key]
+        delattr(self, key)
+        return value

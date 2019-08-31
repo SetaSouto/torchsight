@@ -12,139 +12,146 @@ class DLDENetTrainer(RetinaNetTrainer):
     override some attributes and methods. For more information please read the RetinaNet
     trainer documentation.
     """
-    # Base hyperparameters, can be replaced in the initialization of the trainer
-    hyperparameters = {
-        'model': {
-            # If you provide a checkpoint all the other hyperparameters will be overriden
-            # by the ones in the checkpoint and the model will be initialized with the
-            # weights of the checkpoint except for the classification layer (to work with
-            # a possible mismatching number of classes)
-            'checkpoint': None,
-            # The hyperparameters of the model if no checkpoint is provided
-            'resnet': 18,
-            'features': {
-                'pyramid': 256,
-                'regression': 256,
-                'classification': 256
-            },
-            'anchors': {
-                'sizes': [32, 64, 128, 256, 512],
-                'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
-                'ratios': [0.5, 1, 2]
-            },
-            'fpn_levels': [3, 4, 5, 6, 7],
-            'embedding_size': 256,
-            'normalize': True,
-            'pretrained': True,
-            'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
-            'weighted_bias': False,
-            'fixed_bias': 0,
-            'increase_norm_by': None
-        },
-        'criterion': {
-            'alpha': 0.25,
-            'gamma': 2.0,
-            'sigma': 3.0,
-            'iou_thresholds': {'background': 0.4, 'object': 0.5},
-            'increase_foreground_by': 100,
-            # Weight of each loss. See train method.
-            'weights': {'classification': 100, 'regression': 1, 'similarity': 1, 'dispersion': 1},
-            'soft': False,  # Apply soft loss weighted by the IoU
-        },
-        'datasets': {
-            'use': 'coco',
-            'coco': {
-                'root': './datasets/coco',
-                'class_names': (),  # () indicates all classes
-                'train': 'train2017',
-                'validation': 'val2017'
-            },
-            'logo32plus': {
-                'root': './datasets/logo32plus',
-                'classes': None,
-            },
-            'flickr32': {
-                'root': './datasets/flickr32',
-                'brands': None,
-                'only_boxes': True,
-                'training': 'trainval',  # The name of the dataset to use for training
-                'validation': 'test'  # The name of the dataset to use for validation
-            }
-        },
-        'dataloaders': {
-            'batch_size': 1,
-            'shuffle': True,
-            'num_workers': 8
-        },
-        'optimizer': {
-            'use': 'sgd',  # Which optimizer the trainer must use
-            'adabound': {
-                'lr': 1e-3,  # Learning rate
-                'final_lr': 1  # When the optimizer change from Adam to SGD
-            },
-            # Lookahead is not an optimizer by itself, you must choose another of
-            # the optimizers and set the 'use' flag to True in the lookahead params
-            'lookahead': {
-                'use': False,
-                'k': 5,
-                'alpha': 0.5
-            },
-            'radam': {
-                'lr': 1e-3,
-                'betas': [0.9, 0.999],
-                'eps': 1e-8,
-                'weight_decay': 0
-            },
-            'sgd': {
-                'lr': 1e-2,
-                'momentum': 0.9,
-                'weight_decay': 1e-4
-            }
-        },
-        'scheduler': {
-            'factor': 0.1,
-            'patience': 5,
-            'threshold': 0.01
-        },
-        'transform': {
-            'GaussNoise': {
-                'var_limit': (10, 50),
-                'p': 0.5
-            },
-            'GaussianBlur': {
-                'blur_limit': 0.7,
-                'p': 0.5
-            },
-            'RandomBrightnessContrast': {
-                'brightness_limit': 0.2,
-                'contrast_limit': 0.2,
-                'p': 0.5
-            },
-            'Rotate': {
-                'limit': 45,
-                'p': 0.5
-            },
-            'LongestMaxSize': {
-                'max_size': 512
-            },
-            'PadIfNeeded': {
-                'min_height': 512,
-                'min_width': 512
-            },
-            'RandomSizedBBoxSafeCrop': {
-                'height': 512,
-                'width': 512
-            }
-        }
-    }
 
     ####################################
     ###           GETTERS            ###
     ####################################
 
+    @staticmethod
+    def get_base_hp():
+        """Get the base hyperparameters of the trainer.
+
+        Returns:
+            JsonObject: with the base hyperparameters.
+        """
+        return RetinaNetTrainer.get_base_hp().merge({
+            'model': {
+                # If you provide a checkpoint all the other hyperparameters will be overriden
+                # by the ones in the checkpoint and the model will be initialized with the
+                # weights of the checkpoint except for the classification layer (to work with
+                # a possible mismatching number of classes)
+                'checkpoint': None,
+                # The hyperparameters of the model if no checkpoint is provided
+                'resnet': 18,
+                'features': {
+                    'pyramid': 256,
+                    'regression': 256,
+                    'classification': 256
+                },
+                'anchors': {
+                    'sizes': [32, 64, 128, 256, 512],
+                    'scales': [2 ** 0, 2 ** (1/3), 2 ** (2/3)],
+                    'ratios': [0.5, 1, 2]
+                },
+                'fpn_levels': [3, 4, 5, 6, 7],
+                'embedding_size': 256,
+                'normalize': True,
+                'pretrained': True,
+                'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
+                'weighted_bias': False,
+                'fixed_bias': 0,
+                'increase_norm_by': None
+            },
+            'criterion': {
+                'alpha': 0.25,
+                'gamma': 2.0,
+                'sigma': 3.0,
+                'iou_thresholds': {'background': 0.4, 'object': 0.5},
+                'increase_foreground_by': 100,
+                # Weight of each loss. See train method.
+                'weights': {'classification': 100, 'regression': 1, 'similarity': 1, 'dispersion': 1},
+                'soft': False,  # Apply soft loss weighted by the IoU
+            },
+            'datasets': {
+                'use': 'coco',
+                'coco': {
+                    'root': './datasets/coco',
+                    'class_names': (),  # () indicates all classes
+                    'train': 'train2017',
+                    'validation': 'val2017'
+                },
+                'logo32plus': {
+                    'root': './datasets/logo32plus',
+                    'classes': None,
+                },
+                'flickr32': {
+                    'root': './datasets/flickr32',
+                    'brands': None,
+                    'only_boxes': True,
+                    'training': 'trainval',  # The name of the dataset to use for training
+                    'validation': 'test'  # The name of the dataset to use for validation
+                }
+            },
+            'dataloaders': {
+                'batch_size': 1,
+                'shuffle': True,
+                'num_workers': 8
+            },
+            'optimizer': {
+                'use': 'sgd',  # Which optimizer the trainer must use
+                'adabound': {
+                    'lr': 1e-3,  # Learning rate
+                    'final_lr': 1  # When the optimizer change from Adam to SGD
+                },
+                # Lookahead is not an optimizer by itself, you must choose another of
+                # the optimizers and set the 'use' flag to True in the lookahead params
+                'lookahead': {
+                    'use': False,
+                    'k': 5,
+                    'alpha': 0.5
+                },
+                'radam': {
+                    'lr': 1e-3,
+                    'betas': [0.9, 0.999],
+                    'eps': 1e-8,
+                    'weight_decay': 0
+                },
+                'sgd': {
+                    'lr': 1e-2,
+                    'momentum': 0.9,
+                    'weight_decay': 1e-4
+                }
+            },
+            'scheduler': {
+                'factor': 0.1,
+                'patience': 5,
+                'threshold': 0.01
+            },
+            'transform': {
+                'GaussNoise': {
+                    'var_limit': (10, 50),
+                    'p': 0.5
+                },
+                'GaussianBlur': {
+                    'blur_limit': 0.7,
+                    'p': 0.5
+                },
+                'RandomBrightnessContrast': {
+                    'brightness_limit': 0.2,
+                    'contrast_limit': 0.2,
+                    'p': 0.5
+                },
+                'Rotate': {
+                    'limit': 45,
+                    'p': 0.5
+                },
+                'LongestMaxSize': {
+                    'max_size': 512
+                },
+                'PadIfNeeded': {
+                    'min_height': 512,
+                    'min_width': 512
+                },
+                'RandomSizedBBoxSafeCrop': {
+                    'height': 512,
+                    'width': 512
+                }
+            }
+        })
+
     def get_model(self):
         """Initialize and get a DLDENet model instance."""
-        hyperparameters = self.hyperparameters['model']
+        hyperparameters = self.hyperparameters.model.dict()
 
         # Load the model from the checkpoint
         if hyperparameters['checkpoint'] is not None:
@@ -176,7 +183,7 @@ class DLDENetTrainer(RetinaNetTrainer):
         Returns:
             DLDENetLoss: The unified loss between FocalLoss and Cosine similarity Loss.
         """
-        params = self.hyperparameters['criterion']
+        params = self.hyperparameters.criterion.dict()
 
         return DLDENetLoss(
             alpha=params['alpha'],
