@@ -89,7 +89,7 @@ class Evaluator(PrintMixin):
         Returns:
             pymatch.loggers.Logger: A Logger to use during the training.
         """
-        return PrintLogger(description=None)
+        return PrintLogger()
 
     ###############################
     ###         METHODS         ###
