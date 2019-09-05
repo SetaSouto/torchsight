@@ -33,10 +33,11 @@ class Flickr32Evaluator(Evaluator):
     def get_base_params():
         """Get the base parameters for the evaluator."""
         return merge_dicts(
-            super(Flickr32Evaluator, Flickr32Evaluator).get_base_params(),
+            Evaluator.get_base_params(),
             {
                 'root': './datasets/flickr32',
                 'file': './flickr32_predictions.csv',
+                'dataset': 'test',
                 'dataloader': {
                     'num_workers': 8,
                     'shuffle': False,
@@ -71,7 +72,7 @@ class Flickr32Evaluator(Evaluator):
             params = {'brands': None}
 
         return Flickr32Dataset(root=self.params['root'], brands=params['brands'], only_boxes=False,
-                               dataset='test', transform=transform)
+                               dataset=self.params['dataset'], transform=transform)
 
     def get_dataloader(self):
         """Generate the custom dataloaders for the evaluation.

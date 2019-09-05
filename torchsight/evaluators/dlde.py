@@ -8,6 +8,7 @@ from torchvision import transforms
 
 from torchsight.datasets import CocoDataset
 from torchsight.models import DLDENet, DLDENetWithTrackedMeans
+from torchsight.transforms.augmentation import AugmentDetection
 from torchsight.transforms.detection import Normalize, Resize, ToTensor
 from torchsight.utils import merge_dicts
 
@@ -241,10 +242,10 @@ class DLDENetFlickr32Evaluator(Flickr32Evaluator):
     def get_base_params():
         """Add the thresholds to the base parameters."""
         return merge_dicts(
-            super(DLDENetFlickr32Evaluator, DLDENetFlickr32Evaluator).get_base_params(),
+            Flickr32Evaluator.get_base_params(),
             {
                 'thresholds': {
-                    'detection': 0.1,
+                    'detection': 0.5,
                     'iou': 0.1
                 }
             }
