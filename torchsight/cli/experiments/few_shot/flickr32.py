@@ -9,17 +9,16 @@ def flickr32():
 
 @flickr32.command()
 @click.option('-r', '--root', required=True, type=click.Path(exists=True), help='The root directory of the dataset')
-@click.option(
-    '-f', '--base-file', default='trainvalset.txt', show_default=True,
-    help='The base file to use to select the samples'
-)
+@click.option('-bf', '--base-file', default='trainvalset.txt', show_default=True,
+              help='The base file to use to select the samples')
 @click.option('-k', default=20, show_default=True)
+@click.option('-f', '--file-name', show_default=True)
 @click.option('--include-no-logo', is_flag=True, help='Include the images without logos (all) in the dataset')
-def generate_dataset(root, base_file, k, include_no_logo):
+def generate_dataset(root, base_file, k, file_name, include_no_logo):
     """Generate the few shot dataset with K samples per class."""
     from torchsight.datasets.flickr32 import Flickr32Dataset
 
-    return Flickr32Dataset.generate_few_shot_dataset(root, base_file, k, include_no_logo)
+    return Flickr32Dataset.generate_few_shot_dataset(root, base_file, k, file_name, include_no_logo)
 
 
 @flickr32.command()
