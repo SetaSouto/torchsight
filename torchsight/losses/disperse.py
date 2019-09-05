@@ -9,6 +9,12 @@ class DisperseLoss(torch.nn.Module):
     given a set of embeddings, you probably has a matrix with shape `(e, c)` where `e` is
     the embedding size and `c` is the number of classes. This loss forces that this
     classification vectors points to different locations by simply penalizing their similarity.
+
+    The similarity is the cosine similarity, so we could have values between [-1, 1]. A similarity
+    of -1 will mean that the classification vectors point to the same direction but with different
+    sense, we'll never have that all the classification vectors points to opposite directions,
+    so we can set that with a similarity of 0 -when two vectors are perpendicular- we are in
+    a perfect loss. To do this we can simply clamp the similarity.
     """
 
     def forward(self, weights):
@@ -33,13 +39,13 @@ class DisperseLoss(torch.nn.Module):
         indices = torch.arange(num_classes)
         similarity[indices, indices] = 0
 
+        # Clamp the similarity to have only possitives similarities for the loss
+        similarity = similarity.clamp(min=0)
+
         # The mean will be the sum of the similarity matrix divided by ((c ** 2) - c)
         # that is the total number of elements in the matrix (c ** 2) minus the diagonal of elements
         # (c) multiplied by 2 because we have duplicated the values, similarity[i, j] = similarity[j, i]
         num_items = ((num_classes ** 2) - num_classes)
         loss = similarity.sum() / (2 * num_items)
-
-        # Normalize the loss to get values between 0 and 1
-        loss = (loss + 1) / 2
 
         return loss
