@@ -10,14 +10,14 @@ import click
 @click.option('-d', '--dataset', default='coco', show_default=True, type=click.Choice(['coco', 'logo32plus', 'flickr32']))
 @click.option('-dr', '--dataset-root', type=click.Path(exists=True), required=True,
               help='The path to the directory where is the data of the dataset.')
-@click.option('--training-set', is_flag=True, help='Show the images of the training set instead of validation.')
+@click.option('--subdataset', help='Indicates which dataset inside the given dataset it must use. Default: validation.')
 @click.option('--no-shuffle', is_flag=True)
 @click.option('--device', help='The device to use to run the model. Default to cuda:0 if cuda is available.')
 @click.option('--threshold', default=0.5, show_default=True, help='The confidence threshold for the predictions.')
 @click.option('--iou-threshold', default=0.3, show_default=True, help='The threshold for Non Maximum Supresion.')
 @click.option('--only-logos', is_flag=True, help='Show only images with logos in the Flickr32 dataset.')
 @click.option('--tracked-means', is_flag=True)
-def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device, threshold, iou_threshold, tracked_means,
+def dldenet(checkpoint, dataset_root, dataset, subdataset, no_shuffle, device, threshold, iou_threshold, tracked_means,
             only_logos):
     """Visualize the predictions of the DLDENet model loaded from CHECKPOINT with the indicated
     dataset that contains its data in DATASET-ROOT."""
@@ -48,18 +48,18 @@ def dldenet(checkpoint, dataset_root, dataset, training_set, no_shuffle, device,
         except KeyError:
             coco_params = hyperparameters['datasets']
         params['classes_names'] = coco_params['class_names']
-        params['dataset'] = 'train2017' if training_set else 'val2017'
+        params['dataset'] = subdataset if subdataset is not None else 'val2017'
         dataset = CocoDataset(**params, transform=transform)
         dataset_human = CocoDataset(**params, transform=transform_visible)
         label_to_name = dataset.classes['names']
     elif dataset == 'logo32plus':
-        params['dataset'] = 'training' if training_set else 'validation'
+        params['dataset'] = subdataset if subdataset is not None else 'validation'
         params['classes'] = hyperparameters['datasets']['logo32plus']['classes']
         dataset = Logo32plusDataset(**params, transform=transform)
         dataset_human = Logo32plusDataset(**params, transform=transform_visible)
         label_to_name = dataset.label_to_class
     elif dataset == 'flickr32':
-        params['dataset'] = 'trainval' if training_set else 'test'
+        params['dataset'] = subdataset if subdataset is not None else 'test'
         try:
             params['brands'] = hyperparameters['datasets']['flickr32']['brands']
         except KeyError:
