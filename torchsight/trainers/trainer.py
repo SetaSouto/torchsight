@@ -174,6 +174,9 @@ class Trainer():
         if self.criterion is not None:
             self.criterion.to(self.device)
 
+        # Call the before training callback and then continue to the training
+        self.before_train_callback()
+
         # The number of batches that the training dataset have
         n_batches = len(self.dataloader)
 
@@ -230,6 +233,10 @@ class Trainer():
                 self.save(epoch, loss)
                 if self.scheduler is not None:
                     self.scheduler.step(loss)
+
+    def before_train_callback(self):
+        """An optional method to call before the training to perform any action."""
+        # Is optional, no problem with having it empty
 
     def forward(self, *args):
         """Do a forward pass over the model with the model and get the loss value.

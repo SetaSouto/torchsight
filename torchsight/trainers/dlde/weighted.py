@@ -1,4 +1,6 @@
 """DLDENet trainer for the weighted version."""
+import torch
+
 from torchsight.losses import DLDENetLoss
 from torchsight.models import DLDENet
 
@@ -31,6 +33,11 @@ class DLDENetTrainer(RetinaNetTrainer):
                 # weights of the checkpoint except for the classification layer (to work with
                 # a possible mismatching number of classes)
                 'checkpoint': None,
+                # If you set this flag to True the trainer will run an epoch to get the "mean
+                # embedding" of each class and will set that embedding as the classification
+                # weight of the classification head
+                'init_classification_weights': False,
+                'init_classification_weights_norm': 4,
                 # The hyperparameters of the model if no checkpoint is provided
                 'resnet': 18,
                 'features': {
@@ -155,8 +162,12 @@ class DLDENetTrainer(RetinaNetTrainer):
 
         # Load the model from the checkpoint
         if hyperparameters['checkpoint'] is not None:
+            checkpoint = torch.load(hyperparameters['checkpoint'], map_location=self.device)
+            self.hyperparameters.model.merge(checkpoint['hyperparameters']['model'])
+            self.hyperparameters.model.checkpoint = hyperparameters['checkpoint']
+
             return DLDENet.from_checkpoint_with_new_classes(
-                checkpoint=hyperparameters['checkpoint'],
+                checkpoint=checkpoint,
                 num_classes=hyperparameters['classes'],
                 device=self.device
             )
@@ -198,6 +209,59 @@ class DLDENetTrainer(RetinaNetTrainer):
     ####################################
     ###           METHODS            ###
     ####################################
+
+    def before_train_callback(self):
+        """A method that is called before the training starts."""
+        if self.hyperparameters.model.init_classification_weights:
+            self.init_classification_weights()
+
+    def init_classification_weights(self):
+        """Init the classification weights of the model with the "mean embedding" of each class.
+
+        We'll compute the embedding for each object in the dataset and accumulate it in a tensor
+        that will be the initial weights of the classification head.
+        """
+        print('Initializing classification weights with mean embeddings')
+        with torch.no_grad():
+            # Start with zero weights
+            classes = self.hyperparameters.model.classes
+            embedding_size = self.hyperparameters.model.embedding_size
+            weights = torch.zeros(embedding_size, classes).to(self.device)
+
+            # Move the model to the correct device
+            self.model.to(self.device)
+            n_batches = len(self.dataloader)
+
+            for i, (images, annotations, *_) in enumerate(self.dataloader):
+                images, annotations = images.to(self.device), annotations.to(self.device)
+
+                # Compute embeddings and anchors
+                feat_maps = self.model.fpn(images)
+                embeddings = torch.cat([self.model.classification.encode(fm) for fm in feat_maps], dim=1)   # (b, e, d)
+                anchors = self.model.anchors(images)                                                        # (b, e, 4)
+
+                # Iterate over the annotations assign them and get the embeddings whose anchors has IoU > threshold
+                thresholds = self.hyperparameters.criterion.iou_thresholds.dict()
+                for j, item_annotations in enumerate(annotations):
+                    item_anchors = anchors[j]
+                    assignations = self.model.anchors.assign(item_anchors, item_annotations, thresholds)
+                    assigned_annot, object_mask, *_ = assignations              # (e , 5), (e,)
+                    item_embds = embeddings[j, object_mask]                     # (e', d)
+                    item_embds_labels = assigned_annot[object_mask, 4].long()   # (e',)
+                    for k, label in enumerate(item_embds_labels):
+                        weights[:, label] += item_embds[k]
+
+                self.logger.log({
+                    'Initializing': None,
+                    'Batch': '{}/{}'.format(i+1, n_batches)
+                })
+
+            # Normalize the weights and scale them
+            weights /= weights.norm(dim=0, keepdim=True)
+            weights *= self.hyperparameters.model.init_classification_weights_norm
+
+            # Assign this new init weights to the classification head
+            self.model.classification.weights.data.copy_(weights)
 
     def forward(self, *args):
         """Forward pass through the network and loss computation.

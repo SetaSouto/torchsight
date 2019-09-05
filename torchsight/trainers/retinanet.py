@@ -193,19 +193,17 @@ class RetinaNetTrainer(Trainer):
 
         if dataset == 'flickr32':
             params = params.flickr32
-            num_classes = len(params.brands) if params.brands is not None else 32
-
-            self.hyperparameters.model.classes = num_classes
-
             kwargs = {
                 'root': params.root,
                 'brands': params.brands,
                 'only_boxes': params.only_boxes,
                 'transform': transform
             }
+            datasets = (Flickr32Dataset(**kwargs, dataset=params.training),
+                        Flickr32Dataset(**kwargs, dataset=params.validation))
+            self.hyperparameters.model.classes = len([b for b in datasets[0].brands if b != 'no-logo'])
 
-            return (Flickr32Dataset(**kwargs, dataset=params.training),
-                    Flickr32Dataset(**kwargs, dataset=params.validation))
+            return datasets
 
     def get_dataloaders(self):
         """Initialize and get the dataloaders for the datasets.
