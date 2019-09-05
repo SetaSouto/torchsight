@@ -37,7 +37,7 @@ class DLDENetTrainer(RetinaNetTrainer):
                 # embedding" of each class and will set that embedding as the classification
                 # weight of the classification head
                 'init_classification_weights': False,
-                'init_classification_weights_norm': 4,
+                'init_classification_weights_norm': 1,
                 # The hyperparameters of the model if no checkpoint is provided
                 'resnet': 18,
                 'features': {
@@ -163,8 +163,12 @@ class DLDENetTrainer(RetinaNetTrainer):
         # Load the model from the checkpoint
         if hyperparameters['checkpoint'] is not None:
             checkpoint = torch.load(hyperparameters['checkpoint'], map_location=self.device)
+            # Replace the hyperparameters for the ones in the checkpoint
             self.hyperparameters.model.merge(checkpoint['hyperparameters']['model'])
+            # This hyperparameters could be changed in this new training and must not be
+            # inherit from the checkpoint
             self.hyperparameters.model.checkpoint = hyperparameters['checkpoint']
+            self.hyperparameters.model.classes = hyperparameters['classes']
 
             return DLDENet.from_checkpoint_with_new_classes(
                 checkpoint=checkpoint,
