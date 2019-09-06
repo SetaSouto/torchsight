@@ -14,13 +14,11 @@ def instre(dataset_root, dataset, name, no_shuffle):
     """Visualize the images and annotations of the instre dataset that has its root directory
     at DATASET-ROOT."""
     import random
-    from torchvision.transforms import Compose
     from torchsight.datasets import InstreDataset
-    from torchsight.transforms.detection import Resize
+    from torchsight.transforms.augmentation import AugmentDetection
 
-    dataset = InstreDataset(dataset_root, dataset=dataset, name=name, transform=Compose([
-        Resize(min_side=384, max_side=512)
-    ]))
+    dataset = InstreDataset(dataset_root, dataset=dataset, name=name,
+                            transform=AugmentDetection(evaluation=True, normalize=False))
 
     length = len(dataset)
     print('Dataset length: {}'.format(length))

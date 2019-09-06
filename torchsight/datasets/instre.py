@@ -61,7 +61,7 @@ class InstreDataset(Dataset, VisualizeMixin):
         boxes = self.get_boxes(boxes, name)
 
         if self.transform is not None:
-            image, boxes, info = self.transform((image, boxes, info))
+            image, boxes = self.transform({'image': image, 'boxes': boxes})
 
         return image, boxes, info
 
