@@ -176,7 +176,7 @@ class Logo32plusDataset(torch.utils.data.Dataset, VisualizeMixin):
         image = Image.open(filepath)
 
         if self.transform:
-            image, boxes, info = self.transform((image, boxes, info))
+            image, boxes = self.transform({'image': image, 'boxes': boxes})
 
         return image, boxes, info
 

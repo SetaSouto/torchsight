@@ -4,20 +4,18 @@ import click
 
 @click.command()
 @click.argument('dataset-root')
-@click.option('--dataset', default='training', type=click.Choice(['training', 'validation', 'both']))
+@click.option('--dataset', default='both', type=click.Choice(['training', 'validation', 'both']))
 @click.option('--no-shuffle', is_flag=True, help='Show the images in order and not randomly.')
 @click.option('--classes', help='Visualize only this classes. Ex: "google esso"')
 def logo32plus(dataset_root, dataset, no_shuffle, classes):
     """Visualize the images and annotations of the Logo32plus dataset that has its root directory
     at DATASET-ROOT."""
     import random
-    from torchvision.transforms import Compose
     from torchsight.datasets import Logo32plusDataset
-    from torchsight.transforms.detection import Resize
+    from torchsight.transforms.augmentation import AugmentDetection
 
-    dataset = Logo32plusDataset(dataset_root, dataset, transform=Compose([
-        Resize(min_side=384, max_side=512)
-    ]), classes=classes)
+    dataset = Logo32plusDataset(dataset_root, dataset, transform=AugmentDetection(
+        evaluation=True, normalize=False), classes=classes)
 
     length = len(dataset)
     print('Dataset length: {}'.format(length))
