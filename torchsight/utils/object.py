@@ -145,7 +145,27 @@ class JsonObject():
         Returns:
             The value for the given key.
         """
-        return getattr(self, str(key))
+        try:
+            return getattr(self, str(key))
+        except AttributeError:
+            raise KeyError()
+
+    def __contains__(self, key):
+        """Check if this JsonObject contains a given key.
+
+        Useful for the `in` operator.
+
+        Arguments:
+            key: the key to check if exists in this instance.
+
+        Returns:
+            bool: indicating if this instance contains the given key.
+        """
+        try:
+            self.__getitem__(key)
+            return True
+        except KeyError:
+            return False
 
     def pop(self, key):
         """Remove the attribute named with the given key and returns its value.
