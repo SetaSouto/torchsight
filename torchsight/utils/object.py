@@ -150,6 +150,15 @@ class JsonObject():
         except AttributeError:
             raise KeyError()
 
+    def __setitem__(self, key, value):
+        """Set a new property in this object.
+
+        Arguments:
+            key: the key to identify the property.
+            value: the value to set to the given key.
+        """
+        setattr(self, str(key), self._transform(value))
+
     def __contains__(self, key):
         """Check if this JsonObject contains a given key.
 
