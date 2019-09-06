@@ -145,7 +145,7 @@ class JsonObject():
         Returns:
             The value for the given key.
         """
-        return getattr(self, key)
+        return getattr(self, str(key))
 
     def pop(self, key):
         """Remove the attribute named with the given key and returns its value.
