@@ -8,8 +8,9 @@ import math
 import os
 import random
 
+import skimage
+import skimage.io
 import torch
-from PIL import Image
 from scipy.io import loadmat
 
 from .mixins import VisualizeMixin
@@ -173,7 +174,9 @@ class Logo32plusDataset(torch.utils.data.Dataset, VisualizeMixin):
 
         # Load the image
         filepath = os.path.join(self.root, 'images', image)
-        image = Image.open(filepath)
+        image = skimage.io.imread(filepath)
+        if len(image.shape) == 2:
+            image = skimage.color.gray2rgb(image)
 
         if self.transform:
             image, boxes = self.transform({'image': image, 'boxes': boxes})

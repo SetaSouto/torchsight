@@ -183,13 +183,21 @@ class RetinaNetTrainer(Trainer):
                                 transform=transform))
 
         if dataset == 'logo32plus':
+            if self.hyperparameters.datasets.flickr32.root is None:
+                raise ValueError('You must provide the root of the Flickr32 dataset for validation')
+
             params = params.logo32plus
             num_classes = len(params.classes) if params.classes is not None else 32
 
             self.hyperparameters.model.classes = num_classes
 
-            return (Logo32plusDataset(**params, dataset='training', transform=transform),
-                    Logo32plusDataset(**params, dataset='validation', transform=transform))
+            return (Logo32plusDataset(**params, dataset='both', transform=transform),
+                    Flickr32Dataset(
+                        root=self.hyperparameters.datasets.flickr32.root,
+                        only_boxes=True,
+                        dataset='test',
+                        transform=transform)
+                    )
 
         if dataset == 'flickr32':
             params = params.flickr32
