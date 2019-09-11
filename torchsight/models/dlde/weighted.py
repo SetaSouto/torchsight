@@ -57,6 +57,7 @@ class ClassificationModule(nn.Module):
         super().__init__()
 
         self.embedding_size = embedding_size
+        self.classes = classes
         self.normalize = normalize
 
         self.encoder = SubModule(in_channels=in_channels, outputs=embedding_size, anchors=anchors, features=features)
@@ -81,11 +82,18 @@ class ClassificationModule(nn.Module):
         self.reset_weights()
 
     def reset_weights(self):
-        """Reset and initialize with kaiming normal the weights."""
+        """Reset and initialize the weights with kaiming uniform and the bias with constant value.
+
+        For the bias we use a special constant. As at the beginning of the training all the embeddings
+        have proability near 0.5 to belong to a class we can set a bias so the prior of the embedding could be
+        a given value.
+        Usually, in sigmoid based loss functions, is used 1/C the prior for each output as we said that
+        any class could be the output.
+        """
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
 
         if self.weighted_bias:
-            nn.init.constant_(self.bias, 0)
+            nn.init.constant_(self.bias, -torch.log(torch.tensor(self.classes - 1).float()))
 
     def encode(self, feature_map):
         """Generate the embeddings for the given feature map.
