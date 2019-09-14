@@ -89,6 +89,8 @@ class Trainer():
                 'dir': '.',
                 'verbose': True
             },
+            # Accumulate the loss of consecutive batches to simulate a bigger batch
+            'accumulated_batches': 1,  # default to one batch, i.e., no accumulation
             # Restart the best loss when training from a checkpoint
             'restart_best_loss': False
         })
@@ -194,16 +196,13 @@ class Trainer():
             self.model.train()
 
             for batch, data in enumerate(self.dataloader):
-                # Optimize
-                self.optimizer.zero_grad()
+                # Compute the loss and do the backward step
                 loss = self.forward(*data)
                 self.backward(loss)
-                self.optimizer.step()
 
                 # Log the batch
                 learning_rates = [str(param_group['lr'])
                                   for i, param_group in enumerate(self.optimizer.param_groups)]
-
                 total_time = time.time() - start_time
                 batch_time = time.time() - last_endtime
                 last_endtime = time.time()
@@ -220,6 +219,11 @@ class Trainer():
 
                 # Call the callback for the batch
                 self.batch_callback(batch, epoch)
+
+                # Check if we need to do the optimizer step
+                if (batch + 1) % self.hyperparameters.accumulated_batches == 0:
+                    self.optimizer.step()
+                    self.optimizer.zero_grad()
 
             # Call the callback for the epoch
             self.epoch_callback(epoch)
