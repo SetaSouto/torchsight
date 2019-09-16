@@ -228,7 +228,8 @@ class RetinaNetTrainer(Trainer):
         Returns:
             RetinaNet: The RetinaNet model.
         """
-        return RetinaNet(**self.hyperparameters.model)
+        hp = self.hyperparameters.model
+        return RetinaNet(classes=hp.classes, resnet=hp.resnet, features=hp.features, anchors=hp.anchors, pretrained=hp.pretrained)
 
     def get_criterion(self):
         """Initialize and get the FocalLoss.
@@ -236,7 +237,9 @@ class RetinaNetTrainer(Trainer):
         Returns:
             torch.nn.Module: The FocalLoss.
         """
-        return FocalLoss(**self.hyperparameters.criterion, device=self.device)
+        kwargs = {**self.hyperparameters.criterion}
+        kwargs.pop('weights')
+        return FocalLoss(**kwargs, device=self.device)
 
     def get_optimizer(self):
         """Returns the optimizer for the training.

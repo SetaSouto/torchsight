@@ -6,6 +6,7 @@ from .dldenet import dldenet
 from .flickr32 import flickr32
 from .instre import instre
 from .logo32plus import logo32plus
+from .retinanet import retinanet
 from .sigmoid import sigmoid
 
 
@@ -19,4 +20,5 @@ visualize.add_command(dldenet)
 visualize.add_command(flickr32)
 visualize.add_command(instre)
 visualize.add_command(logo32plus)
+visualize.add_command(retinanet)
 visualize.add_command(sigmoid)

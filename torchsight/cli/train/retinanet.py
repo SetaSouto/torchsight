@@ -16,7 +16,8 @@ import click
               help='Indicate which classes (identified by its string label) must be used for the training. '
               'If no class is provided the trainer will use all the classes. Example: --classes "bear sheep airplane"')
 @click.option('--device', default=None, help='The device that the model must use.')
-def retinanet(config, dataset, dataset_root, batch_size, resnet, logs_dir, checkpoint, classes, device):
+@click.option('--epochs', default=300, show_default=True)
+def retinanet(config, dataset, dataset_root, batch_size, resnet, logs_dir, checkpoint, classes, device, epochs):
     """Train a RetinaNet instance with the indicated dataset that contains its data in the
     DATASET_ROOT directory."""
     from torchsight.trainers import RetinaNetTrainer
@@ -61,4 +62,4 @@ def retinanet(config, dataset, dataset_root, batch_size, resnet, logs_dir, check
         hyperparameters=hyperparameters,
         checkpoint=checkpoint,
         device=device
-    ).train()
+    ).train(epochs)
