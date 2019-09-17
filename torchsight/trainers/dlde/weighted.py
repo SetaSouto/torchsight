@@ -27,6 +27,21 @@ class DLDENetTrainer(RetinaNetTrainer):
             JsonObject: with the base hyperparameters.
         """
         return RetinaNetTrainer.get_base_hp().merge({
+            'logger': {
+                'metrics': [
+                    {'name': 'LR', 'accumulate': False, 'template': '{}'},
+                    {'name': 'Loss', 'accumulate': True, 'reduce': 'avg', 'template': '{:.5f}'},
+                    {'name': 'Time', 'accumulate': False, 'template': '{:.3f}'},
+                    {'name': 'Class', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Pos', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Neg', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Reg', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Sim', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Dis', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'w-norm', 'accumulate': False, 'template': '{:.3f}'},
+                    {'name': 'bias', 'accumulate': False, 'template': '{:.3f}'}
+                ],
+            },
             'model': {
                 # If you provide a checkpoint all the other hyperparameters will be overriden
                 # by the ones in the checkpoint and the model will be initialized with the
@@ -234,7 +249,7 @@ class DLDENetTrainer(RetinaNetTrainer):
 
             # Move the model to the correct device
             self.model.to(self.device)
-            n_batches = len(self.dataloader)
+            # n_batches = len(self.dataloader)
 
             for i, (images, annotations, *_) in enumerate(self.dataloader):
                 images, annotations = images.to(self.device), annotations.to(self.device)
@@ -255,10 +270,10 @@ class DLDENetTrainer(RetinaNetTrainer):
                     for k, label in enumerate(item_embds_labels):
                         weights[:, label] += item_embds[k]
 
-                self.logger.log({
-                    'Initializing': None,
-                    'Batch': '{}/{}'.format(i+1, n_batches)
-                })
+                # self.logger.log({
+                #     'Initializing': None,
+                #     'Batch': '{}/{}'.format(i+1, n_batches)
+                # })
 
             # Normalize the weights and scale them
             weights /= weights.norm(dim=0, keepdim=True)
@@ -294,15 +309,15 @@ class DLDENetTrainer(RetinaNetTrainer):
         loss = classification + regression + similarity + dispersion
 
         # Log the classification and regression loss too:
-        self.current_log['Class.'] = '{:.4f}'.format(float(classification))
-        self.current_log['Pos'] = '{:.4f}'.format(float(self.criterion.focal.pos_loss * weights['classification']))
-        self.current_log['Neg'] = '{:.4f}'.format(float(self.criterion.focal.neg_loss * weights['classification']))
-        self.current_log['Regr.'] = '{:.4f}'.format(float(regression))
-        self.current_log['Simil.'] = '{:.4f}'.format(float(similarity))
-        self.current_log['Disp.'] = '{:4f}'.format(float(dispersion))
+        self.current_log['Class'] = float(classification)
+        self.current_log['Pos'] = float(self.criterion.focal.pos_loss * weights['classification'])
+        self.current_log['Neg'] = float(self.criterion.focal.neg_loss * weights['classification'])
+        self.current_log['Reg'] = float(regression)
+        self.current_log['Sim'] = float(similarity)
+        self.current_log['Dis'] = float(dispersion)
         # Log the mean norm of the weights in the classification module and their biases
-        self.current_log['w-norm'] = '{:.4f}'.format(float(self.model.classification.weights.norm(dim=0).mean()))
+        self.current_log['w-norm'] = float(self.model.classification.weights.norm(dim=0).mean())
         if self.model.classification.weighted_bias:
-            self.current_log['bias'] = '{:.4f}'.format(float(self.model.classification.bias.mean()))
+            self.current_log['bias'] = float(self.model.classification.bias.mean())
 
         return loss

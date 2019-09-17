@@ -23,7 +23,7 @@ import time
 
 import torch
 
-from torchsight.loggers import PrintLogger
+from torchsight.loggers.progress import ProgressLogger, ProgressMetric
 from torchsight.utils import JsonObject, merge_dicts
 
 
@@ -89,6 +89,20 @@ class Trainer():
                 'dir': '.',
                 'verbose': True
             },
+            'logger': {
+                'metrics': [
+                    {'name': 'LR', 'accumulate': False, 'template': '{}'},
+                    {'name': 'Loss', 'accumulate': True, 'reduce': 'avg', 'template': '{:.5f}'},
+                    {'name': 'Time', 'accumulate': False, 'template': '{:.3f}'},
+                ],
+                'output_dir': '.',
+                'batches_file': 'batches.csv',
+                'epochs_file': 'epochs.csv',
+                'validation_batches_file': 'validation_batches.csv',
+                'validation_epochs_file': 'validation_epochs.csv',
+                'append': False,
+                'overwrite': False
+            },
             # Accumulate the loss of consecutive batches to simulate a bigger batch
             'accumulated_batches': 1,  # default to one batch, i.e., no accumulation
             # Restart the best loss when training from a checkpoint
@@ -144,14 +158,15 @@ class Trainer():
         # No error because the scheduler is optional.
 
     def get_logger(self):
-        """Get the (optional) logger to use during the training to show the information about the process.
-
-        This base implementation uses the PrintLogger that will print the log to the console.
+        """Get the logger to use during the training to show the information about the process.
 
         Returns:
-            pymatch.loggers.Logger: A Logger to use during the training.
+            pymatch.loggers.ProgressLogger: A Logger to use during the training.
         """
-        return PrintLogger()
+        metrics = [ProgressMetric(**kwargs) for kwargs in self.hyperparameters.logger.metrics]
+        kwargs = self.hyperparameters.logger
+        kwargs.pop('metrics')
+        return ProgressLogger(metrics=metrics, **kwargs)
 
     ####################################
     ###           METHODS            ###
@@ -179,9 +194,6 @@ class Trainer():
         # Call the before training callback and then continue to the training
         self.before_train_callback()
 
-        # The number of batches that the training dataset have
-        n_batches = len(self.dataloader)
-
         # The start time of the training and the last batch's end time
         start_time = time.time()
         last_endtime = start_time
@@ -189,13 +201,13 @@ class Trainer():
         # We start from the next epoch of the checkpoint (if there is any)
         start_epoch = 1 if self.checkpoint is None else self.checkpoint['epoch'] + 1
 
-        for epoch in range(start_epoch, start_epoch + epochs):
+        for epoch in self.logger.epochs(num_epochs=epochs, start_epoch=start_epoch):
             # Indicate to the model that we are in training mode, useful for batch normalization or dropouts modules.
             # For more info see:
             # https://discuss.pytorch.org/t/trying-to-understand-the-meaning-of-model-train-and-model-eval/20158
             self.model.train()
 
-            for batch, data in enumerate(self.dataloader):
+            for batch, data in self.logger.batches(self.dataloader):
                 # Compute the loss and do the backward step
                 loss = self.forward(*data)
                 self.backward(loss)
@@ -203,17 +215,13 @@ class Trainer():
                 # Log the batch
                 learning_rates = [str(param_group['lr'])
                                   for i, param_group in enumerate(self.optimizer.param_groups)]
-                total_time = time.time() - start_time
                 batch_time = time.time() - last_endtime
                 last_endtime = time.time()
 
-                self.logger.log(merge_dicts({
-                    'Training': None,
-                    'Epoch': '{} ({}/{})'.format(epoch, batch + 1, n_batches),
+                self.logger.set_metrics(merge_dicts({
                     'LR': ' '.join(learning_rates),
-                    'Loss': '{:.7f}'.format(float(loss)),
-                    'Time': '{:.3f} s'.format(batch_time),
-                    'Total': '{:.1f} s'.format(total_time)
+                    'Loss': float(loss),
+                    'Time': batch_time,
                 }, self.current_log))
                 self.current_log = {}  # Restart the log dict for the next batch
 
@@ -233,7 +241,7 @@ class Trainer():
                 self.save(epoch)
 
             if validate:
-                loss = self.validate(epoch)
+                loss = self.validate()
                 self.save(epoch, loss)
                 if self.scheduler is not None:
                     self.scheduler.step(loss)
@@ -276,7 +284,7 @@ class Trainer():
         """
         self.model.eval()
 
-    def validate(self, epoch):
+    def validate(self):
         """Run the model over the validation dataset and return the mean loss over it."""
         self.model.to(self.device)
         self.eval()
@@ -284,25 +292,19 @@ class Trainer():
         start_time = time.time()
         last_endtime = start_time
 
-        n_batches = len(self.valid_dataloader)
-
         losses = []
 
         with torch.no_grad():
-            for batch, data in enumerate(self.valid_dataloader):
+            for _, data in self.logger.batches(self.valid_dataloader, validation=True):
                 loss = float(self.forward(*data))
 
                 batch_time = time.time() - last_endtime
                 last_endtime = time.time()
-                total_time = time.time() - start_time
 
-                self.logger.log(merge_dicts({
-                    'Validating': None,
-                    'Epoch': '{} ({}/{})'.format(epoch, batch + 1, n_batches),
-                    'Loss': '{:.7f}'.format(float(loss)),
-                    'Time': '{:.3f} s'.format(batch_time),
-                    'Total': '{:.1f} s'.format(total_time)
-                }, self.current_log))
+                self.logger.set_metrics(merge_dicts({
+                    'Loss': float(loss),
+                    'Time': batch_time,
+                }, self.current_log), validation=True)
                 self.current_log = {}  # Restart the log dict for the next batch
 
                 losses.append(loss)
@@ -342,7 +344,7 @@ class Trainer():
         self.best_loss = current_loss
         params = self.hyperparameters.checkpoint
         path = os.path.join(params.dir, self.get_checkpoint_name(epoch))
-        print('[Epoch {}] Saving checkpoint to: {}'.format(epoch, path))
+        self.logger.write('[Epoch {}] Saving checkpoint to: {}'.format(epoch, path))
         checkpoint = {'epoch': epoch,
                       'best_loss': self.best_loss,
                       'model': self.model.state_dict(),

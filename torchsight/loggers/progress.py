@@ -1,5 +1,6 @@
 """Module with the implementation of the Logger that uses tqdm to show a progress bar for the training."""
 import os
+from copy import deepcopy
 
 from tqdm import tqdm
 
@@ -21,13 +22,13 @@ class ProgressMetric():
         self.reduce = reduce
         self.template = template
         self.value = None
-        self.update_value = self.value  # Keep a copy of the last value that updated the metric
+        self.update_value = None  # Keep a copy of the last value that updated the metric
         self.reset()
 
     def reset(self):
         """Reset the value of the metric."""
         self.value = 0 if self.accumulate else None
-        self._update_value = self.value
+        self.update_value = self.template.format(self.value) if self.value is not None else None
 
     def update(self, value):
         """Update the value of the metric.
@@ -35,7 +36,7 @@ class ProgressMetric():
         Arguments:
             value: the value to accumulate or replace.
         """
-        self.update_value = value
+        self.update_value = self.template.format(value)
         if self.accumulate:
             self.value += value
         else:
@@ -85,7 +86,8 @@ class ProgressLogger():
     ```
     """
 
-    def __init__(self, metrics, output_dir='.', batches_file='batches_metrics.csv', epochs_file='epochs_metrics.csv',
+    def __init__(self, metrics, output_dir='.', batches_file='batches.csv', epochs_file='epochs.csv',
+                 validation_batches_file='validation_batches.csv', validation_epochs_file='validation_epochs.csv',
                  append=False, overwrite=False):
         """Initialize the logger.
 
@@ -103,10 +105,11 @@ class ProgressLogger():
             raise ValueError('Please provide only ProgressMetric instances in the metrics argument.')
 
         self.metrics = {m.name: m for m in metrics}  # Keyed by name
+        self.validation_metrics = {m.name: deepcopy(m) for m in metrics}
         self.output_dir = output_dir
 
         # Check if the files already exists to avoid problems
-        for file in [batches_file, epochs_file]:
+        for file in [batches_file, epochs_file, validation_batches_file, validation_epochs_file]:
             file_path = os.path.join(output_dir, file)
             if os.path.exists(file_path) and not append and not overwrite:
                 raise ValueError(f'File "{file_path}" already exists, you probably want to backup its data. '
@@ -114,6 +117,8 @@ class ProgressLogger():
 
         self.batches_file = os.path.join(output_dir, batches_file)
         self.epochs_file = os.path.join(output_dir, epochs_file)
+        self.validation_batches_file = os.path.join(output_dir, validation_batches_file)
+        self.validation_epochs_file = os.path.join(output_dir, validation_epochs_file)
         self.epoch = None
         self.batch = None
         self.epochs_bar = None
@@ -121,10 +126,12 @@ class ProgressLogger():
 
         # Add the headers for the CSV files
         if overwrite or not append:
-            with open(self.batches_file, 'w') as file:
-                file.write(','.join(['Epoch', 'Batch', *self.metrics.keys()]) + '\n')
-            with open(self.epochs_file, 'w') as file:
-                file.write(','.join(['Epoch', *self.metrics.keys()]) + '\n')
+            for path in [self.batches_file, self.validation_batches_file]:
+                with open(path, 'w') as file:
+                    file.write(','.join(['Epoch', 'Batch', *self.metrics.keys()]) + '\n')
+            for path in [self.epochs_file, self.validation_epochs_file]:
+                with open(path, 'w') as file:
+                    file.write(','.join(['Epoch', *self.metrics.keys()]) + '\n')
 
     def epochs(self, num_epochs, start_epoch=1):
         """Return a generator that renders a progress bar for the whole training and yields the epoch
@@ -142,23 +149,25 @@ class ProgressLogger():
 
         def generator():
             for epoch in self.epochs_bar:
-                self.epoch = epoch
                 if epoch > start_epoch:
                     # Save the metrics of the the last epoch
                     self.save_epoch_metrics()
+                    self.save_epoch_metrics(validation=True)
                     # Restart the metrics
-                    for m in self.metrics.values():
+                    for m in [*self.metrics.values(), *self.validation_metrics.values()]:
                         m.reset()
                 # Yield the number of the epoch
+                self.epoch = epoch
                 yield epoch
 
         return generator()
 
-    def batches(self, data_loader):
+    def batches(self, data_loader, validation=False):
         """Return a generator that renders a progress bar for the progress of the current epoch.
 
         Arguments:
             data_loader (torch.utils.data.DataLoader): to load the data and generate the batches.
+            validation (bool, optional): indicates that the dataloader is for the validation procedure.
 
         Returns:
             Generator: that yields the batch number (1-indexed) and batch's data generated with the
@@ -168,47 +177,69 @@ class ProgressLogger():
 
         def generator():
             for i, data in enumerate(self.batches_bar):
-                self.batch = i + 1  # Set the current batch
-                if self.batch > 1:
+                if i > 0:
                     # Save the metrics of the batch
-                    self.save_batch_metrics()
+                    self.save_batch_metrics(validation=validation)
                 # Yield the number of the batch and its data
+                self.batch = i + 1  # Set the current batch
                 yield self.batch, data
 
         return generator()
 
-    def set_metrics(self, keyed_values):
+    def set_metrics(self, keyed_values, validation=False):
         """Set the metrics' values keyed by their names.
 
         Arguments:
             keyed_values (dict): with the value for each metric keyed by the metrics name.
+            validation (bool, optional): set the validation metrics, not the training ones.
         """
         for name, value in keyed_values.items():
             if name not in self.metrics:
                 raise ValueError(f'The metric with name "{name}" was not declared in this logger.')
-            self.metrics[name].update(value)
+            if validation:
+                self.validation_metrics[name].update(value)
+            else:
+                self.metrics[name].update(value)
 
-        self.update_epochs_description()
-        self.update_batches_description()
+        self.update_epochs_description(validation=validation)
+        self.update_batches_description(validation=validation)
 
-    @property
-    def epochs_description(self):
-        """A property to get the description of the epochs bar."""
-        description = f'[Epoch {self.epoch}] '
-        description += ' '.join([f'[{m.name} {m.get(self.batch)}]' for m in self.metrics.values()])
+    def epochs_description(self, validation=False):
+        """A method to get the description of the epochs bar.
+
+        Arguments:
+            validation (bool, optional): indicates that the metrics to show in the description
+                must be the validation metrics.
+        """
+        metrics = self.validation_metrics if validation else self.metrics
+        description = 'Val: ' if validation else ''
+        description += f'[Epoch {self.epoch}] '
+        description += ' '.join([f'[{m.name} {m.get(self.batch)}]' for m in metrics.values()
+                                 if m.get(self.batch) is not 'None'])
         return description
 
-    def update_epochs_description(self):
-        """Update the description of the epochs bar with the reduced metrics."""
-        self.epochs_bar.set_description(self.epochs_description)
+    def update_epochs_description(self, validation=False):
+        """Update the description of the epochs bar with the reduced metrics.
 
-    def update_batches_description(self):
-        """Update the description of the batches bar with the last updated values of the metrics."""
+        Arguments:
+            validation (bool, optional): indicates that it must use the validation metrics.
+        """
+        self.epochs_bar.set_description(self.epochs_description(validation=validation))
+
+    def update_batches_description(self, validation=False):
+        """Update the description of the batches bar with the last updated values of the metrics.
+
+        Arguments:
+            validation (bool, optional): indicates that it must use the validation metrics.
+        """
         if self.batch == len(self.batches_bar):
-            self.batches_bar.set_description(self.epochs_description)
+            self.batches_bar.set_description(self.epochs_description(validation=validation))
         else:
-            description = f'[Batch {self.batch}] '
-            description += ' '.join([f'[{m.name} {m.update_value}]' for m in self.metrics.values()])
+            metrics = self.validation_metrics if validation else self.metrics
+            description = 'Val: ' if validation else ''
+            description += f'[Batch {self.batch}] '
+            description += ' '.join([f'[{m.name} {m.update_value}]' for m in metrics.values()
+                                     if m.update_value is not None])
             self.batches_bar.set_description(description)
 
     @staticmethod
@@ -222,12 +253,31 @@ class ProgressLogger():
         with open(file, 'a') as f:
             f.write(','.join([str(v) for v in values]) + '\n')
 
-    def save_batch_metrics(self):
-        """Save the metrics of the current batch."""
-        self.append_metrics(self.batches_file, [self.epoch, self.batch,
-                                                *[m.update_value for m in self.metrics.values()]])
+    def save_batch_metrics(self, validation=False):
+        """Save the metrics of the current batch.
 
-    def save_epoch_metrics(self):
-        """Save the reduced metrics of the current epoch."""
+        Arguments:
+            validation (bool, optional): indicates that must save the validation metrics and batches file.
+        """
+        file = self.validation_batches_file if validation else self.batches_file
+        metrics = self.validation_metrics if validation else self.metrics
+        self.append_metrics(file, [self.epoch, self.batch, *[m.update_value for m in metrics.values()]])
+
+    def save_epoch_metrics(self, validation=False):
+        """Save the reduced metrics of the current epoch.
+
+        Arguments:
+            validation (bool, optional): indicates that it must use the validation metrics and epochs file.
+        """
         batches = len(self.batches_bar)
-        self.append_metrics(self.epochs_file, [self.epoch, *[m.get(batches) for m in self.metrics.values()]])
+        file = self.validation_epochs_file if validation else self.epochs_file
+        metrics = self.validation_metrics if validation else self.metrics
+        self.append_metrics(file, [self.epoch, *[m.get(batches) for m in metrics.values()]])
+
+    def write(self, msg):
+        """Write a message using the tqdm `write` class method to avoid collissions with progress bars.
+
+        Arguments:
+            msg (str): the message to write in the stdout.
+        """
+        tqdm.write(msg)
