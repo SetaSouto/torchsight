@@ -121,6 +121,7 @@ class ProgressLogger():
         self.validation_epochs_file = os.path.join(output_dir, validation_epochs_file)
         self.epoch = None
         self.batch = None
+        self.validation_batch = None
         self.epochs_bar = None
         self.batches_bar = None
 
@@ -180,8 +181,12 @@ class ProgressLogger():
                 if i > 0:
                     # Save the metrics of the batch
                     self.save_batch_metrics(validation=validation)
+                # Set the current batch
+                if validation:
+                    self.validation_batch = i + 1
+                else:
+                    self.batch = i + 1
                 # Yield the number of the batch and its data
-                self.batch = i + 1  # Set the current batch
                 yield self.batch, data
 
         return generator()
@@ -212,10 +217,10 @@ class ProgressLogger():
                 must be the validation metrics.
         """
         metrics = self.validation_metrics if validation else self.metrics
+        batch = self.validation_batch if validation else self.batch
         description = 'Val: ' if validation else ''
         description += f'[Epoch {self.epoch}] '
-        description += ' '.join([f'[{m.name} {m.get(self.batch)}]' for m in metrics.values()
-                                 if m.get(self.batch) is not 'None'])
+        description += ' '.join([f'[{m.name} {m.get(batch)}]' for m in metrics.values()])
         return description
 
     def update_epochs_description(self, validation=False):
@@ -232,12 +237,14 @@ class ProgressLogger():
         Arguments:
             validation (bool, optional): indicates that it must use the validation metrics.
         """
-        if self.batch == len(self.batches_bar):
+        batch = self.validation_batch if validation else self.batch
+
+        if batch == len(self.batches_bar):
             self.batches_bar.set_description(self.epochs_description(validation=validation))
         else:
             metrics = self.validation_metrics if validation else self.metrics
             description = 'Val: ' if validation else ''
-            description += f'[Batch {self.batch}] '
+            description += f'[Batch {batch}] '
             description += ' '.join([f'[{m.name} {m.update_value}]' for m in metrics.values()
                                      if m.update_value is not None])
             self.batches_bar.set_description(description)
@@ -261,7 +268,8 @@ class ProgressLogger():
         """
         file = self.validation_batches_file if validation else self.batches_file
         metrics = self.validation_metrics if validation else self.metrics
-        self.append_metrics(file, [self.epoch, self.batch, *[m.update_value for m in metrics.values()]])
+        batch = self.validation_batch if validation else self.batch
+        self.append_metrics(file, [self.epoch, batch, *[m.update_value for m in metrics.values()]])
 
     def save_epoch_metrics(self, validation=False):
         """Save the reduced metrics of the current epoch.
@@ -269,10 +277,10 @@ class ProgressLogger():
         Arguments:
             validation (bool, optional): indicates that it must use the validation metrics and epochs file.
         """
-        batches = len(self.batches_bar)
+        batch = self.validation_batch if validation else self.batch
         file = self.validation_epochs_file if validation else self.epochs_file
         metrics = self.validation_metrics if validation else self.metrics
-        self.append_metrics(file, [self.epoch, *[m.get(batches) for m in metrics.values()]])
+        self.append_metrics(file, [self.epoch, *[m.get(batch) for m in metrics.values()]])
 
     def write(self, msg):
         """Write a message using the tqdm `write` class method to avoid collissions with progress bars.
