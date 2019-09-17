@@ -51,6 +51,9 @@ class ProgressMetric():
         Arguments:
             batches (int, optional): the number of batches to take the average of the metric.
         """
+        if self.value is None:
+            return None
+
         if self.accumulate and self.reduce == 'avg':
             if batches is None:
                 raise ValueError('Using "avg" reduce, provide the batches to take the average of the metric.')
