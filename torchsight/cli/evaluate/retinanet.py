@@ -35,6 +35,7 @@ def retinanet(checkpoint, dataset, dataset_root, results_dir, subdataset,
                     'num_workers': num_workers,
                     'batch_size': batch_size
                 },
+                'iou_threshold': iou_threshold,
                 'thresholds': {
                     'detection': threshold,
                     'iou': iou_threshold
