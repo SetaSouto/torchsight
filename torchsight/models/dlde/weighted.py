@@ -39,7 +39,7 @@ class ClassificationModule(nn.Module):
     """
 
     def __init__(self, in_channels, embedding_size, anchors, features, classes, normalize=False,
-                 weighted_bias=False, fixed_bias=None, increase_norm_by=None):
+                 weighted_bias=False, fixed_bias=None, increase_norm_by=None, prior=None):
         """Initialize the classification module.
 
         Arguments:
@@ -53,6 +53,8 @@ class ClassificationModule(nn.Module):
             fixed_bias (float, optional): Use a bias for the classification as an hyperparameter.
             increase_norm_by (float, optional): Increase the norm of the classification vectors during
                 the classification by this value.
+            prior (float): the prior to set in the bias of the classification layer. None will init
+                the bias with zeros.
         """
         super().__init__()
 
@@ -79,9 +81,9 @@ class ClassificationModule(nn.Module):
                   'this could lead to inconsistent results.')
 
         self.norm_increaser = increase_norm_by
-        self.reset_weights()
+        self.reset_weights(prior=prior)
 
-    def reset_weights(self, bias=0):
+    def reset_weights(self, prior=None):
         """Reset and initialize the weights with kaiming uniform and the bias with constant value.
 
         For the bias you can use a special constant. As at the beginning of the training all the embeddings
@@ -95,6 +97,9 @@ class ClassificationModule(nn.Module):
         nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5))
 
         if self.weighted_bias:
+            bias = 0
+            if prior is not None:
+                bias = float(-torch.log(torch.Tensor((1/prior) - 1)))
             nn.init.constant_(self.bias, bias)
 
     def encode(self, feature_map):
@@ -219,7 +224,7 @@ class DLDENet(RetinaNet):
 
     def __init__(self, classes, resnet=18, features=None, anchors=None, fpn_levels=None, embedding_size=512,
                  normalize=False, pretrained=True,
-                 device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None):
+                 device=None, weighted_bias=False, fixed_bias=None, increase_norm_by=None, prior=None):
         """Initialize the network.
 
         Arguments:
@@ -241,12 +246,15 @@ class DLDENet(RetinaNet):
             fixed_bias (float, optional): A bias to use as a fixed hyperparameter.
             increase_norm_by (float, optional): Increase the norm of the classification vectors by this value while
                 performing the classification step.
+            prior (float): the prior to set in the bias of the classification layer. None will init
+                the bias with zeros.
         """
         self.embedding_size = embedding_size
         self.normalize = normalize
         self.weighted_bias = weighted_bias
         self.fixed_bias = fixed_bias
         self.increase_norm_by = increase_norm_by
+        self.prior = prior
         super().__init__(classes, resnet, features, anchors, fpn_levels, pretrained, device)
 
     def get_classification_module(self, in_channels, classes, anchors, features):
@@ -266,7 +274,7 @@ class DLDENet(RetinaNet):
         return ClassificationModule(in_channels=in_channels, embedding_size=self.embedding_size, anchors=anchors,
                                     features=features, classes=classes, normalize=self.normalize,
                                     weighted_bias=self.weighted_bias, fixed_bias=self.fixed_bias,
-                                    increase_norm_by=self.increase_norm_by)
+                                    increase_norm_by=self.increase_norm_by, prior=self.prior)
 
     def classify(self, feature_maps):
         """Perform the classification of the feature maps.

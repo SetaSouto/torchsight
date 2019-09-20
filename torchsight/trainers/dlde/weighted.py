@@ -72,7 +72,8 @@ class DLDENetTrainer(RetinaNetTrainer):
                 'evaluation': {'threshold': 0.5, 'iou_threshold': 0.5},
                 'weighted_bias': False,
                 'fixed_bias': 0,
-                'increase_norm_by': None
+                'increase_norm_by': None,
+                'prior': None
             },
             'criterion': {
                 'alpha': 0.25,
@@ -205,6 +206,7 @@ class DLDENetTrainer(RetinaNetTrainer):
             weighted_bias=hyperparameters['weighted_bias'],
             fixed_bias=hyperparameters['fixed_bias'],
             increase_norm_by=hyperparameters['increase_norm_by'],
+            prior=hyperparameters['prior']
         )
 
     def get_criterion(self):
