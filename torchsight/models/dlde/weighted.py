@@ -99,7 +99,7 @@ class ClassificationModule(nn.Module):
         if self.weighted_bias:
             bias = 0
             if prior is not None:
-                bias = float(-torch.log(torch.Tensor((1/prior) - 1)))
+                bias = float(-torch.log(torch.Tensor([(1/prior) - 1])))
             nn.init.constant_(self.bias, bias)
 
     def encode(self, feature_map):
