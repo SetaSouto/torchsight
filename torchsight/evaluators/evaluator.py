@@ -2,9 +2,10 @@
 import time
 
 import torch
+from tqdm import tqdm
 
-from torchsight.loggers import PrintLogger
-from torchsight.utils import PrintMixin, merge_dicts
+from torchsight.utils import JsonObject
+from torchsight.utils.print import PrintMixin
 
 
 class Evaluator(PrintMixin):
@@ -26,7 +27,7 @@ class Evaluator(PrintMixin):
             params (dict): A dict to replace the base params of the evaluator.
             device (str, optional): The device to use for the evaluation.
         """
-        self.params = merge_dicts(self.get_base_params(), params, verbose=True)
+        self.params = self.get_params().merge(params, verbose=True)
         self.device = device if device is not None else 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.print('Using device "{}"'.format(self.device))
 
@@ -40,8 +41,9 @@ class Evaluator(PrintMixin):
         self.dataloader = self.get_dataloader()
         self.print('Loading model ...')
         self.model = self.get_model()
-        self.logger = self.get_logger()
 
+        # Set a progress bar using the tqdm package
+        self.progress_bar = tqdm(self.dataloader)
         # Keep a dict with the key-value pairs to log after each batch
         self.current_log = {}
 
@@ -49,9 +51,9 @@ class Evaluator(PrintMixin):
         self.checkpoint = None
 
     @staticmethod
-    def get_base_params():
+    def get_params():
         """Get the base parameters of the evaluator."""
-        return {}
+        return JsonObject({})
 
     ###############################
     ###         GETTERS         ###
@@ -81,16 +83,6 @@ class Evaluator(PrintMixin):
         """
         raise NotImplementedError('You must provide your own model')
 
-    def get_logger(self):
-        """Get the logger to use during the training to show the information about the process.
-
-        This base implementation uses the PrintLogger that will print the log to the console.
-
-        Returns:
-            pymatch.loggers.Logger: A Logger to use during the training.
-        """
-        return PrintLogger()
-
     ###############################
     ###         METHODS         ###
     ###############################
@@ -105,31 +97,24 @@ class Evaluator(PrintMixin):
 
     def evaluate(self):
         """Run the model over the entire dataset and compute the evaluation metric."""
-        self.print('Starting evaluation ...')
+        tqdm.write('Starting evaluation ...')
         self.model.to(self.device)
         self.eval_mode()
-
-        # The number of batches that the dataset has
-        n_batches = len(self.dataloader)
 
         # The start time of the evaluation and the last batch's end time
         start_time = time.time()
         last_endtime = start_time
 
         with torch.no_grad():
-            for batch, data in enumerate(self.dataloader):
+            for batch, data in enumerate(self.progress_bar):
                 self.forward(*data)
 
-                total_time = time.time() - start_time
+                # Update the description of the progress bar with the items of the current log
                 batch_time = time.time() - last_endtime
                 last_endtime = time.time()
-
-                self.logger.log(merge_dicts({
-                    self.__class__.__name__: None,
-                    'Batch': '{}/{}'.format(batch + 1, n_batches),
-                    'Time': '{:.3f} s'.format(batch_time),
-                    'Total': '{:.1f} s'.format(total_time)
-                }, self.current_log))
+                self.current_log['Time'] = f'{batch_time:.3f}'
+                description = ' '.join(f'[{key} {value}]' for key, value in self.current_log.items())
+                self.progress_bar.set_description(description)
                 self.current_log = {}
 
                 # A callback after each batch

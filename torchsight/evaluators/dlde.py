@@ -241,15 +241,12 @@ class DLDENetFlickr32Evaluator(Flickr32Evaluator):
     @staticmethod
     def get_base_params():
         """Add the thresholds to the base parameters."""
-        return merge_dicts(
-            Flickr32Evaluator.get_base_params(),
-            {
-                'thresholds': {
-                    'detection': 0.5,
-                    'iou': 0.1
-                }
+        return Flickr32Evaluator.get_params().merge({
+            'thresholds': {
+                'detection': 0.5,
+                'iou': 0.5
             }
-        )
+        })
 
     def eval_mode(self):
         """Put the model in evaluation mode and set the threshold for the detection."""

@@ -3,7 +3,10 @@ import torch
 from torch.utils.data import DataLoader
 
 from torchsight.datasets import Flickr32Dataset
-from torchsight.utils import merge_dicts
+from torchsight.evaluators.map.bounding_box import BoundingBox
+from torchsight.evaluators.map.bounding_boxes import BoundingBoxes
+from torchsight.evaluators.map.evaluator import Evaluator as MapEvaluator
+from torchsight.evaluators.map.utils import BBFormat, BBType
 
 from ..evaluator import Evaluator
 from .fl_eval_classification import fl_eval_classification
@@ -26,24 +29,25 @@ class Flickr32Evaluator(Evaluator):
         self.processed = 0  # Number of processed images
         self.detected = 0  # Number of images with logos detected
         self.predictions = []
+        self.map_evaluator = MapEvaluator()
+        self.map_boxes = BoundingBoxes()
 
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def get_base_params():
+    def get_params():
         """Get the base parameters for the evaluator."""
-        return merge_dicts(
-            Evaluator.get_base_params(),
-            {
-                'root': './datasets/flickr32',
-                'file': './flickr32_predictions.csv',
-                'dataset': 'test',
-                'dataloader': {
-                    'num_workers': 8,
-                    'shuffle': False,
-                    'batch_size': 8
-                }
-            })
+        return Evaluator.get_params().merge({
+            'root': './datasets/flickr32',
+            'file': './flickr32_predictions.csv',
+            'dataset': 'test',
+            'dataloader': {
+                'num_workers': 8,
+                'shuffle': False,
+                'batch_size': 8
+            },
+            'iou_threshold': 0.5
+        })
 
     ###############################
     ###         GETTERS         ###
@@ -84,13 +88,17 @@ class Flickr32Evaluator(Evaluator):
             """Custom collate function to join the images and get the name of the images.
 
             Arguments:
-                data (sequence): Sequence of tuples as (image, _, info).
+                data (sequence): Sequence of tuples as (image, boxes, info).
+                    The boxes are torch.Tensor with x1, y1, x2, y2, label and shape `(num of boxes, 5)`
 
             Returns:
                 torch.Tensor: The images.
                     Shape:
                         (batch size, channels, height, width)
-                list of dicts: The filename of the each image.
+                list of torch.Tensor: with the ground truth bounding boxes for each image.
+                    Shape of the tensors: (number of annotations, 5) with x1, y1, x2, y2 and the label
+                    of the class.
+                list of str: The filename of the each image.
             """
             images = [image for image, *_ in data]
             max_width = max([image.shape[-1] for image in images])
@@ -103,8 +111,9 @@ class Flickr32Evaluator(Evaluator):
 
             images = torch.stack([pad_image(image) for image, *_ in data], dim=0)
             files = [info['image'].split('/')[-1].replace('.jpg', '') for _, _, info in data]
+            annotations = [a for _, a, *_ in data]
 
-            return images, files
+            return images, annotations, files
 
         hyperparameters = {**self.params['dataloader'], 'collate_fn': collate}
         return DataLoader(**hyperparameters, dataset=self.dataset)
@@ -113,8 +122,47 @@ class Flickr32Evaluator(Evaluator):
     ###         METHODS         ###
     ###############################
 
-    def predict(self, images, files):
-        """Make a predictions for the given images.
+    def update_map(self, boxes_list, detections_list, file_names):
+        """Update the Mean Average Precision metric with the detections of the current batch.
+
+        Arguments:
+            boxes_list (list of torch.Tensor): with the real ground truth annotations for the images where
+                each tensor has shape (number of annotations, 5) with the x1, y1, x2, y2 and label
+                of the class.
+            detections_list (list of torch.Tensor): with the detections for each image. Each tensor
+                has shape `(number of detections, 6)` with the x1, y1, x2, y2, label and probability
+                for each detection.
+            file_names (list of str): with the name of the images.
+        """
+        if len(boxes_list) != len(detections_list):
+            raise ValueError('Ground truth and detection lists length mismatch')
+
+        for i, boxes in enumerate(boxes_list):
+            file_name = file_names[i]
+            for box in boxes:
+                x1, y1, x2, y2, label = box
+                self.map_boxes.addBoundingBox(BoundingBox(
+                    imageName=file_name,
+                    classId=int(label),
+                    x=int(x1), y=int(y1), w=int(x2), h=int(y2),
+                    format=BBFormat.XYX2Y2,
+                    bbType=BBType.GroundTruth
+                ))
+            for detection in detections_list[i]:
+                x1, y1, x2, y2, label, prob = detection
+                self.map_boxes.addBoundingBox(BoundingBox(
+                    imageName=file_name,
+                    classId=int(label),
+                    x=int(x1), y=int(y1), w=int(x2), h=int(y2),
+                    format=BBFormat.XYX2Y2,
+                    bbType=BBType.Detected,
+                    classConfidence=float(prob)
+                ))
+
+    def predict_one(self, detections_list, files):
+        """Make the predictions for the given images.
+
+        It predict only a single brand for each image to follow the evaluation kit of the dataset.
 
         It assumes that the model make predictions and returns a list of tensors with shape:
         `(num bounding boxes, 6)`.
@@ -125,7 +173,8 @@ class Flickr32Evaluator(Evaluator):
         If your model does not follow this structure you can override this method.
 
         Arguments:
-            images (torch.Tensor): The batch of images to make predictions on.
+            detections_list (list of torch.Tensor): The batch of detections for the images.
+                Must be a list with a tensor for each image with shape `(num boxes, 6)`.
             infos (list of dict): A list of the dicts generated by the dataset.
                 See __getitem__ method in the dataste for more information.
 
@@ -134,9 +183,7 @@ class Flickr32Evaluator(Evaluator):
                 the prediction.
                 If the prediction is that there is no logo in the image it returns None as brand.
         """
-        detections_list = self.model(images)
         predictions = []
-
         for i, detections in enumerate(detections_list):
             self.processed += 1
             if detections.shape[0] > 0:
@@ -153,13 +200,22 @@ class Flickr32Evaluator(Evaluator):
 
         return predictions
 
-    def forward(self, images, infos):
+    def forward(self, images, boxes, infos):
         """Forward pass through the model.
 
         Make the predictions and add it to the predictions variable.
+
+        Arguments:
+            torch.Tensor: The images.
+                Shape: (batch size, channels, height, width)
+            torch.Tensor: the ground truth bounding boxes for each image.
+                Shape: (batch size, max number of annotations per image, 5).
+            list of str: The filename of the each image.
         """
         images = images.to(self.device)
-        self.predictions += self.predict(images, infos)
+        detections_list = self.model(images)
+        self.update_map(boxes, detections_list, infos)
+        self.predictions += self.predict_one(detections_list, infos)
         self.current_log['Processed'] = self.processed
         self.current_log['Detected'] = self.detected
 
@@ -174,3 +230,14 @@ class Flickr32Evaluator(Evaluator):
             file.write('\n'.join(('\t'.join(prediction) for prediction in self.predictions)))
 
         fl_eval_classification(self.params['root'], self.params['file'], verbose=True)
+
+        # Get the average precision for each class
+        metrics_per_class = self.map_evaluator.GetPascalVOCMetrics(
+            self.map_boxes, IOUThreshold=self.params.iou_threshold)
+        num_classes = len(metrics_per_class)
+        for metric in metrics_per_class:
+            brand = self.dataset.label_to_class[metric['class']]
+            average_precision = metric['AP']
+            print(f'{brand.ljust(15)}: {average_precision:.5f}')
+        mean_ap = sum(metric['AP'] for metric in metrics_per_class) / num_classes
+        print(f'\nmAP: {mean_ap:.5f}')
