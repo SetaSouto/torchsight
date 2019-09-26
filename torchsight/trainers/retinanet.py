@@ -27,6 +27,17 @@ class RetinaNetTrainer(Trainer):
             JsonObject: with the base hyperparameters.
         """
         return Trainer.get_base_hp().merge({
+            'logger': {
+                'metrics': [
+                    {'name': 'LR', 'accumulate': False, 'template': '{}'},
+                    {'name': 'Loss', 'accumulate': True, 'reduce': 'avg', 'template': '{:.5f}'},
+                    {'name': 'Time', 'accumulate': False, 'template': '{:.3f}'},
+                    {'name': 'Cls', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Pos', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Neg', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                    {'name': 'Reg', 'accumulate': True, 'reduce': 'avg', 'template': '{:.3f}'},
+                ],
+            },
             'model': {
                 'resnet': 50,
                 'features': {
@@ -314,8 +325,8 @@ class RetinaNetTrainer(Trainer):
         loss = classification_loss + regression_loss
 
         # Log the classification and regression loss too:
-        self.current_log['Class.'] = '{:.5f}'.format(float(classification_loss))
-        self.current_log['Regr.'] = '{:.5f}'.format(float(regression_loss))
+        self.current_log['Cls'] = '{:.5f}'.format(float(classification_loss))
+        self.current_log['Reg'] = '{:.5f}'.format(float(regression_loss))
         self.current_log['Pos'] = '{:.4f}'.format(float(self.criterion.pos_loss * weights.classification))
         self.current_log['Neg'] = '{:.4f}'.format(float(self.criterion.neg_loss * weights.classification))
 

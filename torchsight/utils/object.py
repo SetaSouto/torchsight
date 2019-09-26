@@ -58,7 +58,7 @@ class JsonObject():
         Returns:
             dict: with no values as JsonObject.
         """
-        if not isinstance(item, (self.__class__, dict)):
+        if not isinstance(item, (self.__class__, dict, list, tuple)):
             return item
 
         # If the item is a dict
@@ -66,6 +66,10 @@ class JsonObject():
             for key, value in item.items():
                 item[key] = self._to_dict(value)
             return item
+
+        # if the item is an iterable
+        if isinstance(item, (list, tuple)):
+            return [self._to_dict(i) for i in item]
 
         # If the item is a JsonObject
         original = {}
