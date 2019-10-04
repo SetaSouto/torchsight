@@ -18,7 +18,7 @@ class VisualizeMixin():
         """
         if len(args) == 1 and isinstance(args[0], int):
             index, *_ = args
-            image, boxes, _ = self[index]
+            image, boxes, *_ = self[index]
         elif len(args) == 2:
             image, boxes = args
         else:
