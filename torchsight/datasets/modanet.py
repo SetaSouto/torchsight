@@ -3,6 +3,7 @@ import os
 
 import torch
 from PIL import Image
+from tqdm import tqdm
 
 from .mixins import VisualizeMixin
 
@@ -41,6 +42,7 @@ class ModanetDataset(torch.utils.data.Dataset, VisualizeMixin):
             transform (callable): that transform the images and bounding boxes.
             valid (bool): flag to indicate to load the validation dataset.
         """
+        self.root = root
         self.transform = transform
         self.label_to_class, self.class_to_label = self.get_classes(root)
         self.paths = self.get_paths(root, valid)
@@ -134,3 +136,35 @@ class ModanetDataset(torch.utils.data.Dataset, VisualizeMixin):
                     boxes.append(torch.Tensor([x1, y1, x2, y2, label]))
 
             return torch.stack(boxes)
+
+    def boxes_stats(self):
+        """Show how many bounding boxes are per class in the training and the validation dataset."""
+        def get_stats(annotation_dir):
+            """Compute the stats for an specific annotation directory.
+
+            Arguments:
+                annotation_dir (str): the path to the annotations directory with the txt annotations.
+
+            Returns:
+                dict: with the map between the label (int) and the number of samples.
+            """
+            counts = {}
+            print(f'Reading {annotation_dir} ...')
+            for name in tqdm(os.listdir(annotation_dir)):
+                if name[-3:] == 'txt':
+                    with open(os.path.join(annotation_dir, name), 'r') as file:
+                        for line in file.read().split('\n'):
+                            if line:
+                                label, *_ = line.split()
+                                if label not in counts:
+                                    counts[label] = 0
+                                counts[label] += 1
+            return counts
+
+        train = get_stats(os.path.join(self.root, self.annotations_dir))
+        valid = get_stats(os.path.join(self.root, self.annotations_valid_dir))
+
+        print(f'           | TRAIN | VALID')
+        for label in train:
+            # ' | {str(valid[label]).rjust(5)}')
+            print(f'{self.label_to_class[int(label)].ljust(10)} | {str(train[label]).rjust(5)}')
